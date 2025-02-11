@@ -1,0 +1,46 @@
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { toast } from "react-toastify";
+import { GeneralLabor, RAFSendData, SeedMapRegisterInterface } from "../../interfaces";
+import { getRAFByCropId, postCreateGeneralLabor, postCreateRAF, postCreateSeedMap } from "../../actions";
+
+export const useRegisters = ( cropId?: string ) => {
+    const createRAF = useMutation({
+        mutationFn: (field: RAFSendData) => postCreateRAF(field),
+        onSuccess: () => {
+            toast.success('RAF creado correctamente');
+        },
+        onError: (error) => {
+            toast.error('Error al crear el RAF: ' + error);
+        }
+    });
+
+
+    const createSeedMap = useMutation({
+        mutationFn: (field: SeedMapRegisterInterface) => postCreateSeedMap(field),
+        onSuccess: () => {
+            toast.success('Seed Map creado correctamente');
+        },
+        onError: (error) => {
+            toast.error('Error al crear el Seed Map: ' + error);
+        }
+    });
+
+    const createGeneralLabor = useMutation({
+        mutationFn: (field: GeneralLabor) => postCreateGeneralLabor(field),
+        onSuccess: () => {
+            toast.success('General Labor creado correctamente');
+        },
+        onError: (error) => {
+            toast.error('Error al crear el General Labor: ' + error);
+        }
+    });
+
+
+    const rafByCropId = useQuery({
+        queryKey: ['raf-by-crop-id', cropId],
+        queryFn: () => getRAFByCropId(cropId!),
+        enabled: !!cropId,
+    });
+
+    return { createRAF, createSeedMap, createGeneralLabor, rafByCropId };
+};
