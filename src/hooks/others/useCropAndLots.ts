@@ -2,11 +2,11 @@ import { useState } from "react";
 import { Control, useWatch, Path } from "react-hook-form";
 import { toast } from "react-toastify";
 import { useCrop } from "./../index"; // Ajusta la ruta según tu estructura
-import { GeneralLaborInterface, RAFSendData, SeedMapRegisterInterface, SelectedLot } from "../../interfaces";
+import { GeneralLabor, RAFSendData, SeedMapRegisterInterface, SelectedLot } from "../../interfaces";
 
 
 
-export const useCropAndLots = <T extends RAFSendData | SeedMapRegisterInterface | GeneralLaborInterface>(control: Control<T>) => {
+export const useCropAndLots = <T extends RAFSendData | SeedMapRegisterInterface | GeneralLabor>(control: Control<T>) => {
     // State for selected lots
     const [selectedLots, setSelectedLots] = useState<SelectedLot[]>([]);
 
@@ -33,8 +33,8 @@ export const useCropAndLots = <T extends RAFSendData | SeedMapRegisterInterface 
     // Lot handling functions
     const handleLotAreaChange = (lotId: string, area: number) => {
         const lot = lots?.find(l => l.rowid === lotId);
-        if (lot && +area > +lot.area_real) {
-            toast.error(`El área no puede ser mayor a ${lot.area_real}`);
+        if (lot && +area > +(lot.area_utilizada ? lot.area_utilizada : lot.area_real)) {
+            toast.error(`El área no puede ser mayor a ${lot.area_utilizada ? lot.area_utilizada : lot.area_real}`);
             return;
         }
 

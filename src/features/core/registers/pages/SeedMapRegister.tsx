@@ -7,7 +7,6 @@ import {
 } from "../../../../interfaces/index";
 import {
   ActionButtons,
-  ProductFilters,
   CropInfoCard,
   EditProductModal,
   FormField,
@@ -15,6 +14,7 @@ import {
   ProductCard,
   SelectedProductsList,
   TotalAreaDisplay,
+  ProductFilterWithTree,
 } from "../../../../ui/components";
 import {
   useCropAndLots,
@@ -26,6 +26,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
+
 export const SeedMapRegister = () => {
   const {
     register,
@@ -36,6 +37,7 @@ export const SeedMapRegister = () => {
     setValue,
     reset,
   } = useForm<SeedMapRegisterInterface>();
+  
 
   //!Crops and lots
   const {
@@ -69,7 +71,7 @@ export const SeedMapRegister = () => {
   }, [selectedLabor, cusa, setValue]);
 
   //!Seed and variety
-  const { data: seeds, isLoading: isLoadingSeeds } = useGetProductsByCategory(
+  const { data: seeds, isLoading: isLoadingSeeds, categories: categoriesSeeds } = useGetProductsByCategory(
     true,
     "Semillas"
   );
@@ -140,17 +142,17 @@ export const SeedMapRegister = () => {
     }
   };
 
-  // Add after the searchQuerySeeds state
-  const [selectedSeedSubcategory, setSelectedSeedSubcategory] = useState<string>("");
+  // Estados separados para productos filtrados
+  const [filteredSeeds, setFilteredSeeds] = useState<ProductsResponse[]>([]);
+  const [filteredChemicals, setFilteredChemicals] = useState<ProductsResponse[]>([]);
 
-  // Get unique subcategories for seeds
-  const seedSubcategories = seeds
-    ? [...new Set(seeds.map((product) => product.subcategory_name))].sort()
-    : [];
+  //!Chemicals
+  const { 
+    data: chemicals, 
+    isLoading: isLoadingChemicals, 
+    categories: categoriesChemicals 
+  } = useGetProductsByCategory(true, "Insumos");
 
-  //!Agrochemicals
-  const { data: chemicals, isLoading: isLoadingChemicals } =
-    useGetProductsByCategory(true, "Agroquimicos");
 
   // Search query for chemicals
   const [searchQueryChemicals, setSearchQueryChemicals] = useState("");
@@ -223,14 +225,6 @@ export const SeedMapRegister = () => {
       });
     }
   };
-
-  const [selectedChemicalSubcategory, setSelectedChemicalSubcategory] = useState<string>("");
-
-  // Get unique subcategories
-  const chemicalSubcategories = chemicals
-    ? [...new Set(chemicals.map((product) => product.subcategory_name))].sort()
-    : [];
-
 
   //!Submit
   const { createSeedMap } = useRegisters();
@@ -459,19 +453,32 @@ export const SeedMapRegister = () => {
                 Semillas <span className="text-red-500">*</span>
               </label>
 
-              <ProductFilters
+              <ProductFilterWithTree
+                products={seeds || []}
+                categories={categoriesSeeds!}
+                onProductsFiltered={(filteredProducts) => {
+                  setFilteredSeeds(filteredProducts);
+                }}
                 searchQuery={searchQuerySeeds}
                 onSearchChange={(e) => setSearchQuerySeeds(e.target.value)}
-                selectedSubcategory={selectedSeedSubcategory}
-                onSubcategoryChange={(e) => setSelectedSeedSubcategory(e.target.value)}
-                subcategories={seedSubcategories}
               />
+              
+              <div className="grid grid-cols-1 gap-3 max-h-[32rem] overflow-y-auto px-1 mt-4">
+                {filteredSeeds.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onSelectProduct={handleSelectSeed}
+                  />
+                ))}
+              </div>
 
               <SelectedProductsList
                 selectedProducts={selectedSeeds}
                 onUpdateQuantity={handleUpdateSeedQuantity}
                 onRemoveProduct={handleRemoveSeed}
               />
+              
               {editingSeed && (
                 <EditProductModal
                   editingProduct={editingSeed}
@@ -489,97 +496,52 @@ export const SeedMapRegister = () => {
                   }
                 />
               )}
-
-              <div className="grid grid-cols-1 gap-3 max-h-[32rem] overflow-y-auto px-1">
-                {seeds
-                  ?.filter(
-                    (seed) =>
-                      // Excluye las semillas ya seleccionadas
-                      !selectedSeeds.some(
-                        (selected) => selected.id === seed.id
-                      ) &&
-                      // Aplica filtros de búsqueda y subcategoría
-                      (seed.label
-                        .toLowerCase()
-                        .includes(searchQuerySeeds.toLowerCase()) ||
-                        seed.ref
-                          .toLowerCase()
-                          .includes(searchQuerySeeds.toLowerCase())) &&
-                      (!selectedSeedSubcategory ||
-                        seed.subcategory_name === selectedSeedSubcategory)
-                  )
-                  .map((seed) => (
-                    <ProductCard
-                      key={seed.id}
-                      product={seed}
-                      onSelectProduct={handleSelectSeed}
-                    />
-                  ))}
-              </div>
             </div>
 
             {/* Chemicals section */}
             <div className="col-span-2 mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Agroquímicos <span className="text-red-500">*</span>
+                Insumos <span className="text-red-500">*</span>
               </label>
 
-              <ProductFilters
+              <ProductFilterWithTree
+                products={chemicals || []}
+                categories={categoriesChemicals!}
+                onProductsFiltered={(filteredProducts) => {
+                  setFilteredChemicals(filteredProducts);
+                }}
                 searchQuery={searchQueryChemicals}
                 onSearchChange={(e) => setSearchQueryChemicals(e.target.value)}
-                selectedSubcategory={selectedChemicalSubcategory}
-                onSubcategoryChange={(e) => setSelectedChemicalSubcategory(e.target.value)}
-                subcategories={chemicalSubcategories}
               />
+              
+              <div className="grid grid-cols-1 gap-3 max-h-[32rem] overflow-y-auto px-1 mt-4">
+                {filteredChemicals.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                    onSelectProduct={handleSelectChemical}
+                  />
+                ))}
+              </div>
 
               <SelectedProductsList
                 selectedProducts={selectedChemicals}
                 onUpdateQuantity={handleUpdateChemicalQuantity}
                 onRemoveProduct={handleRemoveChemical}
               />
-
+              
               {editingChemical && (
                 <EditProductModal
                   editingProduct={editingChemical}
-                  warehouses={
-                    chemicals?.find((c) => c.id === editingChemical?.id)
-                      ?.warehouses || []
-                  }
+                  warehouses={chemicals?.find((c) => c.id === editingChemical?.id)?.warehouses || []}
                   onClose={() => setEditingChemical(null)}
                   onConfirm={handleConfirmChemical}
                   onChangeQuantity={handleChemicalModalQuantityChange}
                   onChangeWarehouse={handleChemicalModalWarehouseChange}
                   title="Agregar agroquímico"
-                  confirmButtonDisabled={
-                    !editingChemical?.warehouse_id || !editingChemical?.quantity
-                  }
+                  confirmButtonDisabled={!editingChemical?.warehouse_id || !editingChemical?.quantity}
                 />
               )}
-
-              <div className="grid grid-cols-1 gap-3 max-h-[32rem] overflow-y-auto px-1">
-                {chemicals
-                  ?.filter(
-                    (chemical) =>
-                      !selectedChemicals.some(
-                        (selected) => selected.id === chemical.id
-                      ) &&
-                      (chemical.label
-                        .toLowerCase()
-                        .includes(searchQueryChemicals.toLowerCase()) ||
-                        chemical.ref
-                          .toLowerCase()
-                          .includes(searchQueryChemicals.toLowerCase())) &&
-                      (!selectedChemicalSubcategory ||
-                        chemical.subcategory_name === selectedChemicalSubcategory)
-                  )
-                  .map((chemical) => (
-                    <ProductCard
-                      key={chemical.id}
-                      product={chemical}
-                      onSelectProduct={handleSelectChemical}
-                    />
-                  ))}
-              </div>
             </div>
 
             {/* RAF */}

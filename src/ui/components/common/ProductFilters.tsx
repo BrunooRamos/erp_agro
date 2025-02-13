@@ -1,9 +1,13 @@
+import { CategoryResponse } from "../../../interfaces";
+
+
+
 interface ProductFiltersProps {
   searchQuery: string;
   onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   selectedSubcategory?: string;
   onSubcategoryChange?: (e: React.ChangeEvent<HTMLSelectElement>) => void;
-  subcategories?: string[];
+  subcategories?: CategoryResponse;
 }
 
 export const ProductFilters: React.FC<ProductFiltersProps> = ({
@@ -42,9 +46,12 @@ export const ProductFilters: React.FC<ProductFiltersProps> = ({
         className="w-64 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-zinc-800 focus:border-zinc-800"
       >
         <option value="">Todas las subcategorías</option>
-        {subcategories?.map((subcat) => (
-          <option key={subcat} value={subcat}>
-            {subcat}
+        <option key={subcategories.rowid} value={subcategories.label}>
+          {subcategories.label}
+        </option>
+        {subcategories.subcategories?.map((subcat) => (
+          <option key={subcat.rowid} value={subcat.label}>
+            {subcat.label}
           </option>
         ))}
       </select>

@@ -1,6 +1,6 @@
 import { SelectedProducts } from "../../../interfaces";
 
-export const SelectedProductsList = ({ selectedProducts, onUpdateQuantity, onRemoveProduct, seeds = false }: { selectedProducts: SelectedProducts[], onUpdateQuantity: (id: string, quantity: number) => void, onRemoveProduct: (id: string) => void, seeds?: boolean }) => {
+export const SelectedProductsList = ({ selectedProducts, onUpdateQuantity, onRemoveProduct }: { selectedProducts: SelectedProducts[], onUpdateQuantity: (id: string, quantity: number) => void, onRemoveProduct: (id: string) => void}) => {
     if (selectedProducts.length === 0) return null;
     return (
       <div className="mb-6">
@@ -23,7 +23,7 @@ export const SelectedProductsList = ({ selectedProducts, onUpdateQuantity, onRem
                     step="0.01"
                   />
                   <span className="text-sm text-gray-600">
-                    {seeds ? product.unit : product.type}
+                    {product.unit}
                   </span>
                 </div>
                 <button

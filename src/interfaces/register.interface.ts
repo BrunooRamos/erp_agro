@@ -41,13 +41,12 @@ export interface RAFRegister {
 
 
 
-
-
 export interface CategoryResponse {
-    id:          number;
-    label:       string;
-    type:        string;
+    rowid: number;
+    label: string;
+    parent_id: number;
     description: string;
+    subcategories: CategoryResponse[];
 }
 
 

@@ -1,7 +1,7 @@
 import { LotEntity, SelectedLot } from "../../../interfaces";
 
-const LotItem = ({ lot, isSelected, onSelect, onAreaChange }: { lot: LotEntity, isSelected: boolean, onSelect: (lotId: string, checked: boolean) => void, onAreaChange: (lotId: string, area: number) => void }) => (
-    <div className="flex items-center gap-4 p-4 border border-gray-200 rounded-md bg-white shadow-sm hover:border-gray-300 transition-all">
+const LotItem = ({ lot, isSelected, onSelect, onAreaChange }: { lot: LotEntity, isSelected: boolean, onSelect: (lotId: string, checked: boolean) => void, onAreaChange: (lotId: string, area: number) => void }) => (  
+  <div className="flex items-center gap-4 p-4 border border-gray-200 rounded-md bg-white shadow-sm hover:border-gray-300 transition-all">
       <input
         type="checkbox"
         checked={isSelected}
@@ -16,10 +16,10 @@ const LotItem = ({ lot, isSelected, onSelect, onAreaChange }: { lot: LotEntity, 
             <input
               type="number"
               onChange={(e) => onAreaChange(lot.rowid, Number(e.target.value))}
-              placeholder="0"
+              placeholder='0'
               className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-zinc-800 focus:border-zinc-800"
               min="0"
-              max={lot.area_real}
+              max={lot.area_utilizada ? lot.area_utilizada : lot.area_real}
               step="0.01"
             />
           </div>
@@ -29,7 +29,7 @@ const LotItem = ({ lot, isSelected, onSelect, onAreaChange }: { lot: LotEntity, 
               aria-label="Usar área máxima del lote"
               onChange={(e) => {
                 if (e.target.checked) {
-                  onAreaChange(lot.rowid, Number(lot.area_real));
+                  onAreaChange(lot.rowid, Number(lot.area_utilizada ? lot.area_utilizada : lot.area_real));
                 }
               }}
               className="w-4 h-4 rounded border-gray-300 text-zinc-800 focus:ring-zinc-800"
@@ -39,7 +39,7 @@ const LotItem = ({ lot, isSelected, onSelect, onAreaChange }: { lot: LotEntity, 
             </label>
           </div>
           <span className="text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-md">
-            Máx: {lot.area_real}
+            Máx: {lot.area_utilizada ? lot.area_utilizada : lot.area_real}
           </span>
         </div>
       )}
@@ -49,7 +49,9 @@ const LotItem = ({ lot, isSelected, onSelect, onAreaChange }: { lot: LotEntity, 
 
 
 export const LotSelection = ({ lots, selectedLots, onSelect, onAreaChange }: { lots: LotEntity[] | undefined, selectedLots: SelectedLot[], onSelect: (lotId: string, checked: boolean) => void, onAreaChange: (lotId: string, area: number) => void }) => {
-    if (!lots || lots.length === 0) {
+  
+  
+  if (!lots || lots.length === 0) {
       return (
         <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg text-center">
           <p className="text-sm text-gray-500">
@@ -62,6 +64,7 @@ export const LotSelection = ({ lots, selectedLots, onSelect, onAreaChange }: { l
       <div className="space-y-3">
         {lots.map(lot => {
           const isSelected = selectedLots.some(l => l.id_lote === lot.rowid);
+
           return (
             <LotItem 
               key={lot.rowid}

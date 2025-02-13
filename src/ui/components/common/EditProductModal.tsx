@@ -48,7 +48,7 @@ export const EditProductModal = ({
                   " - Stock: " +
                   warehouse.stock +
                   " " +
-                  editingProduct.type}
+                  editingProduct.unit}
               </option>
             ))}
           </select>

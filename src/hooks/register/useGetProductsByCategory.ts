@@ -4,7 +4,7 @@ import { getProductsByCategoryId } from "../../actions";
 
 export const useGetProductsByCategory = ( shouldFetch: boolean, category: string ) => {
     const { data: categoryData } = useGetCategoryByLabel(category);
-    const categoryId = categoryData?.id.toString();
+    const categoryId = categoryData?.rowid.toString();
 
     const { data, isLoading, error } = useQuery({
         queryKey: ["products", categoryId],
@@ -14,5 +14,10 @@ export const useGetProductsByCategory = ( shouldFetch: boolean, category: string
 
     if (!categoryId) return { data: null, isLoading: false, error: null };
 
-    return { data, isLoading, error };
+    return { 
+        data, 
+        isLoading, 
+        error,
+        categories: categoryData
+    };
 }

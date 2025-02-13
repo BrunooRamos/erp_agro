@@ -79,9 +79,11 @@ CREATE TABLE llx_vicentina_campo  (
     fk_user_modif INT(11) DEFAULT NULL,
     status INT(11) DEFAULT 1,
     date_creation DATETIME DEFAULT NULL,
+    period INT DEFAULT NULL,
+    rent_cost DECIMAL(10,2) DEFAULT NULL,
     tms TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     CONSTRAINT `llx_vicentina_field_fk_user_creat` FOREIGN KEY (`fk_user_creat`) REFERENCES `llx_user` (`rowid`),
-    CONSTRAINT `llx_vicentina_field_fk_user_modif` FOREIGN KEY (`fk_user_modif`) REFERENCES `llx_user` (`rowid`)
+    CONSTRAINT `llx_vicentina_field_fk_user_modif` FOREIGN KEY (`fk_user_modif`) REFERENCES `llx_user` (`rowid`),
 );
 
 CREATE TABLE llx_vicentina_campo_coordinates (

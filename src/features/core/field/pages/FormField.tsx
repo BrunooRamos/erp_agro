@@ -16,6 +16,9 @@ export const FormField = () => {
     
     const navigate = useNavigate();
 
+
+    console.log('code', code);
+
     // Form
     const { register, handleSubmit, formState: { errors }, setValue, reset, watch } = useForm<FieldForm>();
 
@@ -93,6 +96,7 @@ export const FormField = () => {
                         <input
                             {...register('name')}
                             name="name"
+                            disabled={!!code}
                             placeholder="ABC123"
                             type="text"
                             autoComplete="off"

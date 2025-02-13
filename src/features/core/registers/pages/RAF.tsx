@@ -23,9 +23,11 @@ import {
   ProductCard,
   EditProductModal,
   ActionButtons,
-  ProductFilters,
+  ProductFilterWithTree,
 } from "../../../../ui/components";
 import { SelectedProductsList } from "../../../../ui/components/common/SelectedProductsList";
+
+
 
 export const RAF = () => {
   const {
@@ -36,7 +38,7 @@ export const RAF = () => {
     reset,
   } = useForm<RAFSendData>();
 
-  // Use the new hook
+  //!Get crops and lots
   const {
     selectedLots,
     //crops,
@@ -61,13 +63,20 @@ export const RAF = () => {
   });
 
   const shouldFetchChemicals =
-    selectedType === "barbecho" ||
     (selectedType === "mantenimiento_cultivo" &&
-      selectedSubType === "apl_agroquimico");
+      selectedSubType === "apl_agroquimico") ||
+    (selectedType === "barbecho" && selectedSubType === "quimico");
 
   // Get category by label
-  const { data: category, isLoading: isLoadingCategory } =
-    useGetProductsByCategory(shouldFetchChemicals, "Agroquimicos");
+  const {
+    data: products,
+    isLoading: isLoadingProducts,
+    categories: categoriesProducts,
+  } = useGetProductsByCategory(shouldFetchChemicals, "Insumos");
+
+  const [filteredProducts, setFilteredProducts] = useState<ProductsResponse[]>(
+    []
+  );
 
   //!Submit form - Create and update RAF
   const { createRAF } = useRegisters();
@@ -76,6 +85,26 @@ export const RAF = () => {
   const navigate = useNavigate(); // Hook para navegar a la lista de RAF
 
   const onSubmit = handleSubmit((data) => {
+    // Calculate total area
+    const totalArea = selectedLots.reduce(
+      (sum, lot) => sum + (lot.area_utilizada || 0),
+      0
+    );
+
+    // Check if chemicals are required and if they're selected
+    const chemicalsRequired = shouldFetchChemicals;
+    const hasChemicals = selectedProducts.length > 0;
+
+    if (totalArea === 0) {
+      toast.error("El área total debe ser mayor a 0");
+      return;
+    }
+
+    if (chemicalsRequired && !hasChemicals) {
+      toast.error("Debe seleccionar al menos un producto");
+      return;
+    }
+
     data.selectedLots = selectedLots;
     data.selectedProducts = selectedProducts;
 
@@ -89,14 +118,6 @@ export const RAF = () => {
 
   // Dentro del componente RAF, agrega este nuevo estado después de los otros estados
   const [searchQuery, setSearchQuery] = useState("");
-
-  // Agregar este estado después de searchQuery
-  const [selectedSubcategory, setSelectedSubcategory] = useState<string>("");
-
-  // Obtener subcategorías únicas
-  const subcategories = category
-    ? [...new Set(category.map((product) => product.subcategory_name))].sort()
-    : [];
 
   // Add new state for selected products
   const [selectedProducts, setSelectedProducts] = useState<SelectedProducts[]>(
@@ -182,7 +203,7 @@ export const RAF = () => {
   };
 
   // Loading crops
-  if (isLoadingCropAndLots || isLoadingCategory) {
+  if (isLoadingProducts || isLoadingCropAndLots) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-white bg-opacity-75 z-50">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-zinc-800"></div>
@@ -277,44 +298,49 @@ export const RAF = () => {
             </select>
           </FormField>
 
-          {selectedType && (
-            <FormField
-              label="Subtipo de aplicación"
-              error={(errors.sub_type && errors.sub_type.message) || ""}
-            >
-              <select
-                {...register("sub_type", {
-                  required: "Este campo es requerido",
-                })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
+          {selectedType &&
+            RAF_OPTIONS.subTypes[
+              selectedType as keyof typeof RAF_OPTIONS.subTypes
+            ] && (
+              <FormField
+                label="Subtipo de aplicación"
+                error={(errors.sub_type && errors.sub_type.message) || ""}
               >
-                <option value="">Seleccione un método</option>
-                {RAF_OPTIONS.subTypes[
-                  selectedType as keyof typeof RAF_OPTIONS.subTypes
-                ]?.map((subType) => (
-                  <option key={subType.value} value={subType.value}>
-                    {subType.label}
-                  </option>
-                ))}
-              </select>
-            </FormField>
-          )}
+                <select
+                  {...register("sub_type", {
+                    required: "Este campo es requerido",
+                  })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
+                >
+                  <option value="">Seleccione un método</option>
+                  {RAF_OPTIONS.subTypes[
+                    selectedType as keyof typeof RAF_OPTIONS.subTypes
+                  ]?.map((subType) => (
+                    <option key={subType.value} value={subType.value}>
+                      {subType.label}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+            )}
 
           {/* Sub Type Field - Solo se muestra si hay un tipo seleccionado */}
           {shouldFetchChemicals && (
             <div className="col-span-2 mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Productos Químicos <span className="text-red-500">*</span>
+                Productos aplicados <span className="text-red-500">*</span>
               </label>
-              <ProductFilters
+
+              <ProductFilterWithTree
+                products={products || []}
+                categories={categoriesProducts!}
+                onProductsFiltered={(filteredProducts: ProductsResponse[]) => {
+                  setFilteredProducts(filteredProducts);
+                }}
                 searchQuery={searchQuery}
-                onSearchChange={(e) => setSearchQuery(e.target.value)}
-                selectedSubcategory={selectedSubcategory}
-                onSubcategoryChange={(e) =>
-                  setSelectedSubcategory(e.target.value)
-                }
-                subcategories={subcategories}
+                onSearchChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
               />
+
               <SelectedProductsList
                 selectedProducts={selectedProducts}
                 onUpdateQuantity={handleUpdateQuantity}
@@ -324,7 +350,7 @@ export const RAF = () => {
                 <EditProductModal
                   editingProduct={editingProduct}
                   warehouses={
-                    category
+                    products
                       ?.find((p) => p.id === editingProduct.id)
                       ?.warehouses.map((w) => ({
                         ...w,
@@ -337,8 +363,8 @@ export const RAF = () => {
                   onChangeWarehouse={handleModalWarehouseChange}
                 />
               )}
-              <div className="grid grid-cols-1 gap-3 max-h-[32rem] overflow-y-auto px-1">
-                {category
+              <div className="grid grid-cols-1 gap-3 max-h-[32rem] overflow-y-auto px-1 py-3">
+                {filteredProducts
                   ?.filter(
                     (product) =>
                       // Excluye los productos ya seleccionados
@@ -351,9 +377,7 @@ export const RAF = () => {
                         .includes(searchQuery.toLowerCase()) ||
                         product.ref
                           .toLowerCase()
-                          .includes(searchQuery.toLowerCase())) &&
-                      (!selectedSubcategory ||
-                        product.subcategory_name === selectedSubcategory)
+                          .includes(searchQuery.toLowerCase()))
                   )
                   .map((product) => (
                     <ProductCard

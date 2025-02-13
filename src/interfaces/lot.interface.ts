@@ -14,6 +14,7 @@ export interface LotEntity {
     name:              string;
     fk_campo:          string;
     area_real:         string;
+    area_utilizada?:   string;
     area_web:          string;
     description:       string;
     fk_user_creat:     string;

@@ -1,7 +1,8 @@
 export const RAF_OPTIONS = {
     types: [
         { value: "barbecho", label: "Barbecho" },
-        { value: "mantenimiento_cultivo", label: "Mantenimiento de cultivo" }
+        { value: "mantenimiento_cultivo", label: "Mantenimiento de cultivo" },
+        { value: "encalado", label: "Encalado" }
     ],
     subTypes: {
         barbecho: [

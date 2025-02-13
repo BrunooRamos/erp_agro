@@ -9,6 +9,6 @@ export const useGetCategoryByLabel = (
         queryFn: () => getCategoryIdByLabel(label),
         staleTime: 10 * 60 * 1000,
     });
-
+    
     return { data, isLoading, error };
 };
