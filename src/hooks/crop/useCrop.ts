@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { toast } from "react-toastify";
 import { CropForm } from "../../interfaces";
-import { getByIdCrop, postCreateCrop, deleteCrop as deleteCropAction, putUpdateCrop, getListCrop, getLotsByCrop } from "../../actions";
+import { getByIdCrop, postCreateCrop, deleteCrop as deleteCropAction, putUpdateCrop, getListCrop, getLotsByCrop, getVarietiesByCrop } from "../../actions";
 
 
 export const useCrop = ( code?: string, rowid?: string ) => {
@@ -63,12 +63,19 @@ export const useCrop = ( code?: string, rowid?: string ) => {
         refetchOnReconnect: false,
     });
 
+    const getVarieties = useQuery({
+        queryKey: ['crop-varieties', code],
+        queryFn: () => getVarietiesByCrop(code!),
+        enabled: !!code,
+    });
+
     return {
         createCrop,
         getCrop,
         deleteCrop,
         updateCrop,
         listCrop,
-        getLotsByCropId
+        getLotsByCropId,
+        getVarieties
     }
 };

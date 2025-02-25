@@ -26,6 +26,7 @@ export interface Product {
     total_price_usd: string;
     date_creation:   Date;
     warehouse_name:  string;
+    medida:          string;
 }
 
 export interface Raf {

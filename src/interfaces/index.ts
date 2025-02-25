@@ -7,3 +7,5 @@ export * from './lot.interface';
 export * from './shared.interfaces';
 export * from './register.interface';
 export * from './cost-center.interface';
+export * from './irrigation.interface';
+export * from './movements.interface';

@@ -26,4 +26,20 @@ export interface LotEntity {
     user_creation:     string;
     user_modification: null;
     coordinates:       [number, number][];
+    sublots:           SublotEntity[];
+}
+
+export interface SublotEntity {
+    rowid: string;
+    name: string;
+    lot_id: string;
+    area_utilizada: string;
+}
+
+
+export interface VarietyEntity {
+    rowid: string;
+    name: string;
+    fk_crop: string;
+    description: string;
 }

@@ -4,9 +4,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 import {  useField } from "../../../../hooks";
 import { FieldForm } from "../../../../interfaces";
-import MapPolygon from "../../../../ui/components/core/MapPolygon";
 import { RENT_PERIODS } from "../constants/rent_periods";
-import { FormField as FormFieldUI } from "../../../../ui/components/index";
+import { FormField as FormFieldUI, MapPolygon } from "../../../../ui/components/index";
 
 export const FormField = () => {
     const { code } = useParams();    

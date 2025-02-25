@@ -36,7 +36,7 @@ const calculateArea = (coordinates: [number, number][]) => {
 };
 
 
-const MapPolygon: React.FC<MapPolygonProps> = ({
+export const MapPolygon: React.FC<MapPolygonProps> = ({
   initialCoordinates,
   existingPolygon,
   zoomLevel = 12,
@@ -166,5 +166,3 @@ const MapPolygon: React.FC<MapPolygonProps> = ({
     </div>
   );
 };
-
-export default MapPolygon;

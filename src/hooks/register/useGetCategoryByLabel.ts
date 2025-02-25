@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { getCategoryIdByLabel } from "../../actions/register/raf_actions";
+import { getCategoryIdByLabel } from "../../actions/register/regisiter_actions";
 
 export const useGetCategoryByLabel = (
     label: string, 

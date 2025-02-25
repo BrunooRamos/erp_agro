@@ -3,7 +3,7 @@ import { SelectedProducts } from "../../../interfaces";
 export const SelectedProductsList = ({ selectedProducts, onUpdateQuantity, onRemoveProduct }: { selectedProducts: SelectedProducts[], onUpdateQuantity: (id: string, quantity: number) => void, onRemoveProduct: (id: string) => void}) => {
     if (selectedProducts.length === 0) return null;
     return (
-      <div className="mb-6">
+      <div className="mb-6 py-4">
         <div className="space-y-3">
           {selectedProducts.map((product) => (
             <div 

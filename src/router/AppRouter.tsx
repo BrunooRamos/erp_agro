@@ -29,6 +29,18 @@ import {
   GeneralLabor,
   ListOfCrops,
   DetailsCost,
+  IrrigationForm,
+  HomeIrrigation,
+  IrrigationList,
+  CreateMovement,
+  ListRAF,
+  CreateRAF,
+  ListSeedMap,
+  CreateSeedMap,
+  HomeMovement,
+  LogisticCosts,
+  IrrigationHours,
+  ListLabor,
 } from "../features/index";
 import { MenuRoute } from "../interfaces";
 
@@ -203,11 +215,59 @@ export const menuRoutes: MenuRoute[] = [
         component: <RAF />,
         visible: true,
       },
+    ],
+  },
+  {
+    to: "/irrigation",
+    icon: "fa-solid fa-water",
+    title: "Riego",
+    description: "Riego",
+    component: <HomeIrrigation />,
+    visible: true,
+    subMenu: [
       {
-        to: "/registers/general-labor",
-        title: "Labores",
-        description: "Labores",
-        component: <GeneralLabor />,
+        to: "/irrigation/create",
+        title: "Crear riego",
+        description: "Formulario para crear riego",
+        component: <IrrigationForm />,
+        visible: true,
+      },
+      {
+        to: "/irrigation/list",
+        title: "Listado de riegos",
+        description: "Listado de riegos",
+        component: <IrrigationList />,
+        visible: true,
+      },
+      {
+        to: "/irrigation/hours",
+        title: "Horas de riego",
+        description: "Horas de riego",
+        component: <IrrigationHours />,
+        visible: true,
+      }
+    ],
+  },
+  {
+    to: "/movements",
+    icon: "fa-solid fa-file-invoice",
+    title: "Movimientos",
+    description: "Movimientos",
+    component: <HomeMovement />,
+    visible: true,
+    subMenu: [
+      {
+        to: "/movements/create",
+        title: "Crear movimiento",
+        description: "Formulario para crear movimiento",
+        component: <CreateMovement />,
+        visible: true,
+      },
+      {
+        to: "/movements/logistic-costs",
+        title: "Costos logísticos",
+        description: "Costos logísticos",
+        component: <LogisticCosts />,
         visible: true,
       },
     ],
@@ -227,6 +287,60 @@ export const menuRoutes: MenuRoute[] = [
     description: "Centro de Costos",
     component: <DetailsCost />,
     visible: false,
+  },
+
+
+  // Sub menus de cada uno de los registros los cuales ya son sub menus
+  {
+    to: "/registers/raf/create",
+    title: "Crear RAF",
+    description: "Crear RAF",
+    component: <CreateRAF />,
+    visible: false,
+    icon: "fa-solid fa-plus",
+  },
+  {
+    to: "/registers/raf/list",
+    title: "Listar RAF",
+    description: "Listar RAF",
+    component: <ListRAF />,
+    visible: false,
+    icon: "fa-solid fa-list",
+  },
+
+
+  {
+    to: "/registers/seed-map/create",
+    title: "Crear Mapa de siembra",
+    description: "Crear Mapa de siembra",
+    component: <CreateSeedMap />,
+    visible: false,
+    icon: "fa-solid fa-plus",
+  },
+  {
+    to: "/registers/seed-map/list",
+    title: "Listar Mapa de siembra",
+    description: "Listar Mapa de siembra",
+    component: <ListSeedMap />,
+    visible: false,
+    icon: "fa-solid fa-list",
+  },
+
+  {
+    to: "/registers/general-labor/create",
+    title: "Crear Labores",
+    description: "Crear Labores",
+    component: <GeneralLabor />,
+    visible: false,
+    icon: "fa-solid fa-plus",
+  },
+  {
+    to: "/registers/general-labor/list",
+    title: "Listar Labores",
+    description: "Listar Labores",
+    component: <ListLabor />,
+    visible: false,
+    icon: "fa-solid fa-list",
   },
 ];
 

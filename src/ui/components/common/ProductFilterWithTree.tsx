@@ -44,10 +44,11 @@ export const ProductFilterWithTree: React.FC<ProductFilterWithTreeProps> = ({
     return filtered;
   }, [products, selectedChain, searchQuery]);
 
-  // Move the callback to useEffect
+  // Move the filtering logic into a useEffect with proper dependencies
   useEffect(() => {
     onProductsFiltered(filteredProducts);
   }, [filteredProducts, onProductsFiltered]);
+
 
   return (
     <div className="space-y-4">
@@ -71,7 +72,7 @@ export const ProductFilterWithTree: React.FC<ProductFilterWithTreeProps> = ({
           <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
       </div>
-      <MultiLevelDropdown category={categories} onChange={handleCategoryChange} />
+      {categories && <MultiLevelDropdown category={categories} onChange={handleCategoryChange} />}
     </div>
   );
 };

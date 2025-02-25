@@ -1,5 +1,5 @@
 import { dolibarrApi } from "../../api";
-import { CategoryResponse, GeneralLabor, ProductsResponse, RafRegister, RAFSendData, SeedMapRegisterInterface } from "../../interfaces";
+import { CategoryResponse, GeneralLabor, MapSeedGetResponse, ProductsResponse, RafRegister, RAFSendData, SeedMapRegisterInterface } from "../../interfaces";
 
 
 export const getCategoryIdByLabel = async (label: string) => {
@@ -31,4 +31,20 @@ export const postCreateGeneralLabor = async (field: GeneralLabor) => {
 export const getRAFByCropId = async (cropId: string) : Promise<RafRegister[]> => {
     const response = await dolibarrApi.get(`/vicentina/register/raf/crop/${cropId}`);
     return response.data as RafRegister[];
+};
+
+export const getListRAF = async () : Promise<RafRegister[]> => {
+    const response = await dolibarrApi.get('/vicentina/register/raf/list');
+    return response.data as RafRegister[];
+};
+
+export const getListSeedMap = async () : Promise<MapSeedGetResponse[]> => {
+    const response = await dolibarrApi.get('/vicentina/register/seed-map/list');
+    return response.data as MapSeedGetResponse[];
+};
+
+
+export const getListLabor = async () : Promise<GeneralLabor[]> => {
+    const response = await dolibarrApi.get('/vicentina/register/general-labor/list');
+    return response.data as GeneralLabor[];
 };

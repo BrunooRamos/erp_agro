@@ -10,15 +10,20 @@
 
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { GeneralLabor as GeneralLaborInterface } from "../../../../interfaces/index";
+import { GeneralLabor as GeneralLaborInterface } from "../../../../../interfaces";
 import {
   ActionButtons,
   CropInfoCard,
   FormField,
   LotSelection,
   TotalAreaDisplay,
-} from "../../../../ui/components";
-import { useCropAndLots, useCusa, useListMachinery, useRegisters } from "../../../../hooks";
+} from "../../../../../ui/components";
+import {
+  useCropAndLots,
+  useCusa,
+  useListMachinery,
+  useRegisters,
+} from "../../../../../hooks";
 import { useNavigate } from "react-router-dom";
 
 export const GeneralLabor = () => {
@@ -29,18 +34,23 @@ export const GeneralLabor = () => {
     control,
     watch,
     setValue,
-    reset, 
+    reset,
   } = useForm<GeneralLaborInterface>();
 
   // Crops and lots
   const {
     selectedLots,
+    selectedSublots,
+
     lots,
     sortedCrops,
     selectedCrop,
     isLoading: isLoadingCropAndLots,
     handleLotAreaChange,
     handleLotSelection,
+
+    handleSublotSelection,
+    handleSublotAreaChange,
   } = useCropAndLots(control);
 
   // Machinery
@@ -63,14 +73,13 @@ export const GeneralLabor = () => {
     }
   }, [selectedLabor, cusa, setValue]);
 
-
   const { createGeneralLabor } = useRegisters();
   const { mutate: createGeneralLaborMutation } = createGeneralLabor;
 
   const onSubmit = handleSubmit((data) => {
     data.selectedLots = selectedLots;
-
-    console.log(JSON.stringify(data));
+    data.selectedSublots = selectedSublots;
+    console.log(JSON.stringify(data, null, 2));
 
     createGeneralLaborMutation(data, {
       onSuccess: () => {
@@ -93,9 +102,7 @@ export const GeneralLabor = () => {
   return (
     <>
       <div>
-        <h1 className="text-2xl font-bold mb-4">
-          Crear Registro de Labores
-        </h1>
+        <h1 className="text-2xl font-bold mb-4">Crear Registro de Labores</h1>
 
         <form onSubmit={onSubmit} className="w-full">
           <div className="w-full grid grid-cols-2 gap-4">
@@ -160,7 +167,7 @@ export const GeneralLabor = () => {
                 <option value="">Seleccione una maquinaria</option>
                 {machinery?.map((machinery) => (
                   <option key={machinery.rowid} value={machinery.rowid}>
-                    {machinery.name}
+                    {`${machinery.name} - ${machinery.brand} ${machinery.model}`}
                   </option>
                 ))}
               </select>
@@ -178,7 +185,7 @@ export const GeneralLabor = () => {
                 <option value="">Seleccione una maquinaria</option>
                 {machinery?.map((machinery) => (
                   <option key={machinery.rowid} value={machinery.rowid}>
-                    {machinery.name}
+                    {`${machinery.name} - ${machinery.brand} ${machinery.model}`}
                   </option>
                 ))}
               </select>
@@ -254,14 +261,18 @@ export const GeneralLabor = () => {
               </label>
               <LotSelection
                 lots={lots}
-                selectedLots={selectedLots}
-                onSelect={handleLotSelection}
+                onLotSelect={handleLotSelection}
                 onAreaChange={handleLotAreaChange}
+                selectedLots={selectedLots}
+                //Sublot
+                onSublotSelect={handleSublotSelection}
+                selectedSublots={selectedSublots}
+                onSublotAreaChange={handleSublotAreaChange}
               />
             </div>
 
             {/* Total applied area */}
-            <TotalAreaDisplay selectedLots={selectedLots} />
+            <TotalAreaDisplay selectedLots={selectedLots} selectedSublots={selectedSublots} />
 
             {/* Action Buttons */}
             <ActionButtons

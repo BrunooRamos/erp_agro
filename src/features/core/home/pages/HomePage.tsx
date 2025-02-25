@@ -44,7 +44,21 @@ export const HomePage = () => {
                 />
                 <OptionCard
                     visible={true}
+                    icon="fa-solid fa-water"
+                    title="Riegos"
+                    to="/irrigation"
+                    description="Gestión de riegos"
+                />
+                <OptionCard
+                    visible={true}
                     icon="fa-solid fa-file-invoice"
+                    title="Movimientos"
+                    to="/movements"
+                    description="Gestión de movimientos"
+                />
+                <OptionCard
+                    visible={true}
+                    icon="fa-solid fa-money-bill"
                     title="Centro de Costo"
                     to="/cost-center/list"
                     description="Gestión de centro de costo"

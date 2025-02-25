@@ -151,8 +151,17 @@ CREATE TABLE llx_vicentina_cultivo_lote (
     CONSTRAINT fk_cultivo_lote_user_modif FOREIGN KEY (fk_user_modif) REFERENCES llx_user(rowid)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
-
-
+CREATE TABLE llx_vicentina_cultivo_sublote (
+    rowid INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    fk_cultivo INT NOT NULL,
+    fk_lote INT NOT NULL,
+    area_utilizada DECIMAL(10,2) DEFAULT 0,
+    date_creation DATETIME NOT NULL,
+    tms TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    fk_cultivo_lote INT NOT NULL,
+    CONSTRAINT fk_cultivo_lote FOREIGN KEY (fk_cultivo_lote) REFERENCES llx_vicentina_cultivo_lote(rowid) ON DELETE CASCADE
+) ENGINE=InnoDB;
 
 CREATE TABLE `llx_vicentina_raf` (
   `rowid` int(11) NOT NULL AUTO_INCREMENT,
@@ -201,11 +210,10 @@ CREATE TABLE `llx_vicentina_seed_map` (
 
 
 
-
 -- Tabla compartida para lotes
 CREATE TABLE `llx_vicentina_registers_lots` (
     `rowid` int(11) NOT NULL AUTO_INCREMENT,
-    `register_type` enum('raf','seed_map') NOT NULL,
+    `register_type` enum('raf','seed_map','irrigation') NOT NULL,
     `fk_register` int(11) NOT NULL,
     `fk_lote` int(11) NOT NULL,
     `area_utilizada` decimal(10,2) DEFAULT 0,
@@ -215,10 +223,20 @@ CREATE TABLE `llx_vicentina_registers_lots` (
     CONSTRAINT `llx_vicentina_registers_lots_fk_lote` FOREIGN KEY (`fk_lote`) REFERENCES `llx_vicentina_lote` (`rowid`)
 ) ENGINE=InnoDB;
 
+ALTER TABLE llx_vicentina_registers_lots ADD COLUMN `fk_sublote` int(11);
+
+ALTER TABLE llx_vicentina_registers_lots
+ADD CONSTRAINT `llx_vicentina_registers_lots_fk_sublote` 
+FOREIGN KEY (`fk_sublote`) 
+REFERENCES `llx_vicentina_cultivo_sublote` (`rowid`);
+
+ALTER TABLE llx_vicentina_registers_lots 
+MODIFY COLUMN register_type enum('raf','seed_map','irrigation','labor') NOT NULL;
+
 -- Tabla compartida para productos
 CREATE TABLE `llx_vicentina_registers_products` (
     `rowid` int(11) NOT NULL AUTO_INCREMENT,
-    `register_type` enum('raf','seed_map') NOT NULL,
+    `register_type` enum('raf','seed_map','irrigation') NOT NULL,
     `fk_register` int(11) NOT NULL,
     `fk_product` int(11) NOT NULL,
     `quantity` decimal(10,2) DEFAULT 0,
@@ -230,6 +248,8 @@ CREATE TABLE `llx_vicentina_registers_products` (
     KEY `fk_product` (`fk_product`),
     CONSTRAINT `llx_vicentina_registers_products_fk_product` FOREIGN KEY (`fk_product`) REFERENCES `llx_product` (`rowid`)
 ) ENGINE=InnoDB;
+
+ALTER TABLE llx_vicentina_registers_products ADD COLUMN unit varchar(255);
 
 CREATE TABLE `llx_vicentina_labor` (
     `rowid` int(11) NOT NULL AUTO_INCREMENT,
@@ -272,3 +292,4 @@ ALTER TABLE `llx_vicentina_registers_products`
 ADD COLUMN `total_price` decimal(24,8) DEFAULT 0.00000000 AFTER `stock_used`,
 ADD COLUMN `total_price_usd` decimal(24,8) DEFAULT 0.00000000 AFTER `total_price`,
 ADD COLUMN `date_creation` datetime DEFAULT CURRENT_TIMESTAMP AFTER `total_price_usd`;
+

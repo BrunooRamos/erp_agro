@@ -9,17 +9,23 @@ interface Category {
 }
 
 interface MultiLevelDropdownProps {
-  category: Category; // Cambiado de categories array a single category
+  category?: Category; // Make category optional
   onChange: (selectedChain: Category[]) => void;
 }
 
 const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({ category, onChange }) => {
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   const [selectedChain, setSelectedChain] = useState<Category[]>([]);
+
+  // If no category is provided, return null or a placeholder
+  if (!category) {
+    return null;
+  }
 
   const handleSelect = (level: number, rowid: number) => {
     const newChain = selectedChain.slice(0, level);
-    const currentOptions = level === 0 ? category.subcategories : newChain[level - 1].subcategories;
+    const currentOptions = level === 0 
+      ? category?.subcategories || [] 
+      : newChain[level - 1]?.subcategories || [];
     const selectedOption = currentOptions.find(cat => cat.rowid === rowid);
 
     if (selectedOption) {
@@ -53,13 +59,16 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({ category, onCha
   };
 
   const dropdowns = [];
-  let currentOptions = category.subcategories;
+  let currentOptions = category.subcategories || [];
   let level = 0;
-  dropdowns.push(renderDropdown(currentOptions, level));
   
-  while (selectedChain[level] && selectedChain[level].subcategories.length > 0) {
+  if (currentOptions.length > 0) {
+    dropdowns.push(renderDropdown(currentOptions, level));
+  }
+  
+  while (selectedChain[level]?.subcategories?.length > 0) {
     level++;
-    currentOptions = selectedChain[level - 1].subcategories;
+    currentOptions = selectedChain[level - 1]?.subcategories || [];
     dropdowns.push(renderDropdown(currentOptions, level));
   }
 

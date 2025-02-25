@@ -4,7 +4,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 import {  useField, useLot } from "../../../../hooks";
 import { FieldEntity, LotForm } from "../../../../interfaces";
-import MapPolygon from "../../../../ui/components/core/MapPolygon";
+import { MapPolygon } from "../../../../ui/components";
+
 
 export const FormLot = () => {
     const { code } = useParams();    
@@ -52,7 +53,6 @@ export const FormLot = () => {
                 }
             });
         } else {
-            console.log('data', data);
             createLotMutation(data, {
                 onSuccess: () => {
                     navigate('/lot/list');

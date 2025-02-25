@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+
 import {
     createColumnHelper,
     flexRender,
@@ -20,16 +20,10 @@ export const ListCrop = () => {
     const { data = [], isLoading, error, refetch } = listCrop;
     const { mutate: deleteCropAction, isPending: isDeletePending } = deleteCrop;
     
-    const navigate = useNavigate();
-    
     const columnHelper = createColumnHelper<CropEntity>();
     
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
-    const handleEdit = (crop: CropEntity) => {
-        const encodedCode = encodeURIComponent(crop.code);
-        navigate(`/crop/edit/${encodedCode}`);
-    };
 
     const handleDelete = (crop: CropEntity) => {
         const confirmMessage = `¿Está seguro que desea eliminar el siguiente cultivo?\n\nCódigo: ${crop.code}\nCampo: ${crop.codigo_campo}\nCultivo: ${crop.cultivo}`;
@@ -81,13 +75,6 @@ export const ListCrop = () => {
             header: 'Acciones',
             cell: (info) => (
                 <div className="flex gap-2">
-                    <button 
-                        onClick={() => handleEdit(info.row.original)}
-                        className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
-                    >
-                        <i className="fas fa-edit mr-1"></i>
-                        Editar
-                    </button>
                     <button 
                         onClick={() => handleDelete(info.row.original)}
                         className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
@@ -181,13 +168,6 @@ export const ListCrop = () => {
             {/* Actions */}
             <div className="relative">
                 <div className="absolute -top-10 right-0 flex gap-2">
-                    <button
-                        onClick={() => refetch()}
-                        className="px-3 py-1 bg-zinc-100 hover:bg-zinc-200 rounded-lg text-zinc-800"
-                        aria-label="Actualizar registros"
-                    >
-                        <i className="fas fa-sync-alt"></i>
-                    </button>
                     <button
                         onClick={handleScrollLeft}
                         className="px-3 py-1 bg-zinc-100 hover:bg-zinc-200 rounded-lg text-zinc-800"

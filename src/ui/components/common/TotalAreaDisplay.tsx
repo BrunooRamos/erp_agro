@@ -1,8 +1,12 @@
-import { SelectedLot } from "../../../interfaces";
+import { SelectedLot, SelectedSubLot } from "../../../interfaces";
 
-export const TotalAreaDisplay = ({ selectedLots }: { selectedLots: SelectedLot[] }) => {
-    const total = selectedLots.reduce((acc, lot) => acc + (lot.area_utilizada || 0), 0);
-    return (
+export const TotalAreaDisplay = ({ selectedLots, selectedSublots }: { selectedLots: SelectedLot[], selectedSublots?: SelectedSubLot[] }) => {
+  const areaSublots = selectedSublots ? selectedSublots.reduce((acc, sublot) => acc + (sublot.area_utilizada || 0), 0) : 0;
+  const areaLots = selectedLots.reduce((acc, lot) => acc + (lot.area_utilizada || 0), 0);
+  
+  const total = areaSublots + areaLots;
+
+  return (
       <div className="col-span-2 p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
         <div className="flex items-center justify-between">
           <span className="text-sm text-gray-500">Área total:</span>

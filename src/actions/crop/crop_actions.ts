@@ -1,5 +1,5 @@
 import { dolibarrApi } from "../../api";
-import { CropEntity, CropForm, LotEntity } from "../../interfaces";
+import { CropEntity, CropForm, CropWithLot, LotEntity, VarietyEntity } from "../../interfaces";
 
 export const postCreateCrop = async (crop: CropForm) => {
     const response = await dolibarrApi.post('/vicentina/crop/create', crop);
@@ -13,7 +13,7 @@ export const putUpdateCrop = async (code: string, crop: CropForm) => {
 
 export const getByIdCrop = async (code: string) => {
     const response = await dolibarrApi.get(`/vicentina/crop/get/${code}`);
-    return response.data;
+    return response.data as CropWithLot;
 };
 
 
@@ -30,4 +30,9 @@ export const deleteCrop = async (code: string) => {
 export const getLotsByCrop = async (code: string) : Promise<LotEntity[]> => {
     const response = await dolibarrApi.get(`/vicentina/crop/${code}/lots`);
     return response.data;
+};
+
+export const getVarietiesByCrop = async (crop_code: string) : Promise<VarietyEntity[]> => {
+    const response = await dolibarrApi.get(`/vicentina/crop/${crop_code}/potato-varieties`);
+    return response.data as VarietyEntity[];
 };

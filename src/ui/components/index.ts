@@ -19,3 +19,5 @@ export * from './common/CategoryDropdowns';
 export * from './common/MultiLevelDropdown';
 export * from './common/ProductFilterWithTree';
 
+export * from './core/irrigation/IrrigationCard';
+

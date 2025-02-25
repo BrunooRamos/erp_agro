@@ -18,4 +18,10 @@ export * from "./field/field_actions";
 export * from "./lot/lot_actions";
 
 // RAF
-export * from "./register/raf_actions";
+export * from "./register/regisiter_actions";
+
+// Irrigation
+export * from "./irrigation/irrigation_actions";
+
+// Movement
+export * from "./movements/movement_actions";
