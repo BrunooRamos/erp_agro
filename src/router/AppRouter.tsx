@@ -41,6 +41,7 @@ import {
   LogisticCosts,
   IrrigationHours,
   ListLabor,
+  LaborRegister,
 } from "../features/index";
 import { MenuRoute } from "../interfaces";
 
@@ -215,6 +216,13 @@ export const menuRoutes: MenuRoute[] = [
         component: <RAF />,
         visible: true,
       },
+      {
+        to: "/registers/general-labor",
+        title: "Laboreos generales",
+        description: "Laboreos generales",
+        component: <LaborRegister />,
+        visible: true,
+      }
     ],
   },
   {

@@ -50,3 +50,11 @@ export interface MachineryEntity {
     user_creation:     string | null;
     user_modification: string | null;
 }
+
+
+export interface MachineryLight {
+    rowid: string;
+    name: string;
+    brand: string;
+    model: string;  
+}

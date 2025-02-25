@@ -2081,11 +2081,17 @@ public function listLabors()
 {
     // Get Labor records with related information
     $sql = "SELECT l.*, 
-                  uc.login as user_creation,
-                  um.login as user_modification
+                  e1.rowid as first_equipment_rowid,
+                  e1.name as first_equipment_name,
+                  e1.brand as first_equipment_brand,
+                  e1.model as first_equipment_model,
+                  e2.rowid as second_equipment_rowid,
+                  e2.name as second_equipment_name,
+                  e2.brand as second_equipment_brand,
+                  e2.model as second_equipment_model
            FROM " . MAIN_DB_PREFIX . "vicentina_labor as l
-           LEFT JOIN " . MAIN_DB_PREFIX . "user as uc ON l.fk_user_creat = uc.rowid
-           LEFT JOIN " . MAIN_DB_PREFIX . "user as um ON l.fk_user_modif = um.rowid
+           LEFT JOIN " . MAIN_DB_PREFIX . "vicentina_maquinaria as e1 ON l.first_equipment = e1.rowid
+           LEFT JOIN " . MAIN_DB_PREFIX . "vicentina_maquinaria as e2 ON l.second_equipment = e2.rowid
            ORDER BY l.date DESC";
 
     $result = $this->db->query($sql);
@@ -2093,24 +2099,31 @@ public function listLabors()
     if ($result) {
         $records = array();
         while ($labor = $this->db->fetch_object($result)) {
-            // Filter Labor fields
-            $laborData = array(
-                'rowid' => $labor->rowid,
-                'crop_code' => $labor->crop_code,
-                'date' => $labor->date,
-                'first_equipment' => $labor->first_equipment,
-                'second_equipment' => $labor->second_equipment,
-                'labor_code' => $labor->labor_code,
-                'cusa_cost' => floatval($labor->cusa_cost),
-                'lts' => floatval($labor->lts),
-                'date_creation' => $labor->date_creation,
-                'date_modification' => $labor->date_modification,
-                'user_creation' => $labor->user_creation,
-                'user_modification' => $labor->user_modification
-            );
+            // Process machinery data
+            $machinaryUsed = array();
+            
+            // Add first equipment if exists
+            if ($labor->first_equipment_rowid) {
+                $machinaryUsed[] = array(
+                    'rowid' => (string)$labor->first_equipment_rowid,
+                    'name' => $labor->first_equipment_name,
+                    'brand' => $labor->first_equipment_brand,
+                    'model' => $labor->first_equipment_model
+                );
+            }
+
+            // Add second equipment if exists
+            if ($labor->second_equipment_rowid) {
+                $machinaryUsed[] = array(
+                    'rowid' => (string)$labor->second_equipment_rowid,
+                    'name' => $labor->second_equipment_name,
+                    'brand' => $labor->second_equipment_brand,
+                    'model' => $labor->second_equipment_model
+                );
+            }
 
             // Get lots and sublots for this Labor
-            $lotsSql = "SELECT l.*, rl.area_utilizada, rl.fk_sublote,
+            $lotsSql = "SELECT l.rowid, l.name, rl.area_utilizada, rl.fk_sublote,
                               c.name as campo_name,
                               sl.name as sublot_name
                        FROM " . MAIN_DB_PREFIX . "vicentina_registers_lots as rl
@@ -2123,22 +2136,32 @@ public function listLabors()
             $lotsResult = $this->db->query($lotsSql);
             $lots = array();
             $sublots = array();
+            $parentLots = array(); // Track parent lots of sublots
 
             while ($lot = $this->db->fetch_object($lotsResult)) {
                 if ($lot->fk_sublote) {
                     // This is a sublot
                     $sublots[] = array(
-                        'id_sub_lote' => $lot->fk_sublote,
+                        'id_sub_lote' => (string)$lot->fk_sublote,
+                        'id_parent_lote' => (string)$lot->rowid,
                         'name' => $lot->sublot_name,
-                        'id_parent_lote' => $lot->rowid,
-                        'parent_lot_name' => $lot->name,
-                        'campo_name' => $lot->campo_name,
                         'area_utilizada' => floatval($lot->area_utilizada)
                     );
+                    
+                    // Add parent lot if not already added
+                    $parentLotKey = $lot->rowid;
+                    if (!isset($parentLots[$parentLotKey])) {
+                        $parentLots[$parentLotKey] = array(
+                            'rowid' => (string)$lot->rowid,
+                            'name' => $lot->name,
+                            'campo_name' => $lot->campo_name,
+                            'area_utilizada' => 0 // Parent lot's area is not used when there are sublots
+                        );
+                    }
                 } else {
-                    // This is a main lot
+                    // This is a main lot without sublots
                     $lots[] = array(
-                        'id_lote' => $lot->rowid,
+                        'rowid' => (string)$lot->rowid,
                         'name' => $lot->name,
                         'campo_name' => $lot->campo_name,
                         'area_utilizada' => floatval($lot->area_utilizada)
@@ -2146,11 +2169,21 @@ public function listLabors()
                 }
             }
 
-            // Structure the response with three main sections
+            // Merge regular lots with parent lots
+            $allLots = array_merge($lots, array_values($parentLots));
+
+            // Structure the response according to GeneralLaborResponse interface
             $records[] = array(
-                'labor' => $laborData,
-                'lots' => $lots,
-                'sublots' => $sublots
+                'date' => $labor->date,
+                'labor_code' => $labor->labor_code,
+                'cusa_cost' => floatval($labor->cusa_cost),
+                'lts' => floatval($labor->lts),
+                'first_equipment' => $labor->first_equipment_rowid ? (string)$labor->first_equipment_rowid : null,
+                'second_equipment' => $labor->second_equipment_rowid ? (string)$labor->second_equipment_rowid : null,
+                'crop_code' => $labor->crop_code,
+                'selectedSublots' => $sublots,
+                'selectedLots' => $allLots,
+                'machinaryUsed' => $machinaryUsed
             );
         }
         return $records;
@@ -2623,7 +2656,7 @@ public function getCropLabors($cropId)
                         'dosisha' => floatval($product->dosisha),
                         'variedad' => $product->variedad
                     );
-}
+                }
 
                 // Structure the response with three main sections
                 $records[] = array(
@@ -3299,4 +3332,3 @@ public function getCropLabors($cropId)
         }
     }
 }
-

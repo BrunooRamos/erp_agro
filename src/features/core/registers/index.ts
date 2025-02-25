@@ -9,5 +9,7 @@ export * from "./pages/seed_map/CreateSeedMap";
 export * from "./pages/seed_map/ListSeedMap";
 export * from "./pages/SeedMapRegister";
 
+
 export * from "./pages/labor/ListLabor";
 export * from "./pages/labor/GeneralLabor";
+export * from "./pages/LaborRegister";

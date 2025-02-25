@@ -1,3 +1,5 @@
+import { MachineryLight } from "./machinery.interface";
+
 export interface GeneralLabor {
   date: string;
   labor_code: string;
@@ -104,10 +106,25 @@ export interface RAFSendData {
   type: string;
 }
 
+
+
 export interface MapSeedGetResponse {
   seed_map: SeedMap;
   lots: Lot[];
   products: ProductsResponse[];
+}
+
+export interface GeneralLaborResponse {
+  date: string;
+  labor_code: string;
+  cusa_cost: number;
+  lts: number;
+  first_equipment: string;
+  second_equipment?: string;
+  crop_code: string;
+  selectedSublots: SelectedSubLot[];
+  selectedLots: Lot[];
+  machinaryUsed: MachineryLight[];  
 }
 
 export interface ProductsResponse {
