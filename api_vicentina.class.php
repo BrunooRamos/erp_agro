@@ -2813,13 +2813,15 @@ public function getCropLabors($cropId)
         try {
             // Insert main Irrigation record
             $sql = "INSERT INTO " . MAIN_DB_PREFIX . "vicentina_irrigation (";
-            $sql .= "crop_code, date, first_equipment, second_equipment, ";
+            $sql .= "crop_code, date, first_equipment, second_equipment, meters_of_line_mother, cost_mother_line, ";
             $sql .= "fk_user_creat, date_creation";
             $sql .= ") VALUES (";
             $sql .= "'" . $this->db->escape($request_data['crop_code']) . "', ";
             $sql .= "'" . $this->db->escape($request_data['date']) . "', ";
             $sql .= ($request_data['first_equipment'] ? (int) $request_data['first_equipment'] : "NULL") . ", ";
             $sql .= ($request_data['second_equipment'] ? (int) $request_data['second_equipment'] : "NULL") . ", ";
+            $sql .= (float) $request_data['meters_of_line_mother'] . ", ";
+            $sql .= (float) $request_data['cost_mother_line'] . ", ";
             $sql .= (int) $user->id . ", ";
             $sql .= "'" . $this->db->idate(dol_now()) . "'";
             $sql .= ")";
@@ -2831,20 +2833,43 @@ public function getCropLabors($cropId)
 
             $irrigation_id = $this->db->last_insert_id(MAIN_DB_PREFIX . 'vicentina_irrigation');
 
-            // Insert lots
-            foreach ($request_data['selectedLots'] as $lot) {
-                $sql = "INSERT INTO " . MAIN_DB_PREFIX . "vicentina_registers_lots (";
-                $sql .= "register_type, fk_register, fk_lote, area_utilizada";
-                $sql .= ") VALUES (";
-                $sql .= "'irrigation', ";
-                $sql .= (int) $irrigation_id . ", ";
-                $sql .= (int) $lot['id_lote'] . ", ";
-                $sql .= floatval($lot['area_utilizada']);
-                $sql .= ")";
+            // Insert lots (without sublots)
+            if (!empty($request_data['selectedLots'])) {
+                foreach ($request_data['selectedLots'] as $lot) {
+                    $sql = "INSERT INTO " . MAIN_DB_PREFIX . "vicentina_registers_lots (";
+                    $sql .= "register_type, fk_register, fk_lote, area_utilizada, fk_sublote";
+                    $sql .= ") VALUES (";
+                    $sql .= "'irrigation', ";
+                    $sql .= (int) $irrigation_id . ", ";
+                    $sql .= (int) $lot['id_lote'] . ", ";
+                    $sql .= floatval($lot['area_utilizada']) . ", ";
+                    $sql .= "NULL";  // No sublot for these entries
+                    $sql .= ")";
 
-                $result = $this->db->query($sql);
-                if (!$result) {
-                    throw new Exception('Error creating Irrigation-lot relationship: ' . $this->db->lasterror());
+                    $result = $this->db->query($sql);
+                    if (!$result) {
+                        throw new Exception('Error creating Seed Map-lot relationship: ' . $this->db->lasterror());
+                    }
+                }
+            }
+
+            // Insert sublots
+            if (!empty($request_data['selectedSublots'])) {
+                foreach ($request_data['selectedSublots'] as $sublot) {
+                    $sql = "INSERT INTO " . MAIN_DB_PREFIX . "vicentina_registers_lots (";
+                    $sql .= "register_type, fk_register, fk_lote, area_utilizada, fk_sublote";
+                    $sql .= ") VALUES (";
+                    $sql .= "'irrigation', ";
+                    $sql .= (int) $irrigation_id . ", ";
+                    $sql .= (int) $sublot['id_parent_lote'] . ", ";
+                    $sql .= floatval($sublot['area_utilizada']) . ", ";
+                    $sql .= (int) $sublot['id_sub_lote'];
+                    $sql .= ")";
+
+                    $result = $this->db->query($sql);
+                    if (!$result) {
+                        throw new Exception('Error creating Seed Map-sublot relationship: ' . $this->db->lasterror());
+                    }
                 }
             }
 
@@ -2948,47 +2973,78 @@ public function getCropLabors($cropId)
         if ($result) {
             $records = array();
             while ($irrigation = $this->db->fetch_object($result)) {
-                // Get lots for this irrigation
-                $lotsSql = "SELECT l.*, rl.area_utilizada, c.name as campo_name
-                        FROM " . MAIN_DB_PREFIX . "vicentina_registers_lots as rl
-                        LEFT JOIN " . MAIN_DB_PREFIX . "vicentina_lote as l ON rl.fk_lote = l.rowid
-                        LEFT JOIN " . MAIN_DB_PREFIX . "vicentina_campo as c ON l.fk_campo = c.rowid
-                        WHERE rl.register_type = 'irrigation' 
-                        AND rl.fk_register = " . (int) $irrigation->rowid;
+                // Get lots and sublots for this irrigation
+                $lotsSql = "SELECT l.rowid, l.name, rl.area_utilizada, rl.fk_sublote,
+                              c.name as campo_name,
+                              sl.name as sublot_name
+                       FROM " . MAIN_DB_PREFIX . "vicentina_registers_lots as rl
+                       LEFT JOIN " . MAIN_DB_PREFIX . "vicentina_lote as l ON rl.fk_lote = l.rowid
+                       LEFT JOIN " . MAIN_DB_PREFIX . "vicentina_campo as c ON l.fk_campo = c.rowid
+                       LEFT JOIN " . MAIN_DB_PREFIX . "vicentina_cultivo_sublote as sl ON rl.fk_sublote = sl.rowid
+                       WHERE rl.register_type = 'irrigation' 
+                       AND rl.fk_register = " . (int) $irrigation->rowid;
 
                 $lotsResult = $this->db->query($lotsSql);
                 $lots = array();
+                $sublots = array();
+                $parentLots = array(); // Track parent lots of sublots
+
                 while ($lot = $this->db->fetch_object($lotsResult)) {
-                    $lots[] = array(
-                        'id_lote' => $lot->rowid,
-                        'name' => $lot->name,
-                        'campo_name' => $lot->campo_name,
-                        'area_utilizada' => floatval($lot->area_utilizada)
-                    );
+                    if ($lot->fk_sublote) {
+                        // This is a sublot
+                        $sublots[] = array(
+                            'id_sub_lote' => (string)$lot->fk_sublote,
+                            'id_parent_lote' => (string)$lot->rowid,
+                            'name' => $lot->sublot_name,
+                            'area_utilizada' => floatval($lot->area_utilizada)
+                        );
+                        
+                        // Add parent lot if not already added
+                        $parentLotKey = $lot->rowid;
+                        if (!isset($parentLots[$parentLotKey])) {
+                            $parentLots[$parentLotKey] = array(
+                                'rowid' => (string)$lot->rowid,
+                                'name' => $lot->name,
+                                'campo_name' => $lot->campo_name,
+                                'area_utilizada' => 0 // Parent lot's area is not used when there are sublots
+                            );
+                        }
+                    } else {
+                        // This is a main lot without sublots
+                        $lots[] = array(
+                            'rowid' => (string)$lot->rowid,
+                            'name' => $lot->name,
+                            'campo_name' => $lot->campo_name,
+                            'area_utilizada' => floatval($lot->area_utilizada)
+                        );
+                    }
                 }
 
-                // Get products/materials for this irrigation
-                // $productsSql = "SELECT p.label as product_name, p.ref as product_ref, 
-                //                     rp.*, e.ref as warehouse_name
-                //             FROM " . MAIN_DB_PREFIX . "vicentina_registers_products as rp
-                //             LEFT JOIN " . MAIN_DB_PREFIX . "product as p ON rp.fk_product = p.rowid
-                //             LEFT JOIN " . MAIN_DB_PREFIX . "entrepot as e ON rp.warehouse_id = e.rowid
-                //             WHERE rp.register_type = 'irrigation' 
-                //             AND rp.fk_register = " . (int)$irrigation->rowid;
+                // Merge regular lots with parent lots
+                $allLots = array_merge($lots, array_values($parentLots));
 
-                // $productsResult = $this->db->query($productsSql);
-                // $products = array();
-                // while ($product = $this->db->fetch_object($productsResult)) {
-                //     $products[] = array(
-                //         'product_name' => $product->product_name,
-                //         'product_ref' => $product->product_ref,
-                //         'quantity' => floatval($product->quantity),
-                //         'type' => $product->type,
-                //         'warehouse_name' => $product->warehouse_name,
-                //         'total_price' => floatval($product->total_price),
-                //         'total_price_usd' => floatval($product->total_price_usd)
-                //     );
-                //}
+                // Get products/materials for this irrigation
+                $productsSql = "SELECT p.label as product_name, p.ref as product_ref, 
+                                    rp.*, e.ref as warehouse_name
+                             FROM " . MAIN_DB_PREFIX . "vicentina_registers_products as rp
+                             LEFT JOIN " . MAIN_DB_PREFIX . "product as p ON rp.fk_product = p.rowid
+                             LEFT JOIN " . MAIN_DB_PREFIX . "entrepot as e ON rp.warehouse_id = e.rowid
+                             WHERE rp.register_type = 'irrigation' 
+                             AND rp.fk_register = " . (int)$irrigation->rowid;
+
+                $productsResult = $this->db->query($productsSql);
+                $products = array();
+                while ($product = $this->db->fetch_object($productsResult)) {
+                    $products[] = array(
+                        'product_name' => $product->product_name,
+                        'product_ref' => $product->product_ref,
+                        'quantity' => floatval($product->quantity),
+                        'type' => $product->type,
+                        'warehouse_name' => $product->warehouse_name,
+                        'total_price' => floatval($product->total_price),
+                        'total_price_usd' => floatval($product->total_price_usd)
+                    );
+                }
 
                 // Structure the response
                 $records[] = array(
@@ -2996,21 +3052,24 @@ public function getCropLabors($cropId)
                         'rowid' => $irrigation->rowid,
                         'crop_code' => $irrigation->crop_code,
                         'date' => $irrigation->date,
-                        // 'first_equipment' => array(
-                        //     'id' => $irrigation->first_equipment,
-                        //     'ref' => $irrigation->first_machinery_ref
-                        // ),
-                        // 'second_equipment' => array(
-                        //     'id' => $irrigation->second_equipment,
-                        //     'ref' => $irrigation->second_machinery_ref
-                        // ),
+                        'meters_of_line_mother' => $irrigation->meters_of_line_mother,
+                        'cost_mother_line' => $irrigation->cost_mother_line,
+                        'first_equipment' => array(
+                            'id' => $irrigation->first_equipment_id,
+                            'ref' => $irrigation->first_machinery_ref
+                        ),
+                        'second_equipment' => array(
+                            'id' => $irrigation->second_equipment_id,
+                            'ref' => $irrigation->second_machinery_ref
+                        ),
                         'date_creation' => $this->db->jdate($irrigation->date_creation),
                         'date_modification' => $irrigation->tms ? $this->db->jdate($irrigation->tms) : null,
                         'user_creation' => $irrigation->user_creation,
                         'user_modification' => $irrigation->user_modification
                     ),
-                    'lots' => $lots,
-                    //'materials' => $products
+                    'selectedLots' => $allLots,
+                    'selectedSublots' => $sublots,
+                    'materials' => $products
                 );
             }
             return $records;
@@ -3329,6 +3388,98 @@ public function getCropLabors($cropId)
         } catch (Exception $e) {
             $this->db->rollback();
             throw new RestException(500, $e->getMessage());
+        }
+    }
+
+    /**
+     * Create new Irrigation Cost record
+     *
+     * @url POST irrigation/cost/create
+     * @param array $request_data {
+     *     @var float $cost_mother_line Cost of mother line
+     *     @var float $fuel_consumption_per_hour Fuel consumption per hour
+     *     @var float $maintenance_hours Maintenance hours
+     *     @var float $maintenance_cost Maintenance cost
+     * }
+     * @return array Created Irrigation Cost record
+     * @throws RestException 400 Bad Request
+     * @throws RestException 500 Internal Server Error
+     */
+    public function createIrrigationCost($request_data)
+    {
+        if (empty($request_data)) {
+            throw new RestException(400, 'Request data is required');
+        }
+
+        $this->db->begin();
+
+        try {
+            $sql = "INSERT INTO " . MAIN_DB_PREFIX . "vicentina_irrigation_costs (";
+            $sql .= "cost_mother_line, fuel_consumption_per_hour, maintenance_hours, maintenance_cost";
+            $sql .= ") VALUES (";
+            $sql .= floatval($request_data['cost_mother_line']) . ", ";
+            $sql .= floatval($request_data['fuel_consumption_per_hour']) . ", ";
+            $sql .= floatval($request_data['maintenance_hours']) . ", ";
+            $sql .= floatval($request_data['maintenance_cost']);
+            $sql .= ")";
+
+            $result = $this->db->query($sql);
+            if (!$result) {
+                throw new Exception('Error creating irrigation cost record: ' . $this->db->lasterror());
+            }
+
+            $id = $this->db->last_insert_id(MAIN_DB_PREFIX . 'vicentina_irrigation_costs');
+
+            $this->db->commit();
+
+            return array(
+                'id' => $id,
+                'message' => 'Irrigation cost record created successfully'
+            );
+
+        } catch (Exception $e) {
+            $this->db->rollback();
+            throw new RestException(500, $e->getMessage());
+        }
+    }
+
+    /**
+     * Get all irrigation cost records
+     *
+     * @url GET irrigation/cost/list
+     * @return array List of irrigation cost records
+     * @throws RestException 503 Error retrieving data
+     */
+    public function listIrrigationCosts()
+    {
+        $sql = "SELECT rowid, 
+                       cost_mother_line,
+                       fuel_consumption_per_hour,
+                       maintenance_hours,
+                       maintenance_cost,
+                       date_creation,
+                       tms as date_modification
+                FROM " . MAIN_DB_PREFIX . "vicentina_irrigation_costs
+                ORDER BY date_creation DESC";
+
+        $result = $this->db->query($sql);
+
+        if ($result) {
+            $records = array();
+            while ($cost = $this->db->fetch_object($result)) {
+                $records[] = array(
+                    'id' => $cost->rowid,
+                    'cost_mother_line' => floatval($cost->cost_mother_line),
+                    'fuel_consumption_per_hour' => floatval($cost->fuel_consumption_per_hour),
+                    'maintenance_hours' => floatval($cost->maintenance_hours),
+                    'maintenance_cost' => floatval($cost->maintenance_cost),
+                    'date_creation' => $cost->date_creation,
+                    'date_modification' => $cost->date_modification
+                );
+            }
+            return $records;
+        } else {
+            throw new RestException(503, 'Error retrieving irrigation cost records: ' . $this->db->lasterror());
         }
     }
 }

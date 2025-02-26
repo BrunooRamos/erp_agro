@@ -32,6 +32,7 @@ export const IrrigationForm = () => {
     formState: { errors },
     control,
     reset,
+    setValue,
   } = useForm<IrrigationFormInterface>();
 
   //!Crops and lots
@@ -43,6 +44,9 @@ export const IrrigationForm = () => {
     isLoading: isLoadingCropAndLots,
     handleLotAreaChange,
     handleLotSelection,
+    handleSublotSelection,
+    selectedSublots,
+    handleSublotAreaChange,
   } = useCropAndLots(control);
 
   //!Machinery
@@ -54,6 +58,7 @@ export const IrrigationForm = () => {
     isLoading: isLoadingMaterials,
     categories: categoriesMaterials,
   } = useGetProductsByCategory(true, "Materiales");
+
 
   // Filtered materials
   const [filteredMaterials, setFilteredMaterials] = useState<
@@ -138,14 +143,14 @@ export const IrrigationForm = () => {
   };
 
   //!Create irrigation
-  const { createIrrigation } = useIrrigation();
+  const { createIrrigation, irrigationCosts } = useIrrigation();
   const { mutate: createIrrigationMutation } = createIrrigation;
+  const { data: irrigationCostsData } = irrigationCosts;
 
   const onSubmit = handleSubmit((data) => {
     data.selectedLots = selectedLots;
     data.selectedMaterials = selectedMaterials;
-
-    console.log(JSON.stringify(data, null, 2));
+    data.selectedSublots = selectedSublots;
 
     createIrrigationMutation(data, {
       onSuccess: () => {
@@ -257,10 +262,56 @@ export const IrrigationForm = () => {
                 <option value="">Seleccione una maquinaria</option>
                 {machinery?.map((machinery) => (
                   <option key={machinery.rowid} value={machinery.rowid}>
-                    {machinery.name}
+                    {`${machinery.name} - ${machinery.brand} ${machinery.model}`}
                   </option>
                 ))}
               </select>
+            </FormField>
+
+            {/* Meters of line mother */}
+            <FormField
+              label="Metros de linea madre"
+              error={errors.meters_of_line_mother?.message || ""}
+            >
+              <input
+                {...register("meters_of_line_mother", {
+                  required: "Este campo es requerido",
+                  onChange: (e) => {
+                    const meters = parseFloat(e.target.value) || 0;
+                    const baseCost = irrigationCostsData?.[0]?.cost_mother_line || 0;
+                    const totalCost = (meters * baseCost) / 100;
+                    // Update the cost_mother_line field
+                    setValue("cost_mother_line", totalCost);
+                  },
+                })}
+                type="number"
+                placeholder="Ingrese los metros de linea madre"
+                autoComplete="off"
+                className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
+              />
+              {irrigationCostsData?.[0]?.cost_mother_line && (
+                <span className="text-sm text-gray-500 mt-1 block">
+                  Costo base: ${irrigationCostsData[0].cost_mother_line}/100m
+                </span>
+              )}
+            </FormField>
+
+            {/* Cost of line mother */}
+            <FormField
+              label="Costo de la linea madre"
+              error={errors.cost_mother_line?.message || ""}
+            >
+              <input
+                {...register("cost_mother_line", {
+                  required: "Este campo es requerido",
+                })}
+                name="cost_mother_line"
+                placeholder="Ingrese el costo de la linea madre"
+                type="number"
+                readOnly
+                autoComplete="off"
+                className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800 bg-gray-50"
+              />
             </FormField>
 
             {/* Crop type */}
@@ -273,14 +324,20 @@ export const IrrigationForm = () => {
               </label>
               <LotSelection
                 lots={lots}
-                selectedLots={selectedLots}
-                onSelect={handleLotSelection}
+                
+                onLotSelect={handleLotSelection}
                 onAreaChange={handleLotAreaChange}
-              />
+                selectedLots={selectedLots}
+
+                //Sublot
+                onSublotSelect={handleSublotSelection}
+                selectedSublots={selectedSublots}
+                onSublotAreaChange={handleSublotAreaChange}
+                />
             </div>
 
             {/* Total applied area */}
-            <TotalAreaDisplay selectedLots={selectedLots} />
+            <TotalAreaDisplay selectedLots={selectedLots} selectedSublots={selectedSublots}/>
 
             <div className="col-span-2 mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">

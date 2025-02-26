@@ -293,3 +293,45 @@ ADD COLUMN `total_price` decimal(24,8) DEFAULT 0.00000000 AFTER `stock_used`,
 ADD COLUMN `total_price_usd` decimal(24,8) DEFAULT 0.00000000 AFTER `total_price`,
 ADD COLUMN `date_creation` datetime DEFAULT CURRENT_TIMESTAMP AFTER `total_price_usd`;
 
+
+CREATE TABLE `llx_vicentina_irrigation_costs` (
+    `rowid` int(11) NOT NULL AUTO_INCREMENT,
+    `cost_mother_line` decimal(24,8) DEFAULT 0.00000000,
+    `fuel_consumption_per_hour` decimal(24,8) DEFAULT 0.00000000,
+    `maintenance_hours` decimal(24,8) DEFAULT 0.00000000,
+    `maintenance_cost` decimal(24,8) DEFAULT 0.00000000,
+    `date_creation` datetime DEFAULT CURRENT_TIMESTAMP,
+    `tms` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+    PRIMARY KEY (`rowid`)
+) ENGINE=InnoDB;
+
+
+
+CREATE TABLE `llx_vicentina_irrigation` (
+  `rowid` int(11) NOT NULL AUTO_INCREMENT,
+  `date` date NOT NULL,
+  `crop_code` varchar(255) NOT NULL,
+  `first_equipment` int(11) DEFAULT NULL,
+  `second_equipment` int(11) DEFAULT NULL,
+  `fk_user_creat` int(11) DEFAULT NULL,
+  `fk_user_modif` int(11) DEFAULT NULL,
+  `date_creation` datetime DEFAULT NULL,
+  `tms` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`rowid`),
+  KEY `fk_first_equipment` (`first_equipment`),
+  KEY `fk_second_equipment` (`second_equipment`),
+  KEY `fk_user_creat` (`fk_user_creat`),
+  KEY `fk_user_modif` (`fk_user_modif`),
+  CONSTRAINT `llx_vicentina_irrigation_fk_first_equipment` FOREIGN KEY (`first_equipment`) REFERENCES `llx_vicentina_maquinaria` (`rowid`),
+  CONSTRAINT `llx_vicentina_irrigation_fk_second_equipment` FOREIGN KEY (`second_equipment`) REFERENCES `llx_vicentina_maquinaria` (`rowid`),
+  CONSTRAINT `llx_vicentina_irrigation_fk_user_creat` FOREIGN KEY (`fk_user_creat`) REFERENCES `llx_user` (`rowid`),
+  CONSTRAINT `llx_vicentina_irrigation_fk_user_modif` FOREIGN KEY (`fk_user_modif`) REFERENCES `llx_user` (`rowid`)
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
+
+
+ALTER TABLE `llx_vicentina_irrigation`
+ADD COLUMN `cost_mother_line` decimal(24,8) DEFAULT 0.00000000 AFTER `second_equipment`,
+ADD COLUMN `meters_of_line_mother` decimal(24,8) DEFAULT 0.00000000 AFTER `cost_mother_line`;
+
+
+

@@ -5,6 +5,8 @@ import { IrrigationCard } from "../../../../ui/components";
 
 export const IrrigationList = () => {
     const { irrigationList } = useIrrigation();
+
+    console.log(irrigationList.data);
 //    const navigate = useNavigate();
     
     // const handleIrrigationClick = (irrigation: IrrigationResponse) => {

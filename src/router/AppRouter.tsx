@@ -42,6 +42,7 @@ import {
   IrrigationHours,
   ListLabor,
   LaborRegister,
+  IrrigationCosts,
 } from "../features/index";
 import { MenuRoute } from "../interfaces";
 
@@ -252,6 +253,13 @@ export const menuRoutes: MenuRoute[] = [
         title: "Horas de riego",
         description: "Horas de riego",
         component: <IrrigationHours />,
+        visible: true,
+      },
+      {
+        to: "/irrigation/costs",
+        title: "Costos de riego",
+        description: "Costos de riego",
+        component: <IrrigationCosts />,
         visible: true,
       }
     ],

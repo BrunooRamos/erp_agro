@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query"
-import { IrrigationFormInterface } from "../../interfaces/irrigation.interface"
+import { IrrigationCostForm, IrrigationFormInterface } from "../../interfaces"
 import { toast } from "react-toastify";
-import { postCreateIrrigation, getIrrigationList } from "../../actions/index";
+import { postCreateIrrigation, getIrrigationList, getIrrigationCosts, postIrrigationCosts } from "../../actions/index";
 
 
 export const useIrrigation = () => {
@@ -16,11 +16,25 @@ export const useIrrigation = () => {
         }
     })
 
-
     const irrigationList = useQuery({
         queryKey: ['irrigationList'],
         queryFn: () => getIrrigationList(),
     })
 
-    return { createIrrigation, irrigationList };
+    const createIrrigationCosts = useMutation({
+        mutationFn: (irrigationCost: IrrigationCostForm) => postIrrigationCosts(irrigationCost),
+        onSuccess: () => {
+            toast.success('Costo de riego creado correctamente');
+        },
+        onError: (error) => {
+            toast.error('Error al crear el costo de riego: ' + error);
+        }
+    })
+
+    const irrigationCosts = useQuery({
+        queryKey: ['irrigationCosts'],
+        queryFn: () => getIrrigationCosts(),
+    })
+
+    return { createIrrigation, irrigationList, irrigationCosts, createIrrigationCosts };
 }
