@@ -1,67 +1,106 @@
-import { IrrigationResponse } from "../../../../interfaces/irrigation.interface"
+import { IrrigationResponse } from "../../../../interfaces/irrigation.interface";
 import { useNavigate } from "react-router-dom";
 
-export const IrrigationCard = ( { data }: { data: IrrigationResponse } ) => {
-    const navigate = useNavigate();
+export const IrrigationCard = ({ data }: { data: IrrigationResponse }) => {
+  const navigate = useNavigate();
 
-    const handleClick = () => {
-        navigate('/irrigation/hours', { state: { irrigationData: data } });
-    };
+  const handleHours = () => {
+    navigate("/irrigation/hours", { state: { irrigationData: data } });
+  };
 
-    return (
-        <div 
-            onClick={handleClick}
-            className="group relative bg-white rounded-xl overflow-hidden transition-all duration-300 hover:shadow-xl border border-gray-100 cursor-pointer"
-        >
-          {/* Gradient overlay on hover */}
-          <div className="absolute inset-0 bg-gradient-to-r from-zinc-900/5 to-zinc-900/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          
-          {/* Content Container */}
-          <div className="p-6">
-            {/* Header Section */}
-            <div className="mb-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="text-xs font-medium text-zinc-500 tracking-wider uppercase mb-1">
-                    Código de Cultivo
-                  </p>
-                  <h3 className="text-xl font-bold text-zinc-900">
-                    {data.irrigation.crop_code}
-                  </h3>
-                </div>
-                <span className="px-3 py-1 bg-zinc-100 text-zinc-600 text-xs font-medium rounded-full">
-                  {new Date(data.irrigation.date).toLocaleDateString()}
-                </span>
+  const handleFertirriego = () => {
+    navigate("/irrigation/fertirriego", { state: { irrigationData: data } });
+  };
+
+  const handleInfo = () => {
+    navigate("/irrigation/general", { state: { irrigationData: data } });
+  };
+
+  // Cálculo de Área Total
+  const totalArea = [
+    ...data.selectedLots.filter((lot) => lot.area_utilizada > 0),
+    ...data.selectedSublots,
+  ].reduce((acc, lot) => acc + lot.area_utilizada, 0);
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm flex flex-col gap-4">
+      {/* Encabezado */}
+      <div>
+        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+          Código de Cultivo
+        </p>
+        <h3 className="text-lg font-semibold text-gray-800">
+          {data.irrigation.crop_code}
+        </h3>
+        <span className="text-xs text-gray-500">
+          {new Date(data.irrigation.date).toLocaleDateString()}
+        </span>
+      </div>
+
+      {/* Área Total */}
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium text-gray-600">Área Total</span>
+        <span className="text-sm font-bold text-gray-800">{totalArea} ha</span>
+      </div>
+
+      {/* Lotes Utilizados */}
+      <div>
+        <p className="text-xs font-medium text-gray-500 uppercase mb-2">
+          Lotes Utilizados
+        </p>
+        <div className="flex flex-col gap-2">
+          {data.selectedLots.map((lot) => (
+            <div key={lot.rowid} className="flex flex-col gap-1">
+              <div className="text-sm text-gray-700 font-medium">
+                Lote padre:{" "}
+                <span className="font-semibold">{lot.name}</span>
               </div>
-            </div>
-
-            <div className="space-y-3">
-          <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-            <span className="text-sm font-medium text-zinc-600">Área Total</span>
-            <span className="text-sm font-bold text-zinc-800">{data.lots.reduce((acc, lot) => acc + lot.area_utilizada, 0)} ha</span>
-          </div>
-          
-          <div className="space-y-2">
-            <p className="text-xs font-medium text-zinc-500 uppercase">Lotes Utilizados</p>
-            <div className="flex flex-wrap gap-2">
-              {data.lots.map((lot) => (
-                <div 
-                  key={lot.id_lote}
-                  className="inline-flex items-center gap-1.5 bg-blue-50 px-3 py-1.5 rounded-full border border-blue-100"
-                >
-                  <i className="fa-solid fa-map-pin text-blue-500 text-xs" />
-                  <span className="text-sm font-medium text-blue-700">
-                    {lot.name}
-                  </span>
-                  <span className="text-xs font-medium text-blue-600 bg-blue-100/80 px-1.5 py-0.5 rounded-full">
-                    {lot.area_utilizada} ha
-                  </span>
+              {lot.area_utilizada === 0 ? (
+                // Sublotes
+                <div className="flex flex-wrap gap-2">
+                  {data.selectedSublots
+                    .filter((sublot) => sublot.id_parent_lote === lot.rowid)
+                    .map((sublot) => (
+                      <span
+                        key={sublot.id_sub_lote}
+                        className="text-xs text-gray-600 bg-gray-100 rounded px-2 py-1"
+                      >
+                        {sublot.name} - {sublot.area_utilizada} ha
+                      </span>
+                    ))}
                 </div>
-              ))}
+              ) : (
+                // Área del lote padre
+                <span className="text-xs text-gray-600 bg-gray-100 rounded px-2 py-1">
+                  Área utilizada: {lot.area_utilizada} ha
+                </span>
+              )}
             </div>
-          </div>
+          ))}
         </div>
+      </div>
+
+      {/* Buttons Section */}
+      <div className="mt-6 flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 border-t border-gray-100 pt-4">
+        <button
+          onClick={handleHours}
+          className="flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-sm hover:shadow-md w-full sm:w-auto"
+        >
+          Agregar Horas
+        </button>
+        <button
+          onClick={handleFertirriego}
+          className="flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-lg hover:from-emerald-600 hover:to-emerald-700 transition-all duration-200 shadow-sm hover:shadow-md w-full sm:w-auto"
+        >
+          Fertirriego
+        </button>
+        <button
+          onClick={handleInfo}
+          className="flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-indigo-500 to-indigo-600 rounded-lg hover:from-indigo-600 hover:to-indigo-700 transition-all duration-200 shadow-sm hover:shadow-md w-full sm:w-auto"
+        >
+          Info
+        </button>
       </div>
     </div>
   );
-}
+};

@@ -43,6 +43,8 @@ import {
   ListLabor,
   LaborRegister,
   IrrigationCosts,
+  IrrigationFertirriego,
+  IrrigationGeneral,
 } from "../features/index";
 import { MenuRoute } from "../interfaces";
 
@@ -253,7 +255,14 @@ export const menuRoutes: MenuRoute[] = [
         title: "Horas de riego",
         description: "Horas de riego",
         component: <IrrigationHours />,
-        visible: true,
+        visible: false,
+      },
+      {
+        to: "/irrigation/fertirriego",
+        title: "Fertirriego",
+        description: "Fertirriego",
+        component: <IrrigationFertirriego />,
+        visible: false,
       },
       {
         to: "/irrigation/costs",
@@ -261,6 +270,13 @@ export const menuRoutes: MenuRoute[] = [
         description: "Costos de riego",
         component: <IrrigationCosts />,
         visible: true,
+      },
+      {
+        to: "/irrigation/general",
+        title: "Riego general",
+        description: "Riego general",
+        component: <IrrigationGeneral />,
+        visible: false,
       }
     ],
   },

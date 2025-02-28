@@ -1,4 +1,4 @@
-import { SelectedProducts, SelectedSubLot } from "./register.interface";
+import { SelectedProducts, SelectedSubLot, SelectedLot as SelectedLotRegister } from "./register.interface";
 
 export interface IrrigationFormInterface {
     date: string;
@@ -15,11 +15,11 @@ export interface IrrigationFormInterface {
 
 export interface IrrigationHoursSendData {
     date: string;
-    irrigation_hours: number;
+    hours: number;
+    crop_code: string;
+    lots_irrigated: SelectedLotRegister[];
+    sublots_irrigated: SelectedSubLot[];
 }
-
-
-
 
 
 export interface IrrigationCostForm {
@@ -38,7 +38,15 @@ export interface IrrigationCostResponse extends IrrigationCostForm {
 }
 
 
+// Fertirriego
 
+export interface IrrigationFertirriegoSendData {
+    crop_code: string;
+    date: string;
+    selectedLots: SelectedLotRegister[];
+    selectedSublots: SelectedSubLot[];
+    selectedMaterials: SelectedProducts[];
+}
 
 
 //Todo esto es del IrrigationResponse
@@ -70,6 +78,7 @@ interface Equipment {
 }
 
 interface Material {
+    rowid?:           string;
     product_name:    string;
     product_ref:     string;
     quantity:        number;
@@ -91,4 +100,56 @@ interface SelectedSublot {
     id_parent_lote: string;
     name:           string;
     area_utilizada: number;
+}
+
+
+// Todo esto es del IrrigationInfoResponse
+export interface IrrigationInfoResponse {
+    irrigation:      IrrigationInfo;
+    selectedLots:    SelectedLot[];
+    selectedSublots: SelectedSublot[];
+    materials:       Material[];
+    hours:           Hour[];
+    fertirriego:     Fertirriego[];
+}
+
+export interface Fertirriego {
+    rowid:         string;
+    date:          Date;
+    total_area:    number;
+    product_count: number;
+    total_cost:    number;
+    products:      Material[];
+}
+
+export interface Hour {
+    rowid:                     string;
+    date:                      Date;
+    hours:                     number;
+    fk_costs:                  string;
+    fuel_consumption_per_hour: number;
+    maintenance_hours:         number;
+    maintenance_cost:          number;
+}
+
+export interface IrrigationInfo {
+    rowid:                 string;
+    crop_code:             string;
+    date:                  Date;
+    meters_of_line_mother: number;
+    cost_mother_line:      number;
+    first_equipment:       EquipmentInfo;
+    second_equipment:      EquipmentInfo;
+    date_creation:         number;
+    date_modification:     number;
+    user_creation:         string;
+    user_modification:     null;
+}
+
+export interface EquipmentInfo {
+    id:    null | string;
+    name:  null | string;
+    code:  null | string;
+    brand: null | string;
+    model: null | string;
 }

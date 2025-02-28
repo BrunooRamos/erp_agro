@@ -6,13 +6,6 @@ import { IrrigationCard } from "../../../../ui/components";
 export const IrrigationList = () => {
     const { irrigationList } = useIrrigation();
 
-    console.log(irrigationList.data);
-//    const navigate = useNavigate();
-    
-    // const handleIrrigationClick = (irrigation: IrrigationResponse) => {
-    //     navigate(`/irrigation/details/${irrigation.irrigation.rowid}`);
-    // }
-    
     if (irrigationList.isLoading) {
         return (
             <div className="fixed inset-0 flex items-center justify-center bg-white bg-opacity-75 z-50">
@@ -27,6 +20,7 @@ export const IrrigationList = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {irrigationList.data?.map((irrigation) => (
+                    console.log(irrigation),
                     <IrrigationCard 
                         key={irrigation.irrigation.rowid} 
                         data={irrigation}

@@ -230,8 +230,7 @@ ADD CONSTRAINT `llx_vicentina_registers_lots_fk_sublote`
 FOREIGN KEY (`fk_sublote`) 
 REFERENCES `llx_vicentina_cultivo_sublote` (`rowid`);
 
-ALTER TABLE llx_vicentina_registers_lots 
-MODIFY COLUMN register_type enum('raf','seed_map','irrigation','labor') NOT NULL;
+ALTER TABLE llx_vicentina_registers_lots MODIFY COLUMN register_type enum('raf','seed_map','irrigation','labor','irrigation_hours') NOT NULL;
 
 -- Tabla compartida para productos
 CREATE TABLE `llx_vicentina_registers_products` (
@@ -250,6 +249,7 @@ CREATE TABLE `llx_vicentina_registers_products` (
 ) ENGINE=InnoDB;
 
 ALTER TABLE llx_vicentina_registers_products ADD COLUMN unit varchar(255);
+ALTER TABLE llx_vicentina_registers_products MODIFY COLUMN register_type enum('raf','seed_map','irrigation','labor','irrigation_hours') NOT NULL;
 
 CREATE TABLE `llx_vicentina_labor` (
     `rowid` int(11) NOT NULL AUTO_INCREMENT,
@@ -332,6 +332,42 @@ CREATE TABLE `llx_vicentina_irrigation` (
 ALTER TABLE `llx_vicentina_irrigation`
 ADD COLUMN `cost_mother_line` decimal(24,8) DEFAULT 0.00000000 AFTER `second_equipment`,
 ADD COLUMN `meters_of_line_mother` decimal(24,8) DEFAULT 0.00000000 AFTER `cost_mother_line`;
+
+
+
+CREATE TABLE `llx_vicentina_irrigation_hours` (
+    `rowid` int(11) NOT NULL AUTO_INCREMENT,
+    `date` date NOT NULL,
+    `crop_code` varchar(255) NOT NULL,
+    `hours` decimal(24,8) DEFAULT 0.00000000,
+    `fk_costs` int(11) DEFAULT NULL,
+    `fk_user_creat` int(11) DEFAULT NULL,
+    `fk_user_modif` int(11) DEFAULT NULL,
+    `date_creation` datetime DEFAULT NULL,
+    `tms` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+    PRIMARY KEY (`rowid`),
+    KEY `fk_user_creat` (`fk_user_creat`),
+    KEY `fk_user_modif` (`fk_user_modif`),
+    CONSTRAINT `llx_vicentina_irrigation_hours_fk_user_creat` FOREIGN KEY (`fk_user_creat`) REFERENCES `llx_user` (`rowid`),
+    CONSTRAINT `llx_vicentina_irrigation_hours_fk_user_modif` FOREIGN KEY (`fk_user_modif`) REFERENCES `llx_user` (`rowid`),
+    CONSTRAINT `llx_vicentina_irrigation_hours_fk_costs` FOREIGN KEY (`fk_costs`) REFERENCES `llx_vicentina_irrigation_costs` (`rowid`)
+) ENGINE=InnoDB;
+
+CREATE TABLE `llx_vicentina_irrigation_fertirriego` (
+    `rowid` int(11) NOT NULL AUTO_INCREMENT,
+    `date` date NOT NULL,
+    `crop_code` varchar(255) NOT NULL,
+    `total_area` decimal(24,8) DEFAULT 0.00000000,
+    `fk_user_creat` int(11) DEFAULT NULL,
+    `fk_user_modif` int(11) DEFAULT NULL,
+    `date_creation` datetime DEFAULT NULL,
+    `tms` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+    PRIMARY KEY (`rowid`),
+    KEY `fk_user_creat` (`fk_user_creat`),
+    KEY `fk_user_modif` (`fk_user_modif`),
+    CONSTRAINT `llx_vicentina_irrigation_fertirriego_fk_user_creat` FOREIGN KEY (`fk_user_creat`) REFERENCES `llx_user` (`rowid`),
+    CONSTRAINT `llx_vicentina_irrigation_fertirriego_fk_user_modif` FOREIGN KEY (`fk_user_modif`) REFERENCES `llx_user` (`rowid`)
+) ENGINE=InnoDB;
 
 
 

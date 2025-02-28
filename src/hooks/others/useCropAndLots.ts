@@ -2,11 +2,14 @@ import { useState } from "react";
 import { Control, useWatch, Path } from "react-hook-form";
 import { toast } from "react-toastify";
 import { useCrop } from "./../index"; // Ajusta la ruta según tu estructura
-import { GeneralLabor, IrrigationFormInterface, RAFSendData, SeedMapRegisterInterface, SelectedLot, SelectedSubLot } from "../../interfaces";
+import { GeneralLabor, IrrigationFertirriegoSendData, IrrigationFormInterface, IrrigationHoursSendData, RAFSendData, SeedMapRegisterInterface, SelectedLot, SelectedSubLot } from "../../interfaces";
 
 
 
-export const useCropAndLots = <T extends RAFSendData | SeedMapRegisterInterface | GeneralLabor | IrrigationFormInterface>(control: Control<T>) => {
+export const useCropAndLots = <T extends RAFSendData | SeedMapRegisterInterface | GeneralLabor | IrrigationFormInterface | IrrigationHoursSendData | IrrigationFertirriegoSendData>(
+  control: Control<T>,
+  initialCropCode?: string
+) => {
     // State for selected lots
     const [selectedLots, setSelectedLots] = useState<SelectedLot[]>([]);
 
@@ -21,7 +24,7 @@ export const useCropAndLots = <T extends RAFSendData | SeedMapRegisterInterface 
     const selectedCropCode = useWatch({ 
         control, 
         name: "crop_code" as Path<T> 
-    });
+    }) || initialCropCode;
     
     // Get crop rowid
     const selectedCrop = crops?.find(crop => crop.code === selectedCropCode);
