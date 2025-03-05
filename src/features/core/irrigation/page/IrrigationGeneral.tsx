@@ -2,6 +2,7 @@ import { useLocation } from "react-router-dom";
 import { useIrrigation } from "../../../../hooks";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import React from "react";
 
 export const IrrigationGeneral = () => {
   const location = useLocation();
@@ -13,6 +14,8 @@ export const IrrigationGeneral = () => {
     irrigationDeleteFertirriegoProduct,
   } = useIrrigation(irrigationData.irrigation.rowid);
   const { data: irrigationInfoData, isLoading } = irrigationInfo;
+
+  console.log(JSON.stringify(irrigationInfoData, null, 2));
 
   const handleDeleteHours = (id: string) => {
     // Mostrar spinner mientras se elimina
@@ -65,7 +68,7 @@ export const IrrigationGeneral = () => {
   if (isLoading) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-white bg-opacity-75 z-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-zinc-800"></div>
+        <div className="animate-spin rounded-full h-24 w-24 border-t-2 border-b-2 border-zinc-800"></div>
       </div>
     );
   }
@@ -196,9 +199,8 @@ export const IrrigationGeneral = () => {
                   const hasChildSublots = childSublots.length > 0;
 
                   return (
-                    <>
-                      {" "}
-                      <tr key={lot.rowid} className="border-b bg-gray-50">
+                    <React.Fragment key={lot.rowid}>
+                      <tr className="border-b bg-gray-50">
                         <td className="py-2 px-4 font-medium">{lot.name}</td>
                         <td className="py-2 px-4">{lot.campo_name}</td>
                         <td className="py-2 px-4">Lote</td>
@@ -218,7 +220,7 @@ export const IrrigationGeneral = () => {
                           </td>
                         </tr>
                       ))}
-                    </>
+                    </React.Fragment>
                   );
                 })}
 
@@ -285,7 +287,7 @@ export const IrrigationGeneral = () => {
                     Consumo de Combustible
                   </th>
                   <th className="py-2 px-4 text-right">
-                    Costo de Mantenimiento
+                    Costo de Combustible
                   </th>
                   <th className="py-2 px-4 text-center">Acciones</th>
                 </tr>
@@ -301,7 +303,7 @@ export const IrrigationGeneral = () => {
                       ).toFixed(2)}
                     </td>
                     <td className="py-2 px-4 text-right">
-                      ${Number(hour.maintenance_cost).toLocaleString()}
+                      ${Number(hour.fuel_price).toLocaleString()}
                     </td>
                     <td className="py-2 px-4 text-center">
                       <button

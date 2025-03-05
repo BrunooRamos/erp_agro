@@ -20,7 +20,6 @@ export const IrrigationList = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {irrigationList.data?.map((irrigation) => (
-                    console.log(irrigation),
                     <IrrigationCard 
                         key={irrigation.irrigation.rowid} 
                         data={irrigation}

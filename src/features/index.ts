@@ -32,3 +32,6 @@ export * from "./core/machinery/index";
 
 // Movements
 export * from "./core/movements/index";
+
+// Prices
+export * from "./core/prices/index";

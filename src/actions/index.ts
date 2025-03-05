@@ -8,6 +8,9 @@ export * from "./machinery/put-update-machinery";
 export * from "./machinery/delete-machinery-id";
 export * from "./machinery/get-by-id-machinery";
 
+// General
+export * from "./general/general.actions";
+
 // Field Lot
 export * from "./crop/crop_actions";
 

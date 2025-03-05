@@ -353,6 +353,10 @@ CREATE TABLE `llx_vicentina_irrigation_hours` (
     CONSTRAINT `llx_vicentina_irrigation_hours_fk_costs` FOREIGN KEY (`fk_costs`) REFERENCES `llx_vicentina_irrigation_costs` (`rowid`)
 ) ENGINE=InnoDB;
 
+
+ALTER TABLE `llx_vicentina_irrigation_hours` ADD COLUMN `fuel_price` decimal(24,8) DEFAULT 0.00000000 AFTER `hours`;
+
+
 CREATE TABLE `llx_vicentina_irrigation_fertirriego` (
     `rowid` int(11) NOT NULL AUTO_INCREMENT,
     `date` date NOT NULL,
@@ -371,3 +375,27 @@ CREATE TABLE `llx_vicentina_irrigation_fertirriego` (
 
 
 
+CREATE TABLE `llx_vicentina_fuels` (
+    `rowid` int(11) NOT NULL AUTO_INCREMENT,
+    `date` date NOT NULL,
+    `super` decimal(24,8) DEFAULT 0.00000000,
+    `premium` decimal(24,8) DEFAULT 0.00000000,
+    `gasoil10s` decimal(24,8) DEFAULT 0.00000000,
+    `gasoil50s` decimal(24,8) DEFAULT 0.00000000,
+    `date_creation` datetime DEFAULT CURRENT_TIMESTAMP,
+    `tms` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+    PRIMARY KEY (`rowid`)
+) ENGINE=InnoDB;
+
+
+CREATE TABLE `llx_vicentina_dolar` (
+    `rowid` int(11) NOT NULL AUTO_INCREMENT,
+    `date` date NOT NULL,
+    `compra` decimal(24,8) DEFAULT 0.00000000,
+    `venta` decimal(24,8) DEFAULT 0.00000000,
+    `avg` decimal(24,8) DEFAULT 0.00000000,
+    `moneda` varchar(255) NOT NULL,
+    `date_creation` datetime DEFAULT CURRENT_TIMESTAMP,
+    `tms` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+    PRIMARY KEY (`rowid`)
+) ENGINE=InnoDB;

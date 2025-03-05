@@ -45,6 +45,7 @@ import {
   IrrigationCosts,
   IrrigationFertirriego,
   IrrigationGeneral,
+  DolarAndFuelPrice,
 } from "../features/index";
 import { MenuRoute } from "../interfaces";
 
@@ -303,6 +304,14 @@ export const menuRoutes: MenuRoute[] = [
         visible: true,
       },
     ],
+  },
+  {
+    to: "/prices",
+    icon: "fa-solid fa-coins",
+    title: "Cotizaciones",
+    description: "Cotizaciones",
+    component: <DolarAndFuelPrice />,
+    visible: true,
   },
   {
     to: "/cost-center/list",

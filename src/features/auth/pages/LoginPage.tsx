@@ -20,7 +20,6 @@ export const LoginPage = () => {
 
   // Function to handle the form submission
   const onSubmit = handleSubmit((data) => {
-    console.log('Form Data:', data);
     dispatch(startLoginWithEmailPassword(data));
   });
   

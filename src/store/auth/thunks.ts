@@ -22,6 +22,8 @@ export const startLoginWithEmailPassword = ({ user, password }: LoginUserProps) 
             localStorage.setItem("displayName", data.message.split(' ')[1]);
             localStorage.setItem("entity", data.entity);
 
+            
+
             dispatch( onLogin( data ) );
         } catch (error: unknown) {
             const errorResponse = (error as AxiosError).response?.data as ErrorAuthResponse;

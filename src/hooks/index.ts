@@ -29,6 +29,6 @@ export * from "./others/useCusa"
 export * from "./others/useCheckAuth"
 export * from "./others/useCropAndLots"
 export * from "./others/useERPInfo"
-
+export * from "./others/usePrices"
 // Movements
 export * from "./movements/useMovement"

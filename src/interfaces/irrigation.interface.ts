@@ -128,6 +128,7 @@ export interface Hour {
     hours:                     number;
     fk_costs:                  string;
     fuel_consumption_per_hour: number;
+    fuel_price:                number;
     maintenance_hours:         number;
     maintenance_cost:          number;
 }
