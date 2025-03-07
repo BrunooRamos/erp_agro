@@ -399,3 +399,38 @@ CREATE TABLE `llx_vicentina_dolar` (
     `tms` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
     PRIMARY KEY (`rowid`)
 ) ENGINE=InnoDB;
+
+
+CREATE TABLE `llx_vicentina_logistic_cost` (
+    `rowid` int(11) NOT NULL AUTO_INCREMENT,
+    `date` date NOT NULL,
+    `kilometers` decimal(24,8) DEFAULT 0.00000000,
+    `cost` decimal(24,8) DEFAULT 0.00000000,
+    `origin` varchar(255) NOT NULL,
+    `destination` varchar(255) DEFAULT NULL,
+    `fk_user_creat` int(11) DEFAULT NULL,
+    `fk_user_modif` int(11) DEFAULT NULL,
+    `date_creation` datetime DEFAULT NULL,
+    `tms` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+    PRIMARY KEY (`rowid`),
+    KEY `fk_user_creat` (`fk_user_creat`),
+    KEY `fk_user_modif` (`fk_user_modif`),
+    CONSTRAINT `llx_vicentina_logistic_cost_fk_user_creat` FOREIGN KEY (`fk_user_creat`) REFERENCES `llx_user` (`rowid`),
+    CONSTRAINT `llx_vicentina_logistic_cost_fk_user_modif` FOREIGN KEY (`fk_user_modif`) REFERENCES `llx_user` (`rowid`)
+) ENGINE=InnoDB;
+
+
+CREATE TABLE `llx_vicentina_caliber` (
+    `rowid` int(11) NOT NULL AUTO_INCREMENT,
+    `name` varchar(255) NOT NULL,
+    `description` text DEFAULT NULL,
+    `fk_user_creat` int(11) DEFAULT NULL,
+    `fk_user_modif` int(11) DEFAULT NULL,
+    `date_creation` datetime DEFAULT NULL,
+    `tms` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+    PRIMARY KEY (`rowid`),
+    KEY `fk_user_creat` (`fk_user_creat`),
+    KEY `fk_user_modif` (`fk_user_modif`),
+    CONSTRAINT `llx_vicentina_caliber_fk_user_creat` FOREIGN KEY (`fk_user_creat`) REFERENCES `llx_user` (`rowid`),
+    CONSTRAINT `llx_vicentina_caliber_fk_user_modif` FOREIGN KEY (`fk_user_modif`) REFERENCES `llx_user` (`rowid`)
+) ENGINE=InnoDB;

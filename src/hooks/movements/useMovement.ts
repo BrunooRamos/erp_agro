@@ -1,7 +1,7 @@
-import { useMutation } from "@tanstack/react-query";
-import { MovementForm } from "../../interfaces";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { LogisticCostForm, MovementForm } from "../../interfaces";
 import { toast } from "react-toastify";
-import { postCreateMovement } from "../../actions/index";
+import { getLogisticCosts, postCreateLogisticCost, postCreateMovement } from "../../actions/index";
 
 
 export const useMovement = () => {
@@ -15,7 +15,25 @@ export const useMovement = () => {
         }
     });
 
-    return { createMovement };
+    const createLogisticCost = useMutation({
+        mutationFn: (data: LogisticCostForm) => postCreateLogisticCost(data),
+        onSuccess: () => {
+            toast.success('Costo logístico creado correctamente');
+        },
+        onError: (error) => {
+            toast.error('Error al crear el costo logístico: ' + error);
+
+        }
+
+    });
+
+    const listLogisticCosts = useQuery({
+        queryKey: ['logistic-costs'],
+        queryFn: () => getLogisticCosts(),
+    });
+
+
+    return { createMovement, createLogisticCost, listLogisticCosts };
 };
 
 

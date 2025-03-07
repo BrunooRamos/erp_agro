@@ -28,3 +28,6 @@ export * from "./irrigation/irrigation_actions";
 
 // Movement
 export * from "./movements/movement_actions";
+
+// Post Harvest
+export * from "./post-harvest/post-harvest.actions";

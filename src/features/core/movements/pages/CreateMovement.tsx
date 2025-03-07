@@ -53,7 +53,11 @@ export const CreateMovement = () => {
   //!Warehouses
   const { warehouses } = useERPInfo();
 
-  if (isLoadingCrop || isLoadingVarieties) {
+  //!Logistic Costs
+  const { listLogisticCosts } = useMovement();
+  const { data: logisticCosts, isLoading: isLoadingLogisticCosts } = listLogisticCosts;
+
+  if (isLoadingCrop || isLoadingVarieties || isLoadingLogisticCosts) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-white bg-opacity-75 z-50">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-zinc-800"></div>
@@ -120,6 +124,22 @@ export const CreateMovement = () => {
             </select>
           </FormField>
 
+          <FormField label="Costo logístico" error={errors.logistic_cost?.message || ""} required>
+            <select
+              className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
+              {...register("logistic_cost", {
+                required: "Este campo es requerido",
+              })}
+            >
+              <option value="">Seleccione un costo logístico</option>
+              {logisticCosts?.map((cost) => (
+                <option key={cost.id} value={cost.cost}>
+                    {cost.origin} {'->'} {cost.destination} | ${cost.cost}
+                </option>
+              ))}
+            </select>
+          </FormField>
+
           <FormField label="Fecha" error={errors.date?.message || ""} required>
             <input
               {...register("date", {
@@ -172,6 +192,27 @@ export const CreateMovement = () => {
           </FormField>
 
           <FormField
+            label="Tipo"
+            error={errors.quantity?.message || ""}
+            required
+          >
+             <select
+              className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
+              {...register("variety", {
+                required: "Este campo es requerido",
+              })}
+              disabled={!selectedCrop || isLoadingVarieties}
+            >
+              <option value="">Seleccione una variedad</option>
+              {varieties?.map((variety) => (
+                <option key={variety.rowid} value={variety.name}>
+                  {variety.name}
+                </option>
+              ))}
+            </select>
+          </FormField>
+
+          <FormField
             label="Cantidad de bins"
             error={errors.quantity?.message || ""}
             required
@@ -190,7 +231,7 @@ export const CreateMovement = () => {
           </FormField>
 
           <ActionButtons
-            onCancel={() => navigate("/registers")}
+            onCancel={() => navigate("/movements")}
             onSubmit={onSubmit}
           />
         </div>

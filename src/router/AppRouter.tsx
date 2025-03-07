@@ -46,6 +46,9 @@ import {
   IrrigationFertirriego,
   IrrigationGeneral,
   DolarAndFuelPrice,
+  PostHarvest,
+  TongProcces,
+  CreateAndListCaliber,
 } from "../features/index";
 import { MenuRoute } from "../interfaces";
 
@@ -305,6 +308,31 @@ export const menuRoutes: MenuRoute[] = [
       },
     ],
   },
+  {
+    to: "/post-harvest",
+    icon: "fa-solid fa-chain",
+    title: "Post cosecha",
+    description: "Post cosecha",
+    component: <PostHarvest />,
+    visible: true,
+    subMenu: [
+      {
+        to: "/post-harvest/tong",
+        title: "Tong Procces",
+        description: "Tong Procces",
+        component: <TongProcces />,
+        visible: true,
+      },
+      {
+        to: "/post-harvest/create-caliber",
+        title: "Crear y listar calibre",
+        description: "Crear y listar calibre",
+        component: <CreateAndListCaliber />,
+        visible: true,
+      },
+    ],
+  },
+
   {
     to: "/prices",
     icon: "fa-solid fa-coins",

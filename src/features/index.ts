@@ -35,3 +35,6 @@ export * from "./core/movements/index";
 
 // Prices
 export * from "./core/prices/index";
+
+// Post Harvest
+export * from "./core/post-harvest/index";

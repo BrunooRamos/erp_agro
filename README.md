@@ -26,15 +26,25 @@ Para este caso, por una cuestión de velocidad y conocimiento técnico, además 
 
 Entonces en resumidas cuentas, todo lo que se adapta a Vicentina y Dolibarr tiene, se usa. Toda la parte de agro se dearrolla en React.
 
-### 2. Integración
-Como se mencionô antes Dolibarr usa PHP y MySQL (o MariaDB o PostgreSQL) ([requisitos de software y hardware](https://wiki.dolibarr.org/index.php?title=Prerequisites)) una de las ventajas que tiene, es que si bien usa PHP y se usa prinicipalmente como una aplicación web que renderiza las páginas desde el servidor, también expone una API REST que permite interactuar con los datos sin necesidad de cargar la interfaz gráfica. Esto nos permite hacer la integración con React e interacturar con los datos de manera mucho mas sencilla.
+#### 2. Set up
+### 2.1 Desarrollo
+
+
+### 3. Integración
+#### 3.1 Explicación
+Como se mencionó antes Dolibarr usa PHP y MySQL (o MariaDB o PostgreSQL) ([requisitos de software y hardware](https://wiki.dolibarr.org/index.php?title=Prerequisites)) una de las ventajas que tiene, es que si bien usa PHP y se usa prinicipalmente como una aplicación web que renderiza las páginas desde el servidor, también expone una API REST que permite interactuar con los datos sin necesidad de cargar la interfaz gráfica. Esto nos permite hacer la integración con React e interacturar con los datos de manera mucho mas sencilla.
 
 Ahora bien, recordemos que el desarrollo en React es para trabajar con la parte Agro la cual Dolibarr no tiene, por lo tanto, para que quiero interactura con los datos existentes desde mi web.
 
-Dada su naturaleza flexible, podemos usar un gestor de BD como Table Plus, pgAdmin o dbeaver para abrir la base de datos y crear tantas tablas y relaciones querramos. Con esto resolvimos una parte del problema, ya tenemos las tablas, ahora, ¿como interactuamos con ellas desde la web de React?
+Dada su naturaleza flexible, podemos usar un gestor de BD como Table Plus, pgAdmin o dbeaver para abrir la base de datos y crear tantas tablas y relaciones como querramos. Con esto resolvimos una parte del problema, ya tenemos las tablas, ahora, ¿como interactuamos con ellas desde la web de React?
+
+Para hace eso, basta con seguir la lógica que tienen los demás módulos de Dolibarr. 
 
 Aquí es donde entra en juego el Module Builder de Dolibarr. El Module Builder permite crear módulos personalizados dentro de Dolibarr sin necesidad de modificar el código core del sistema. Lo más interesante es que, al crear un nuevo módulo, podemos definir automáticamente endpoints en la API REST para interactuar con las nuevas tablas.
 
 De esta forma logramos integrar la web en React con Dolibarr. A contiunación se ve una representación de como se hace la integración:
 
-![Imagen de integración con Dolibarr](/Users/brunoramos/Desktop/Trabajo/Vicentina/agro-module/agro-module/public/markdown/integracion.png)
+![Imagen de integración con Dolibarr](/public/markdown/integracion.png)
+
+#### 3.2 Configuración.
+Esto no se integra de manera automatica, sino que hay que desarrollar cierta logica.
