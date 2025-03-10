@@ -6,7 +6,7 @@ export const PostHarvest = () => {
       <OptionCard
         visible={true}
         icon="fa-solid fa-layer-group"
-        title="Tong Procces"
+        title="Proceso Tong"
         to="/post-harvest/tong"
         description="Formulario para crear movimiento"
       />

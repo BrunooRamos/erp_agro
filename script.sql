@@ -434,3 +434,27 @@ CREATE TABLE `llx_vicentina_caliber` (
     CONSTRAINT `llx_vicentina_caliber_fk_user_creat` FOREIGN KEY (`fk_user_creat`) REFERENCES `llx_user` (`rowid`),
     CONSTRAINT `llx_vicentina_caliber_fk_user_modif` FOREIGN KEY (`fk_user_modif`) REFERENCES `llx_user` (`rowid`)
 ) ENGINE=InnoDB;
+
+
+CREATE TABLE `llx_vicentina_papa_cosecha` (
+    `rowid` int(11) NOT NULL AUTO_INCREMENT,
+    `date` date NOT NULL,
+    `crop` varchar(255) NOT NULL,
+    `warehouse_id` int(11) NOT NULL,
+    `logistic_cost` decimal(24,8) DEFAULT 0.00000000,
+    `lot` int(11) NOT NULL,
+    `variety` varchar(255) NOT NULL,
+    `variety_code` varchar(255) NOT NULL,
+    `type` varchar(255) NOT NULL,
+    `quantity` decimal(24,8) DEFAULT 0.00000000,
+    `fk_user_creat` int(11) DEFAULT NULL,
+    `fk_user_modif` int(11) DEFAULT NULL,
+    `date_creation` datetime DEFAULT NULL,
+    `tms` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+    PRIMARY KEY (`rowid`),
+    KEY `fk_user_creat` (`fk_user_creat`),
+    KEY `fk_user_modif` (`fk_user_modif`),
+    CONSTRAINT `llx_vicentina_harvest_fk_user_creat` FOREIGN KEY (`fk_user_creat`) REFERENCES `llx_user` (`rowid`),
+    CONSTRAINT `llx_vicentina_harvest_fk_user_modif` FOREIGN KEY (`fk_user_modif`) REFERENCES `llx_user` (`rowid`)
+) ENGINE=InnoDB;
+

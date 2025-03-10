@@ -69,6 +69,7 @@ export interface ProductsResponse {
   ref: string;
   date_creation: Date;
   label: string;
+  parent_key: string;
   subcategory_id: string;
   subcategory_name: string;
   warehouses: Warehouse[];

@@ -3252,7 +3252,10 @@ class Vicentina extends DolibarrApi
      *     @var string $date Date
      *     @var string $lot Lot number
      *     @var string $variety Variety name
+     *     @var string $type Type (semilla, consumo)
      *     @var float $quantity Quantity
+     *     @var string $variety_code Variety code
+     *     @var float $logistic_cost Logistic cost
      * }
      * @return array Created product info
      * @throws RestException 400 Bad Request
@@ -3264,9 +3267,15 @@ class Vicentina extends DolibarrApi
 
         if (
             empty($request_data['crop']) || empty($request_data['warehouse_id']) ||
-            empty($request_data['variety']) || empty($request_data['quantity'])
+            empty($request_data['variety']) || empty($request_data['quantity']) ||
+            empty($request_data['type']) || empty($request_data['variety_code'])
         ) {
             throw new RestException(400, 'Missing required fields');
+        }
+
+        // Validate type is either 'semilla' or 'consumo'
+        if ($request_data['type'] !== 'semilla' && $request_data['type'] !== 'consumo') {
+            throw new RestException(400, 'Type must be either "semilla" or "consumo"');
         }
 
         $this->db->begin();
@@ -3274,14 +3283,20 @@ class Vicentina extends DolibarrApi
         try {
             require_once DOL_DOCUMENT_ROOT . '/product/class/product.class.php';
             require_once DOL_DOCUMENT_ROOT . '/product/stock/class/mouvementstock.class.php';
+            require_once DOL_DOCUMENT_ROOT . '/categories/class/categorie.class.php';
+
+            // ID de la categoría "Papa" (29 según los datos proporcionados)
+            $papa_category_id = 29;
 
             // Create main product if it doesn't exist
+            // New naming convention: crop_variety_code
+            $mainProductRef = $request_data['crop'] . '_' . $request_data['variety_code'];
             $mainProduct = new Product($this->db);
-            $result = $mainProduct->fetch(null, $request_data['crop']);
+            $result = $mainProduct->fetch(null, $mainProductRef);
 
             if ($result <= 0) {
-                $mainProduct->ref = $request_data['crop'];
-                $mainProduct->label = $request_data['crop'];
+                $mainProduct->ref = $mainProductRef;
+                $mainProduct->label = $mainProductRef;
                 $mainProduct->type = 0; // Product type
                 $mainProduct->status = 1;
                 $mainProduct->tosell = 0; // Not for sale
@@ -3299,10 +3314,21 @@ class Vicentina extends DolibarrApi
                 if ($result < 0) {
                     throw new Exception('Error adding extrafields to main product: ' . $mainProduct->error);
                 }
+
+                // Agregar el producto a la categoría "Papa"
+                $category = new Categorie($this->db);
+                $category->fetch($papa_category_id);
+                $result = $category->add_type($mainProduct, 'product');
+                if ($result < 0) {
+                    throw new Exception('Error adding main product to Papa category: ' . $category->error);
+                }
             }
 
+            // Determine which variant to use based on type
+            $variantType = ($request_data['type'] === 'semilla') ? 'S' : 'C';
+            $variantRef = $request_data['variety_code'] . '_' . $variantType . '_SP';
+            
             // Create variant product
-            $variantRef = $request_data['crop'] . '_' . substr($request_data['variety'], 0, 3) . '_SP';
             $variantProduct = new Product($this->db);
             $result = $variantProduct->fetch(null, $variantRef);
 
@@ -3324,9 +3350,18 @@ class Vicentina extends DolibarrApi
                 // Add extrafields to variant
                 $variantProduct->array_options['options_variedad'] = $request_data['variety'];
                 $variantProduct->array_options['options_tipo_presentacion'] = 'Bin';
+                $variantProduct->array_options['options_tipo'] = 'SP';
                 $result = $variantProduct->insertExtraFields();
                 if ($result < 0) {
                     throw new Exception('Error adding extrafields to variant: ' . $variantProduct->error);
+                }
+
+                // Agregar la variante a la categoría "Papa"
+                $category = new Categorie($this->db);
+                $category->fetch($papa_category_id);
+                $result = $category->add_type($variantProduct, 'product');
+                if ($result < 0) {
+                    throw new Exception('Error adding variant product to Papa category: ' . $category->error);
                 }
 
                 // Add product combination
@@ -3364,11 +3399,12 @@ class Vicentina extends DolibarrApi
 
             // Add variety and lot to stock movement extrafields
             $sql = "INSERT INTO " . MAIN_DB_PREFIX . "stock_mouvement_extrafields (";
-            $sql .= "fk_object, variedad, lote";
+            $sql .= "fk_object, variedad, lote, precio";
             $sql .= ") VALUES (";
             $sql .= $movement->id . ", ";
             $sql .= "'" . $this->db->escape($request_data['variety']) . "', ";
-            $sql .= "'" . $this->db->escape($request_data['lot']) . "'";
+            $sql .= "'" . $this->db->escape($request_data['lot']) . "', ";
+            $sql .= "'" . $this->db->escape($request_data['logistic_cost']) . "'";
             $sql .= ")";
 
             $result = $this->db->query($sql);
@@ -3376,19 +3412,88 @@ class Vicentina extends DolibarrApi
                 throw new Exception('Error adding variety and lot to stock movement: ' . $this->db->lasterror());
             }
 
-            $this->db->commit();
+            // Add new code to save to llx_vicentina_papa_cosecha
+            $sql = "INSERT INTO " . MAIN_DB_PREFIX . "vicentina_papa_cosecha (";
+            $sql .= "date, crop, warehouse_id, logistic_cost, lot, variety, variety_code, type, quantity, ";
+            $sql .= "fk_user_creat, date_creation";
+            $sql .= ") VALUES (";
+            $sql .= "'" . $this->db->escape($request_data['date']) . "', ";
+            $sql .= "'" . $this->db->escape($request_data['crop']) . "', ";
+            $sql .= (int) $request_data['warehouse_id'] . ", ";
+            $sql .= (isset($request_data['logistic_cost']) ? floatval($request_data['logistic_cost']) : 0) . ", ";
+            $sql .= "'" . $this->db->escape($request_data['lot']) . "', ";
+            $sql .= "'" . $this->db->escape($request_data['variety']) . "', ";
+            $sql .= "'" . $this->db->escape($request_data['variety_code']) . "', ";
+            $sql .= "'" . $this->db->escape($request_data['type']) . "', ";
+            $sql .= floatval($request_data['quantity']) . ", ";
+            $sql .= (int) $user->id . ", ";
+            $sql .= "'" . $this->db->idate(dol_now()) . "'";
+            $sql .= ")";
 
+            $result = $this->db->query($sql);
+            if (!$result) {
+                throw new Exception('Error inserting into vicentina_papa_cosecha: ' . $this->db->lasterror());
+            }
+
+            $harvest_id = $this->db->last_insert_id(MAIN_DB_PREFIX . 'vicentina_papa_cosecha');
+            
+            $this->db->commit();
+            
             return array(
                 'main_product_id' => $mainProduct->id,
                 'variant_product_id' => $variantProduct->id,
                 'movement_id' => $movement->id,
-                'message' => 'Products and stock movement created successfully'
+                'message' => 'Products and stock movement created successfully',
+                'harvest_id' => $harvest_id
             );
-
         } catch (Exception $e) {
             $this->db->rollback();
             throw new RestException(500, $e->getMessage());
         }
+    }
+
+    /**
+     * Get all potato harvest records
+     *
+     * @url GET potato/harvest/list
+     * @return array List of potato harvest records
+     * @throws RestException 503 Error retrieving data
+     */
+    public function listPotatoHarvest()
+    {
+        $sql = "SELECT h.rowid, h.date, h.crop, h.warehouse_id, h.logistic_cost, ";
+        $sql .= "h.lot, h.variety, h.variety_code, h.type, h.quantity, ";
+        $sql .= "h.date_creation, h.fk_user_creat, ";
+        $sql .= "w.ref as warehouse_ref, w.lieu as warehouse_name ";
+        $sql .= "FROM " . MAIN_DB_PREFIX . "vicentina_papa_cosecha as h ";
+        $sql .= "LEFT JOIN " . MAIN_DB_PREFIX . "entrepot as w ON h.warehouse_id = w.rowid ";
+        $sql .= "ORDER BY h.date DESC, h.rowid DESC";
+
+        $result = $this->db->query($sql);
+        if (!$result) {
+            throw new RestException(503, 'Error retrieving potato harvest records: ' . $this->db->lasterror());
+        }
+
+        $harvests = array();
+        while ($obj = $this->db->fetch_object($result)) {
+            $harvests[] = array(
+                'id' => (int) $obj->rowid,
+                'date' => $obj->date,
+                'crop' => $obj->crop,
+                'warehouse_id' => (int) $obj->warehouse_id,
+                'warehouse_ref' => $obj->warehouse_ref,
+                'logistic_cost' => (float) $obj->logistic_cost,
+                'lot' => $obj->lot,
+                'variety' => $obj->variety,
+                'variety_code' => $obj->variety_code,
+                'type' => $obj->type,
+                'quantity' => (float) $obj->quantity,
+                'date_creation' => $obj->date_creation,
+                'user_created' => (int) $obj->fk_user_creat
+            );
+        }
+
+        return $harvests;
     }
 
     /**
@@ -3517,8 +3622,8 @@ class Vicentina extends DolibarrApi
         $this->db->begin();
 
         try {
-            // Get latest irrigation cost record
-            $sql = "SELECT rowid FROM " . MAIN_DB_PREFIX . "vicentina_irrigation_costs 
+            // Get latest irrigation cost record with fuel consumption per hour
+            $sql = "SELECT rowid, fuel_consumption_per_hour FROM " . MAIN_DB_PREFIX . "vicentina_irrigation_costs 
                     ORDER BY date_creation DESC LIMIT 1";
             $result = $this->db->query($sql);
             $latest_cost = $this->db->fetch_object($result);
@@ -3527,14 +3632,41 @@ class Vicentina extends DolibarrApi
                 throw new Exception('No irrigation costs found in the system');
             }
 
-            // Insert irrigation hours record
+            // Get fuel price (gasoil50s) for the date
+            $fuelPrice = 0;
+            $fuelData = $this->getFuelPriceForDate($request_data['date']);
+            if ($fuelData && isset($fuelData['gasoil50s'])) {
+                $fuelPrice = $fuelData['gasoil50s'];
+            }
+
+            // Get dollar price for the date
+            $dollarAvg = 1; // Default value if no dollar price is found
+            $sql = "SELECT avg FROM " . MAIN_DB_PREFIX . "vicentina_dolar 
+                    WHERE date = '" . $this->db->escape($request_data['date']) . "'";
+            $result = $this->db->query($sql);
+            if ($result && $this->db->num_rows($result) > 0) {
+                $dollarRow = $this->db->fetch_object($result);
+                $dollarAvg = $dollarRow->avg > 0 ? $dollarRow->avg : 1;
+            }
+
+            // Calculate total fuel consumption in liters (hours × fuel_consumption_per_hour)
+            $totalFuelConsumption = floatval($request_data['hours']) * floatval($latest_cost->fuel_consumption_per_hour);
+            
+            // Calculate total fuel cost in local currency (total consumption × fuel price)
+            $totalFuelCostLocal = $totalFuelConsumption * $fuelPrice;
+            
+            // Calculate total fuel cost in USD
+            $totalFuelCostUSD = $totalFuelCostLocal / $dollarAvg;
+
+            // Insert irrigation hours record with fuel price in USD
             $sql = "INSERT INTO " . MAIN_DB_PREFIX . "vicentina_irrigation_hours (";
-            $sql .= "date, hours, crop_code, fk_costs, fk_user_creat, date_creation";
+            $sql .= "date, hours, crop_code, fk_costs, fuel_price, fk_user_creat, date_creation";
             $sql .= ") VALUES (";
             $sql .= "'" . $this->db->escape($request_data['date']) . "', ";
             $sql .= floatval($request_data['hours']) . ", ";
             $sql .= "'" . $this->db->escape($request_data['crop_code']) . "', ";
             $sql .= (int) $latest_cost->rowid . ", ";
+            $sql .= floatval($totalFuelCostUSD) . ", ";
             $sql .= (int) $user->id . ", ";
             $sql .= "'" . $this->db->idate(dol_now()) . "'";
             $sql .= ")";
@@ -3593,7 +3725,13 @@ class Vicentina extends DolibarrApi
             return array(
                 'id' => $irrigation_hours_id,
                 'message' => 'Irrigation hours record created successfully',
-                'fk_costs' => $latest_cost->rowid
+                'fk_costs' => $latest_cost->rowid,
+                'fuel_consumption_per_hour' => floatval($latest_cost->fuel_consumption_per_hour),
+                'total_fuel_consumption' => $totalFuelConsumption,
+                'fuel_price_per_liter' => $fuelPrice,
+                'dollar_avg' => $dollarAvg,
+                'total_fuel_cost_local' => $totalFuelCostLocal,
+                'total_fuel_cost_usd' => $totalFuelCostUSD
             );
 
         } catch (Exception $e) {
@@ -3918,7 +4056,8 @@ class Vicentina extends DolibarrApi
                 'fk_costs' => $hour->fk_costs,
                 'fuel_consumption_per_hour' => floatval($hour->fuel_consumption_per_hour),
                 'maintenance_hours' => floatval($hour->maintenance_hours),
-                'maintenance_cost' => floatval($hour->maintenance_cost)
+                'maintenance_cost' => floatval($hour->maintenance_cost),
+                'fuel_price' => floatval($hour->fuel_price), // Total fuel cost stored in the database
             );
         }
 
@@ -4180,5 +4319,436 @@ class Vicentina extends DolibarrApi
             $this->db->rollback();
             throw new RestException(500, $e->getMessage());
         }
+    }
+
+    /**
+     * Save prices for dollar and fuels
+     *
+     * @url POST /prices/save
+     * @param array $request_data {
+     *     @var array $dolar {
+     *         @var float $compra Purchase price
+     *         @var float $venta Sale price
+     *         @var string $moneda Currency name
+     *     }
+     *     @var array $fuels Array of fuel prices {
+     *         @var string $fuel Fuel type
+     *         @var float $price Fuel price
+     *     }
+     * }
+     * @return array Response message
+     * @throws RestException 400 Bad Request
+     * @throws RestException 500 Internal Server Error
+     */
+    public function savePrices($request_data)
+    {
+        if (empty($request_data['dolar']) || empty($request_data['fuels'])) {
+            throw new RestException(400, 'Dolar and fuels data are required');
+        }
+
+        $this->db->begin();
+
+        try {
+            // Check if dollar prices were already updated today
+            $checkSql = "SELECT COUNT(*) as count FROM " . MAIN_DB_PREFIX . "vicentina_dolar 
+                         WHERE DATE(date) = CURDATE()";
+            $checkResult = $this->db->query($checkSql);
+            $dollarUpdatedToday = false;
+            
+            if ($checkResult) {
+                $row = $this->db->fetch_object($checkResult);
+                $dollarUpdatedToday = ($row->count > 0);
+            }
+
+            // Save dollar prices if not already updated today
+            if (!$dollarUpdatedToday) {
+                $dolar = $request_data['dolar'];
+                $compra = floatval($dolar['compra']);
+                $venta = floatval($dolar['venta']);
+                $moneda = $this->db->escape($dolar['moneda']);
+                $avg = ($compra + $venta) / 2;
+
+                $sql = "INSERT INTO " . MAIN_DB_PREFIX . "vicentina_dolar (date, compra, venta, moneda, avg) 
+                    VALUES (CURDATE(), " . $compra . ", " . $venta . ", '" . $moneda . "', " . $avg . ")";
+
+                $result = $this->db->query($sql);
+                if (!$result) {
+                    throw new Exception('Error saving dollar prices: ' . $this->db->lasterror());
+                }
+            }
+
+            // Check if fuel prices were already updated today
+            $checkFuelSql = "SELECT COUNT(*) as count FROM " . MAIN_DB_PREFIX . "vicentina_fuels 
+                             WHERE DATE(date) = CURDATE()";
+            $checkFuelResult = $this->db->query($checkFuelSql);
+            $fuelsUpdatedToday = false;
+            
+            if ($checkFuelResult) {
+                $row = $this->db->fetch_object($checkFuelResult);
+                $fuelsUpdatedToday = ($row->count > 0);
+            }
+
+            // Save fuel prices if not already updated today
+            if (!$fuelsUpdatedToday) {
+                // Process fuel prices into a structured array
+                $fuelData = [
+                    'super' => 0,
+                    'premium' => 0,
+                    'gasoil10s' => 0,
+                    'gasoil50s' => 0
+                ];
+
+                foreach ($request_data['fuels'] as $fuel) {
+                    $fuelType = $fuel['fuel'];
+                    $price = floatval($fuel['price']);
+
+                    // Map the fuel type to the corresponding column
+                    if ($fuelType == 'super95') {
+                        $fuelData['super'] = $price;
+                    } elseif ($fuelType == 'premium97') {
+                        $fuelData['premium'] = $price;
+                    } elseif ($fuelType == 'gasoil10s') {
+                        $fuelData['gasoil10s'] = $price;
+                    } elseif ($fuelType == 'gasoil50s') {
+                        $fuelData['gasoil50s'] = $price;
+                    }
+                }
+
+                // Insert fuel prices into the table
+                $sql = "INSERT INTO " . MAIN_DB_PREFIX . "vicentina_fuels 
+                    (date, super, premium, gasoil10s, gasoil50s) 
+                    VALUES (
+                        CURDATE(), 
+                        " . $fuelData['super'] . ", 
+                        " . $fuelData['premium'] . ", 
+                        " . $fuelData['gasoil10s'] . ", 
+                        " . $fuelData['gasoil50s'] . "
+                    )";
+
+                $result = $this->db->query($sql);
+                if (!$result) {
+                    throw new Exception('Error saving fuel prices: ' . $this->db->lasterror());
+                }
+            }
+
+            $this->db->commit();
+
+            return array(
+                'message' => 'Prices saved successfully',
+                'dollar_updated' => !$dollarUpdatedToday,
+                'fuels_updated' => !$fuelsUpdatedToday
+            );
+        } catch (Exception $e) {
+            $this->db->rollback();
+            throw new RestException(500, 'Error saving prices: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get historical prices for fuels and dollar for the last year
+     *
+     * @url GET /prices/historic
+     * @return array Historical prices for fuels and dollar
+     * @throws RestException 503 Error retrieving data
+     */
+    public function getHistoricalPrices()
+    {
+        try {
+            // Get dollar prices for the last year
+            $sql = "SELECT rowid, date, compra, venta, avg, moneda 
+                    FROM " . MAIN_DB_PREFIX . "vicentina_dolar 
+                    WHERE date >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR) 
+                    ORDER BY date DESC";
+                    
+            $result = $this->db->query($sql);
+            if (!$result) {
+                throw new Exception('Error retrieving dollar prices: ' . $this->db->lasterror());
+            }
+            
+            $dollarPrices = array();
+            while ($row = $this->db->fetch_object($result)) {
+                $dollarPrices[] = array(
+                    'id' => $row->rowid,
+                    'date' => $row->date,
+                    'compra' => floatval($row->compra),
+                    'venta' => floatval($row->venta),
+                    'avg' => floatval($row->avg),
+                    'moneda' => $row->moneda
+                );
+            }
+            
+            // Get fuel prices for the last year
+            $sql = "SELECT rowid, date, super, premium, gasoil10s, gasoil50s 
+                    FROM " . MAIN_DB_PREFIX . "vicentina_fuels 
+                    WHERE date >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR) 
+                    ORDER BY date DESC";
+                    
+            $result = $this->db->query($sql);
+            if (!$result) {
+                throw new Exception('Error retrieving fuel prices: ' . $this->db->lasterror());
+            }
+            
+            $fuelPrices = array();
+            while ($row = $this->db->fetch_object($result)) {
+                $fuelPrices[] = array(
+                    'id' => $row->rowid,
+                    'date' => $row->date,
+                    'super95' => floatval($row->super),
+                    'premium97' => floatval($row->premium),
+                    'gasoil10s' => floatval($row->gasoil10s),
+                    'gasoil50s' => floatval($row->gasoil50s)
+                );
+            }
+            
+            // Return combined results
+            return array(
+                'dollar' => $dollarPrices,
+                'fuels' => $fuelPrices
+            );
+            
+        } catch (Exception $e) {
+            throw new RestException(503, 'Error retrieving historical prices: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get fuel price for a specific date
+     *
+     * @param string $date Date in YYYY-MM-DD format
+     * @return array Fuel prices for the given date
+     * @throws RestException 503 Error retrieving data
+     */
+    public function getFuelPriceForDate($date)
+    {
+        try {
+            // Get fuel prices for the given date
+            $sql = "SELECT super, premium, gasoil10s, gasoil50s 
+                    FROM " . MAIN_DB_PREFIX . "vicentina_fuels 
+                    WHERE date = '" . $this->db->escape($date) . "'";
+            
+            $result = $this->db->query($sql);
+            if (!$result) {
+                throw new Exception('Error retrieving fuel prices: ' . $this->db->lasterror());
+            }
+            
+            $fuelPrices = array();
+            while ($row = $this->db->fetch_object($result)) {
+                $fuelPrices['super'] = floatval($row->super);
+                $fuelPrices['premium'] = floatval($row->premium);
+                $fuelPrices['gasoil10s'] = floatval($row->gasoil10s);
+                $fuelPrices['gasoil50s'] = floatval($row->gasoil50s);
+            }
+            
+            return $fuelPrices;
+        } catch (Exception $e) {
+            throw new RestException(503, 'Error retrieving fuel prices: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Create a new logistic cost record
+     *
+     * @param array $request_data {
+     *     @var string $origin       Origin location
+     *     @var string $destination  Destination location (optional)
+     *     @var string $date         Date in Y-m-d format
+     *     @var string $kilometeres  Distance in kilometers
+     *     @var string $cost         Cost amount
+     * }
+     * @return array Created logistic cost record
+     *
+     * @url POST logistic-cost/create
+     */
+    public function createLogisticCost($request_data)
+    {
+        global $user;
+
+        // Check mandatory fields
+        if (empty($request_data['origin'])) {
+            throw new RestException(400, 'Origin location is mandatory');
+        }
+        if (empty($request_data['date'])) {
+            throw new RestException(400, 'Date is mandatory');
+        }
+        if (!isset($request_data['kilometeres'])) {
+            throw new RestException(400, 'Kilometers is mandatory');
+        }
+        if (!isset($request_data['cost'])) {
+            throw new RestException(400, 'Cost is mandatory');
+        }
+
+        $sql = "INSERT INTO " . MAIN_DB_PREFIX . "vicentina_logistic_cost (";
+        $sql .= "date, kilometers, cost, origin, destination, ";
+        $sql .= "fk_user_creat, date_creation";
+        $sql .= ") VALUES (";
+        $sql .= "'" . $this->db->escape($request_data['date']) . "', ";
+        $sql .= floatval($request_data['kilometeres']) . ", ";
+        $sql .= floatval($request_data['cost']) . ", ";
+        $sql .= "'" . $this->db->escape($request_data['origin']) . "', ";
+        $sql .= !empty($request_data['destination']) ? "'" . $this->db->escape($request_data['destination']) . "', " : "NULL, ";
+        $sql .= (int) $user->id . ", ";
+        $sql .= "'" . $this->db->idate(dol_now()) . "'";
+        $sql .= ")";
+
+        $result = $this->db->query($sql);
+        if (!$result) {
+            throw new RestException(500, 'Error creating logistic cost record');
+        }
+
+        return array(
+            'success' => true,
+            'id' => $this->db->last_insert_id(MAIN_DB_PREFIX . 'vicentina_logistic_cost')
+        );
+    }
+
+    /**
+     * Get list of logistic costs
+     *
+     * @return array Array of logistic cost records
+     *
+     * @url GET logistic-cost/list
+     */
+    public function listLogisticCosts()
+    {
+        global $user;
+
+        $sql = "SELECT l.rowid, l.date, l.kilometers, l.cost, ";
+        $sql .= "l.origin, l.destination, ";
+        $sql .= "l.date_creation, l.fk_user_creat ";
+        $sql .= "FROM " . MAIN_DB_PREFIX . "vicentina_logistic_cost as l ";
+        $sql .= "ORDER BY l.date DESC";
+
+        $result = $this->db->query($sql);
+        if (!$result) {
+            throw new RestException(503, 'Error retrieving logistic cost records');
+        }
+
+        $costs = array();
+        while ($obj = $this->db->fetch_object($result)) {
+            $costs[] = array(
+                'id' => (int) $obj->rowid,
+                'date' => $obj->date,
+                'kilometers' => (float) $obj->kilometers,
+                'cost' => (float) $obj->cost,
+                'origin' => $obj->origin,
+                'destination' => $obj->destination,
+                'date_creation' => $obj->date_creation,
+                'user_created' => (int) $obj->fk_user_creat
+            );
+        }
+
+        return $costs;
+    }
+
+    /**
+     * Create a new caliber
+     *
+     * @param array $request_data {
+     *     @var string $name        Name of the caliber
+     *     @var string $description Description (optional)
+     * }
+     * @return array Created caliber record
+     *
+     * @url POST post-harvest/caliber
+     */
+    public function createCaliber($request_data)
+    {
+        global $user;
+        if (empty($request_data['name'])) {
+            throw new RestException(400, 'Caliber name is mandatory');
+        }
+
+        $sql = "INSERT INTO " . MAIN_DB_PREFIX . "vicentina_caliber (";
+        $sql .= "name, description, fk_user_creat, date_creation";
+        $sql .= ") VALUES (";
+        $sql .= "'" . $this->db->escape($request_data['name']) . "', ";
+        $sql .= !empty($request_data['description']) ? "'" . $this->db->escape($request_data['description']) . "', " : "NULL, ";
+        $sql .= (int) $user->id . ", ";
+        $sql .= "'" . $this->db->idate(dol_now()) . "'";
+        $sql .= ")";
+
+        $result = $this->db->query($sql);
+        if (!$result) {
+            throw new RestException(500, 'Error creating caliber');
+        }
+
+        return array(
+            'id' => $this->db->last_insert_id(MAIN_DB_PREFIX . 'vicentina_caliber'),
+            'name' => $request_data['name']
+        );
+    }
+
+    /**
+     * Get list of calibers
+     *
+     * @return array Array of caliber records
+     *
+     * @url GET post-harvest/caliber
+     */
+    public function listCalibers()
+    {
+        $sql = "SELECT c.rowid, c.name, c.description, ";
+        $sql .= "c.date_creation, c.fk_user_creat ";
+        $sql .= "FROM " . MAIN_DB_PREFIX . "vicentina_caliber as c ";
+        $sql .= "ORDER BY c.name";
+
+        $result = $this->db->query($sql);
+        if (!$result) {
+            throw new RestException(503, 'Error retrieving calibers');
+        }
+
+        $calibers = array();
+        while ($obj = $this->db->fetch_object($result)) {
+            $calibers[] = array(
+                'id' => (int) $obj->rowid,
+                'name' => $obj->name,
+                'description' => $obj->description,
+                'date_creation' => $obj->date_creation,
+                'user_created' => (int) $obj->fk_user_creat
+            );
+        }
+
+        return $calibers;
+    }
+
+    /**
+     * Update a caliber
+     *
+     * @param int   $id           ID of caliber to update
+     * @param array $request_data {
+     *     @var string $name        Name of the caliber
+     *     @var string $description Description (optional)
+     * }
+     * @return array Updated caliber record
+     *
+     * @url PUT post-harvest/caliber/{id}
+     */
+    public function updateCaliber($id, $request_data)
+    {
+        global $user;
+
+        if (!DolibarrApiAccess::$user->rights->vicentina->write) {
+            throw new RestException(401);
+        }
+
+        $sql = "UPDATE " . MAIN_DB_PREFIX . "vicentina_caliber SET ";
+        if (isset($request_data['name'])) {
+            $sql .= "name = '" . $this->db->escape($request_data['name']) . "', ";
+        }
+        if (isset($request_data['description'])) {
+            $sql .= "description = " . (!empty($request_data['description']) ? "'" . $this->db->escape($request_data['description']) . "'" : "NULL") . ", ";
+        }
+        $sql .= "fk_user_modif = " . (int) $user->id . " ";
+        $sql .= "WHERE rowid = " . (int) $id;
+
+        $result = $this->db->query($sql);
+        if (!$result) {
+            throw new RestException(500, 'Error updating caliber');
+        }
+
+        return array(
+            'id' => (int) $id,
+            'message' => 'Caliber updated successfully'
+        );
     }
 }

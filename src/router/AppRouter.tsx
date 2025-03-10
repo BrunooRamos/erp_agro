@@ -318,8 +318,8 @@ export const menuRoutes: MenuRoute[] = [
     subMenu: [
       {
         to: "/post-harvest/tong",
-        title: "Tong Procces",
-        description: "Tong Procces",
+        title: "Proceso Tong",
+        description: "Proceso Tong",
         component: <TongProcces />,
         visible: true,
       },

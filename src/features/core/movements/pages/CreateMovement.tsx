@@ -24,6 +24,7 @@ export const CreateMovement = () => {
   const { mutate: createMovementMutation } = createMovement;
 
   const onSubmit = handleSubmit((data) => {
+    console.log(JSON.stringify(data, null, 2));
     createMovementMutation(data, {
       onSuccess: () => {
         navigate("/home");
@@ -192,23 +193,41 @@ export const CreateMovement = () => {
           </FormField>
 
           <FormField
-            label="Tipo"
-            error={errors.quantity?.message || ""}
+            label="Variedad - Código"
+            error={errors.variety_code?.message || ""}
             required
           >
-             <select
+            <input
+              {...register("variety_code", {
+                required: "Este campo es requerido",
+                setValueAs: (value) => value.toUpperCase(),
+              })}
+              name="variety_code"
+              placeholder="Código de la variedad"
+              type="text"
+              autoComplete="off"
               className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
-              {...register("variety", {
+              style={{ textTransform: 'uppercase' }}
+              onChange={(e) => {
+                e.target.value = e.target.value.toUpperCase();
+              }}
+            />
+          </FormField>
+
+          <FormField
+            label="Tipo"
+            error={errors.type?.message || ""}
+            required
+          >
+            <select
+              className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
+              {...register("type", {
                 required: "Este campo es requerido",
               })}
-              disabled={!selectedCrop || isLoadingVarieties}
             >
-              <option value="">Seleccione una variedad</option>
-              {varieties?.map((variety) => (
-                <option key={variety.rowid} value={variety.name}>
-                  {variety.name}
-                </option>
-              ))}
+              <option value="">Seleccione un tipo</option>
+              <option value="semilla">Semilla</option>
+              <option value="consumo">Consumo</option>
             </select>
           </FormField>
 
