@@ -458,3 +458,79 @@ CREATE TABLE `llx_vicentina_papa_cosecha` (
     CONSTRAINT `llx_vicentina_harvest_fk_user_modif` FOREIGN KEY (`fk_user_modif`) REFERENCES `llx_user` (`rowid`)
 ) ENGINE=InnoDB;
 
+
+ALTER TABLE `llx_vicentina_papa_cosecha` 
+ADD COLUMN `product_id` int(11) DEFAULT NULL AFTER `quantity`,
+ADD KEY `idx_vicentina_papa_cosecha_product_id` (`product_id`);
+
+ALTER TABLE `llx_vicentina_papa_cosecha`
+ADD CONSTRAINT `fk_vicentina_papa_cosecha_product` 
+FOREIGN KEY (`product_id`) REFERENCES `llx_product` (`rowid`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+CREATE TABLE `llx_vicentina_tong_proceso` (
+    `rowid` int(11) NOT NULL AUTO_INCREMENT,
+    `date` date NOT NULL,
+    `number_of_bins` int(11) DEFAULT 0,
+    `potato_id` int(11) DEFAULT 0,
+    `parent_potato_id` int(11) DEFAULT 0,
+    `fk_user_creat` int(11) DEFAULT NULL,
+    `fk_user_modif` int(11) DEFAULT NULL,
+    PRIMARY KEY (`rowid`),
+    KEY `fk_user_creat` (`fk_user_creat`),
+    KEY `fk_user_modif` (`fk_user_modif`),
+    CONSTRAINT `llx_vicentina_tong_proceso_fk_user_creat` FOREIGN KEY (`fk_user_creat`) REFERENCES `llx_user` (`rowid`),
+    CONSTRAINT `llx_vicentina_tong_proceso_fk_user_modif` FOREIGN KEY (`fk_user_modif`) REFERENCES `llx_user` (`rowid`)
+) ENGINE=InnoDB;
+
+
+CREATE TABLE `llx_vicentina_tong_proceso_caliber` (
+    `rowid` int(11) NOT NULL AUTO_INCREMENT,
+    `tong_process_id` int(11) DEFAULT 0,
+    `caliber_id` int(11) DEFAULT 0,
+    `bins` int(11) DEFAULT 0,
+    `fk_user_creat` int(11) DEFAULT NULL,
+    `fk_user_modif` int(11) DEFAULT NULL,
+    PRIMARY KEY (`rowid`),
+    KEY `fk_user_creat` (`fk_user_creat`),
+    KEY `fk_user_modif` (`fk_user_modif`),
+    CONSTRAINT `llx_vicentina_tong_proceso_caliber_fk_user_creat` FOREIGN KEY (`fk_user_creat`) REFERENCES `llx_user` (`rowid`),
+    CONSTRAINT `llx_vicentina_tong_proceso_caliber_fk_user_modif` FOREIGN KEY (`fk_user_modif`) REFERENCES `llx_user` (`rowid`)
+) ENGINE=InnoDB;
+
+
+CREATE TABLE `llx_vicentina_tong_proceso_costo` (
+    `rowid` int(11) NOT NULL AUTO_INCREMENT,
+    `date` date NOT NULL,
+    `tong_process_id` int(11) DEFAULT 0,
+    `fuel_liters` decimal(24,8) DEFAULT 0.00000000,
+    `fuel_cost` decimal(24,8) DEFAULT 0.00000000,
+    `lift_cost` decimal(24,8) DEFAULT 0.00000000,
+    `gata_cost` decimal(24,8) DEFAULT 0.00000000,
+    `fk_user_creat` int(11) DEFAULT NULL,
+    `fk_user_modif` int(11) DEFAULT NULL,
+    PRIMARY KEY (`rowid`),
+    KEY `fk_user_creat` (`fk_user_creat`),
+    KEY `fk_user_modif` (`fk_user_modif`),
+    CONSTRAINT `llx_vicentina_tong_proceso_costo_fk_user_creat` FOREIGN KEY (`fk_user_creat`) REFERENCES `llx_user` (`rowid`),
+    CONSTRAINT `llx_vicentina_tong_proceso_costo_fk_user_modif` FOREIGN KEY (`fk_user_modif`) REFERENCES `llx_user` (`rowid`)
+) ENGINE=InnoDB;
+
+
+
+
+CREATE TABLE `llx_vicentina_tong_costo` (
+    `rowid` int(11) NOT NULL AUTO_INCREMENT,
+    `date` date NOT NULL,
+    `max_bins` int(11) DEFAULT 1,
+    `fuel_liters` decimal(24,8) DEFAULT 0.00000000,
+    `fuel_cost` decimal(24,8) DEFAULT 0.00000000,
+    `lift_cost` decimal(24,8) DEFAULT 0.00000000,
+    `gata_cost` decimal(24,8) DEFAULT 0.00000000,
+    `fk_user_creat` int(11) DEFAULT NULL,
+    `fk_user_modif` int(11) DEFAULT NULL,
+    PRIMARY KEY (`rowid`),
+    KEY `fk_user_creat` (`fk_user_creat`),
+    KEY `fk_user_modif` (`fk_user_modif`),
+    CONSTRAINT `llx_vicentina_tong_costo_fk_user_creat` FOREIGN KEY (`fk_user_creat`) REFERENCES `llx_user` (`rowid`),
+    CONSTRAINT `llx_vicentina_tong_costo_fk_user_modif` FOREIGN KEY (`fk_user_modif`) REFERENCES `llx_user` (`rowid`)
+) ENGINE=InnoDB;

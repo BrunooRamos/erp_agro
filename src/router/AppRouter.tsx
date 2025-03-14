@@ -49,6 +49,12 @@ import {
   PostHarvest,
   TongProcces,
   CreateAndListCaliber,
+  HomeTong,
+  CostoTong,
+  ListTongProcesses,
+  HomeWash,
+  QualitiesAndLabels,
+  CostWash,
 } from "../features/index";
 import { MenuRoute } from "../interfaces";
 
@@ -318,21 +324,20 @@ export const menuRoutes: MenuRoute[] = [
     subMenu: [
       {
         to: "/post-harvest/tong",
-        title: "Proceso Tong",
-        description: "Proceso Tong",
-        component: <TongProcces />,
+        title: "Tong",
+        description: "Tong",
+        component: <HomeTong />,
         visible: true,
       },
       {
-        to: "/post-harvest/create-caliber",
-        title: "Crear y listar calibre",
-        description: "Crear y listar calibre",
-        component: <CreateAndListCaliber />,
+        to: "/post-harvest/wash",
+        title: "Lavado",
+        description: "Lavado",
+        component: <HomeWash />,
         visible: true,
       },
     ],
   },
-
   {
     to: "/prices",
     icon: "fa-solid fa-coins",
@@ -358,7 +363,57 @@ export const menuRoutes: MenuRoute[] = [
     visible: false,
   },
 
-
+  //!Sub menus de post cosecha
+  // TONG  
+  {
+    to: "/post-harvest/tong/proceso-tong",
+    title: "Proceso Tong",
+    description: "Proceso Tong",
+    component: <TongProcces />,
+    visible: false,
+    icon: "fa-solid fa-plus",
+  },
+  {
+    to: "/post-harvest/tong/list-tong-processes",
+    title: "Listar procesos de tong",
+    description: "Listar procesos de tong",
+    component: <ListTongProcesses />,
+    visible: false,
+    icon: "fa-solid fa-list",
+  },
+  {
+    to: "/post-harvest/tong/create-caliber",
+    title: "Crear y listar calibre",
+    description: "Crear y listar calibre",
+    component: <CreateAndListCaliber />,
+    visible: false,
+    icon: "fa-solid fa-plus",
+  },
+  {
+    to: "/post-harvest/tong/costo-tong",
+    title: "Costo Tong",
+    description: "Costo Tong",
+    component: <CostoTong />,
+    visible: false,
+    icon: "fa-solid fa-plus",
+  },
+  // WASH
+  {
+    to: "/post-harvest/wash/qualities",
+    title: "Crear y listar calidades y etiquetas",
+    description: "Crear y listar calidades y etiquetas",
+    component: <QualitiesAndLabels />,
+    visible: false,
+    icon: "fa-solid fa-plus",
+  },
+  {
+    to: "/post-harvest/wash/costs",
+    title: "Costos de lavado",
+    description: "Costos de lavado",
+    component: <CostWash />,
+    visible: false,
+    icon: "fa-solid fa-plus",
+  },
   // Sub menus de cada uno de los registros los cuales ya son sub menus
   {
     to: "/registers/raf/create",

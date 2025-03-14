@@ -1,8 +1,8 @@
 import { useForm } from "react-hook-form";
-import { ActionButtons, FormField } from "../../../../ui/components";
+import { ActionButtons, FormField } from "../../../../../ui/components";
 import { useNavigate } from "react-router-dom";
-import { CreateCaliberForm } from "../../../../interfaces";
-import { usePostHarvest } from "../../../../hooks/post-harvest/usePostHarvest";
+import { CreateCaliberForm } from "../../../../../interfaces";
+import { usePostHarvest } from "../../../../../hooks/post-harvest/usePostHarvest";
 
 export const CreateAndListCaliber = () => {
   const navigate = useNavigate();
@@ -23,7 +23,7 @@ export const CreateAndListCaliber = () => {
     console.log(JSON.stringify(data, null, 2)); 
     createCaliberMutation(data, {
         onSuccess: () => {
-            navigate("/movements");
+          listCalibers.refetch();
         },
     });
   });

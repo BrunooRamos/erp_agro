@@ -3415,7 +3415,7 @@ class Vicentina extends DolibarrApi
             // Add new code to save to llx_vicentina_papa_cosecha
             $sql = "INSERT INTO " . MAIN_DB_PREFIX . "vicentina_papa_cosecha (";
             $sql .= "date, crop, warehouse_id, logistic_cost, lot, variety, variety_code, type, quantity, ";
-            $sql .= "fk_user_creat, date_creation";
+            $sql .= "product_id, fk_user_creat, date_creation";  // Added product_id here
             $sql .= ") VALUES (";
             $sql .= "'" . $this->db->escape($request_data['date']) . "', ";
             $sql .= "'" . $this->db->escape($request_data['crop']) . "', ";
@@ -3426,6 +3426,7 @@ class Vicentina extends DolibarrApi
             $sql .= "'" . $this->db->escape($request_data['variety_code']) . "', ";
             $sql .= "'" . $this->db->escape($request_data['type']) . "', ";
             $sql .= floatval($request_data['quantity']) . ", ";
+            $sql .= (int) $variantProduct->id . ", ";  // Store the variant product ID
             $sql .= (int) $user->id . ", ";
             $sql .= "'" . $this->db->idate(dol_now()) . "'";
             $sql .= ")";
@@ -4649,7 +4650,7 @@ class Vicentina extends DolibarrApi
      * }
      * @return array Created caliber record
      *
-     * @url POST post-harvest/caliber
+     * @url POST tong/caliber
      */
     public function createCaliber($request_data)
     {
@@ -4683,7 +4684,7 @@ class Vicentina extends DolibarrApi
      *
      * @return array Array of caliber records
      *
-     * @url GET post-harvest/caliber
+     * @url GET tong/caliber
      */
     public function listCalibers()
     {
@@ -4750,5 +4751,647 @@ class Vicentina extends DolibarrApi
             'id' => (int) $id,
             'message' => 'Caliber updated successfully'
         );
+    }
+
+    /**
+     * Create tong cost record
+     *
+     * @url POST tong/cost/create
+     */
+    public function createTongCost($request_data)
+    {
+        global $user;
+
+        if (empty($request_data['date'])) {
+            throw new RestException(400, 'Date is a required field');
+        }
+
+        $this->db->begin();
+
+        try {
+            // Get fuel price for the date
+            $fuelData = $this->getFuelPriceForDate($request_data['date']);
+            if (!$fuelData || !isset($fuelData['gasoil50s'])) {
+                throw new RestException(400, 'No fuel price found for the specified date');
+            }
+
+            // Calculate fuel cost based on liters and current price
+            $fuelLiters = isset($request_data['fuel_liters']) ? floatval($request_data['fuel_liters']) : 0;
+            $fuelCost = $fuelLiters * floatval($fuelData['gasoil50s']);
+
+            $sql = "INSERT INTO " . MAIN_DB_PREFIX . "vicentina_tong_costo (";
+            $sql .= "date, max_bins, fuel_liters, fuel_cost, lift_cost, gata_cost, ";
+            $sql .= "fk_user_creat, fk_user_modif";
+            $sql .= ") VALUES (";
+            $sql .= "'" . $this->db->escape($request_data['date']) . "', ";
+            $sql .= (isset($request_data['max_bins']) ? intval($request_data['max_bins']) : 1) . ", ";
+            $sql .= $fuelLiters . ", ";
+            $sql .= $fuelCost . ", ";  // Calculated fuel cost
+            $sql .= (isset($request_data['lift_cost']) ? floatval($request_data['lift_cost']) : 0) . ", ";
+            $sql .= (isset($request_data['gata_cost']) ? floatval($request_data['gata_cost']) : 0) . ", ";
+            $sql .= (int) $user->id . ", ";  // fk_user_creat
+            $sql .= (int) $user->id;         // fk_user_modif
+            $sql .= ")";
+
+            $result = $this->db->query($sql);
+            if (!$result) {
+                throw new Exception('Error creating tong cost record: ' . $this->db->lasterror());
+            }
+
+            $id = $this->db->last_insert_id(MAIN_DB_PREFIX . 'vicentina_tong_costo');
+
+            $this->db->commit();
+
+            return array(
+                'id' => $id,
+                'message' => 'Tong cost record created successfully',
+                'date' => $request_data['date'],
+                'max_bins' => isset($request_data['max_bins']) ? intval($request_data['max_bins']) : 1,
+                'fuel_liters' => $fuelLiters,
+                'fuel_price' => floatval($fuelData['gasoil50s']),
+                'fuel_cost' => $fuelCost,
+                'lift_cost' => isset($request_data['lift_cost']) ? floatval($request_data['lift_cost']) : 0,
+                'gata_cost' => isset($request_data['gata_cost']) ? floatval($request_data['gata_cost']) : 0
+            );
+
+        } catch (Exception $e) {
+            $this->db->rollback();
+            throw new RestException(500, $e->getMessage());
+        }
+    }
+
+    /**
+     * List all tong costs
+     *
+     * @url GET tong/costs
+     * @return array List of tong costs
+     * @throws RestException 500 Internal Server Error
+     */
+    public function listTongCosts()
+    {
+        global $user;
+
+        try {
+            $sql = "SELECT t.rowid, t.date, t.max_bins, ";
+            $sql .= "t.fuel_liters, t.fuel_cost, t.lift_cost, t.gata_cost, ";
+            $sql .= "t.fk_user_creat, t.fk_user_modif, ";
+            $sql .= "uc.firstname as user_creat_firstname, uc.lastname as user_creat_lastname, ";
+            $sql .= "um.firstname as user_modif_firstname, um.lastname as user_modif_lastname ";
+            $sql .= "FROM " . MAIN_DB_PREFIX . "vicentina_tong_costo as t ";
+            $sql .= "LEFT JOIN " . MAIN_DB_PREFIX . "user as uc ON t.fk_user_creat = uc.rowid ";
+            $sql .= "LEFT JOIN " . MAIN_DB_PREFIX . "user as um ON t.fk_user_modif = um.rowid ";
+            $sql .= "ORDER BY t.date DESC";
+
+            $result = $this->db->query($sql);
+            if (!$result) {
+                throw new Exception('Error fetching tong costs: ' . $this->db->lasterror());
+            }
+
+            $tong_costs = array();
+            while ($obj = $this->db->fetch_object($result)) {
+                $tong_costs[] = array(
+                    'id' => (int) $obj->rowid,
+                    'date' => $obj->date,
+                    'max_bins' => (int) $obj->max_bins,
+                    'fuel_liters' => floatval($obj->fuel_liters),
+                    'fuel_cost' => floatval($obj->fuel_cost),
+                    'lift_cost' => floatval($obj->lift_cost),
+                    'gata_cost' => floatval($obj->gata_cost),
+                    'created_by' => array(
+                        'id' => (int) $obj->fk_user_creat,
+                        'name' => $obj->user_creat_firstname . ' ' . $obj->user_creat_lastname
+                    ),
+                    'modified_by' => array(
+                        'id' => (int) $obj->fk_user_modif,
+                        'name' => $obj->user_modif_firstname . ' ' . $obj->user_modif_lastname
+                    )
+                );
+            }
+
+            return $tong_costs;
+
+        } catch (Exception $e) {
+            throw new RestException(500, $e->getMessage());
+        }
+    }
+
+    /**
+     * Delete tong cost record
+     *
+     * @url DELETE tong/cost/delete/{id}
+     * @param int $id ID of the tong cost record to delete
+     * @return array Result of the deletion
+     * @throws RestException 400 Bad Request
+     * @throws RestException 404 Not Found
+     * @throws RestException 500 Internal Server Error
+     */
+    public function deleteTongCost($id)
+    {
+        global $user;
+
+        if (empty($id)) {
+            throw new RestException(400, 'ID is required');
+        }
+
+        $this->db->begin();
+
+        try {
+            // Check if record exists
+            $sql = "SELECT rowid FROM " . MAIN_DB_PREFIX . "vicentina_tong_costo WHERE rowid = " . (int) $id;
+            $result = $this->db->query($sql);
+            if (!$result || $this->db->num_rows($result) == 0) {
+                throw new RestException(404, 'Tong cost record not found');
+            }
+
+            // Delete the record
+            $sql = "DELETE FROM " . MAIN_DB_PREFIX . "vicentina_tong_costo WHERE rowid = " . (int) $id;
+            $result = $this->db->query($sql);
+            
+            if (!$result) {
+                throw new Exception('Error deleting tong cost record: ' . $this->db->lasterror());
+            }
+
+            $this->db->commit();
+
+            return array(
+                'id' => (int) $id,
+                'message' => 'Tong cost record deleted successfully'
+            );
+
+        } catch (Exception $e) {
+            $this->db->rollback();
+            throw new RestException(500, $e->getMessage());
+        }
+    }
+
+    /**
+     * Create tong process
+     *
+     * @url POST /tong/process/create
+     * @param array $request_data {
+     *     @var array $caliber_outputs Array of caliber outputs with caliber_id and bins
+     *     @var int $warehouse_id Warehouse ID
+     *     @var string $date Date
+     *     @var int $parent_potato_id Parent potato product ID
+     *     @var int $potato_id Potato variant product ID
+     *     @var int $number_of_bins Number of bins
+     *     @var float $fuel_cost Fuel cost
+     *     @var float $gata_cost Gata cost
+     *     @var float $lift_cost Lift cost
+     *     @var float $fuel_liters Fuel liters
+     * }
+     * @return array Created tong process info
+     * @throws RestException 400 Bad Request
+     * @throws RestException 500 Internal Server Error
+     */
+    public function createTongProcess($request_data)
+    {
+        global $user, $db;
+
+        if (
+            empty($request_data['caliber_outputs']) || empty($request_data['warehouse_id']) ||
+            empty($request_data['date']) || empty($request_data['parent_potato_id']) ||
+            empty($request_data['potato_id']) || empty($request_data['number_of_bins'])
+        ) {
+            throw new RestException(400, 'Missing required fields');
+        }
+
+        $this->db->begin();
+
+        try {
+            require_once DOL_DOCUMENT_ROOT . '/product/class/product.class.php';
+            require_once DOL_DOCUMENT_ROOT . '/product/stock/class/mouvementstock.class.php';
+            require_once DOL_DOCUMENT_ROOT . '/categories/class/categorie.class.php';
+
+            // ID de la categoría "Papa"
+            $papa_category_id = 29;
+
+            // Fetch the source potato product
+            $sourceProduct = new Product($this->db);
+            $result = $sourceProduct->fetch($request_data['potato_id']);
+            if ($result <= 0) {
+                throw new Exception('Error fetching source potato product');
+            }
+
+            // Fetch the parent product
+            $parentProduct = new Product($this->db);
+            $result = $parentProduct->fetch($request_data['parent_potato_id']);
+            if ($result <= 0) {
+                throw new Exception('Error fetching parent potato product');
+            }
+
+            // Check if the source product ref ends with SP
+            if (substr($sourceProduct->ref, -3) !== '_SP') {
+                throw new Exception('Source product reference must end with _SP');
+            }
+
+            // Base reference without SP
+            $baseRef = substr($sourceProduct->ref, 0, -3);
+
+            // Insert into llx_vicentina_tong_proceso
+            $sql = "INSERT INTO " . MAIN_DB_PREFIX . "vicentina_tong_proceso (";
+            $sql .= "date, number_of_bins, potato_id, parent_potato_id, fk_user_creat";
+            $sql .= ") VALUES (";
+            $sql .= "'" . $this->db->escape($request_data['date']) . "', ";
+            $sql .= (int) $request_data['number_of_bins'] . ", ";
+            $sql .= (int) $request_data['potato_id'] . ", ";
+            $sql .= (int) $request_data['parent_potato_id'] . ", ";
+            $sql .= (int) $user->id;
+            $sql .= ")";
+
+            $result = $this->db->query($sql);
+            if (!$result) {
+                throw new Exception('Error inserting into vicentina_tong_proceso: ' . $this->db->lasterror());
+            }
+
+            $tong_process_id = $this->db->last_insert_id(MAIN_DB_PREFIX . 'vicentina_tong_proceso');
+
+            // Insert costs
+            $sql = "INSERT INTO " . MAIN_DB_PREFIX . "vicentina_tong_proceso_costo (";
+            $sql .= "date, tong_process_id, fuel_liters, fuel_cost, lift_cost, gata_cost, fk_user_creat";
+            $sql .= ") VALUES (";
+            $sql .= "'" . $this->db->escape($request_data['date']) . "', ";
+            $sql .= (int) $tong_process_id . ", ";
+            $sql .= floatval($request_data['fuel_liters']) . ", ";
+            $sql .= floatval($request_data['fuel_cost']) . ", ";
+            $sql .= floatval($request_data['lift_cost']) . ", ";
+            $sql .= floatval($request_data['gata_cost']) . ", ";
+            $sql .= (int) $user->id;
+            $sql .= ")";
+
+            $result = $this->db->query($sql);
+            if (!$result) {
+                throw new Exception('Error inserting into vicentina_tong_proceso_costo: ' . $this->db->lasterror());
+            }
+
+            // Decrease stock of source product
+            $movement = new MouvementStock($this->db);
+            $result = $movement->livraison(
+                $user,
+                $sourceProduct->id,
+                $request_data['warehouse_id'],
+                $request_data['number_of_bins'],
+                0, // price
+                'Tong process output',
+                $request_data['date']
+            );
+
+            if ($result < 0) {
+                throw new Exception('Error decreasing source product stock: ' . $movement->error);
+            }
+
+            $caliber_products = [];
+
+            // Process each caliber output
+            foreach ($request_data['caliber_outputs'] as $caliber_output) {
+                // Insert into llx_vicentina_tong_proceso_caliber
+                $sql = "INSERT INTO " . MAIN_DB_PREFIX . "vicentina_tong_proceso_caliber (";
+                $sql .= "tong_process_id, caliber_id, bins, fk_user_creat";
+                $sql .= ") VALUES (";
+                $sql .= (int) $tong_process_id . ", ";
+                $sql .= (int) $caliber_output['caliber_id'] . ", ";
+                $sql .= (int) $caliber_output['bins'] . ", ";
+                $sql .= (int) $user->id;
+                $sql .= ")";
+
+                $result = $this->db->query($sql);
+                if (!$result) {
+                    throw new Exception('Error inserting into vicentina_tong_proceso_caliber: ' . $this->db->lasterror());
+                }
+
+                // Get caliber name
+                $sql = "SELECT name FROM " . MAIN_DB_PREFIX . "vicentina_caliber WHERE rowid = " . (int) $caliber_output['caliber_id'];
+                $res = $this->db->query($sql);
+                if (!$res) {
+                    throw new Exception('Error fetching caliber name: ' . $this->db->lasterror());
+                }
+                
+                $obj = $this->db->fetch_object($res);
+                if (!$obj) {
+                    throw new Exception('Caliber not found with ID: ' . $caliber_output['caliber_id']);
+                }
+                
+                $caliber_name = $obj->name;
+
+                // Create new variant with caliber name
+                $variantRef = $baseRef . '_' . $caliber_name;
+                
+                // Check if variant already exists
+                $variantProduct = new Product($this->db);
+                $result = $variantProduct->fetch(null, $variantRef);
+
+                if ($result <= 0) {
+                    // Create new variant
+                    $variantProduct->ref = $variantRef;
+                    $variantProduct->label = $variantRef;
+                    $variantProduct->type = 0;
+                    $variantProduct->status = 1;
+                    $variantProduct->tosell = 0; // Not for sale
+                    $variantProduct->tobuy = 0; // Not for purchase
+                    $variantProduct->stock = 0;
+                    $variantProduct->fk_parent = $parentProduct->id;
+
+                    $result = $variantProduct->create($user);
+                    if ($result < 0) {
+                        throw new Exception('Error creating variant product: ' . $variantProduct->error);
+                    }
+
+                    // Copy extrafields from source product
+                    $sql = "SELECT * FROM " . MAIN_DB_PREFIX . "product_extrafields WHERE fk_object = " . (int) $sourceProduct->id;
+                    $res = $this->db->query($sql);
+                    if ($res) {
+                        $extrafields = $this->db->fetch_object($res);
+                        if ($extrafields) {
+                            // Prepare extrafields for the new variant
+                            $variantProduct->array_options = [];
+                            foreach ($extrafields as $key => $value) {
+                                if ($key != 'rowid' && $key != 'fk_object' && $key != 'tms') {
+                                    $variantProduct->array_options['options_' . $key] = $value;
+                                }
+                            }
+                            
+                            // Update tipo to caliber name
+                            $variantProduct->array_options['options_tipo'] = $caliber_name;
+                            
+                            $result = $variantProduct->insertExtraFields();
+                            if ($result < 0) {
+                                throw new Exception('Error adding extrafields to variant: ' . $variantProduct->error);
+                            }
+                        }
+                    }
+
+                    // Add the variant to the "Papa" category
+                    $category = new Categorie($this->db);
+                    $category->fetch($papa_category_id);
+                    $result = $category->add_type($variantProduct, 'product');
+                    if ($result < 0) {
+                        throw new Exception('Error adding variant product to Papa category: ' . $category->error);
+                    }
+
+                    // Add product combination
+                    $sql = "INSERT INTO " . MAIN_DB_PREFIX . "product_attribute_combination (";
+                    $sql .= "fk_product_parent, fk_product_child, variation_price, variation_weight, entity";
+                    $sql .= ") VALUES (";
+                    $sql .= (int) $parentProduct->id . ", ";
+                    $sql .= (int) $variantProduct->id . ", ";
+                    $sql .= "0, "; // variation_price
+                    $sql .= "0, "; // variation_weight
+                    $sql .= "1"; // entity
+                    $sql .= ")";
+
+                    $result = $this->db->query($sql);
+                    if (!$result) {
+                        throw new Exception('Error creating product combination: ' . $this->db->lasterror());
+                    }
+                }
+
+                // Increase stock of caliber variant
+                $movement = new MouvementStock($this->db);
+                $result = $movement->reception(
+                    $user,
+                    $variantProduct->id,
+                    $request_data['warehouse_id'],
+                    $caliber_output['bins'],
+                    0, // price
+                    'Tong process input',
+                    $request_data['date']
+                );
+
+                if ($result < 0) {
+                    throw new Exception('Error increasing variant product stock: ' . $movement->error);
+                }
+
+                $caliber_products[] = [
+                    'caliber_id' => $caliber_output['caliber_id'],
+                    'caliber_name' => $caliber_name,
+                    'product_id' => $variantProduct->id,
+                    'bins' => $caliber_output['bins']
+                ];
+            }
+
+            $this->db->commit();
+            
+            return [
+                'tong_process_id' => $tong_process_id,
+                'source_product_id' => $sourceProduct->id,
+                'parent_product_id' => $parentProduct->id,
+                'caliber_products' => $caliber_products,
+                'message' => 'Tong process created successfully'
+            ];
+        } catch (Exception $e) {
+            $this->db->rollback();
+            throw new RestException(500, $e->getMessage());
+        }
+    }
+
+    /**
+     * Get tong process details
+     *
+     * @url GET /tong/process/{id}
+     * @param int $id ID of tong process
+     * @return array Tong process details
+     * @throws RestException 404 Not found
+     * @throws RestException 500 Internal Server Error
+     */
+    public function getTongProcess($id)
+    {
+        global $db;
+
+        if (empty($id)) {
+            throw new RestException(400, 'Missing tong process ID');
+        }
+
+        try {
+            // Get main process data
+            $sql = "SELECT p.*, u.login as user_created";
+            $sql .= " FROM " . MAIN_DB_PREFIX . "vicentina_tong_proceso as p";
+            $sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "user as u ON p.fk_user_creat = u.rowid";
+            $sql .= " WHERE p.rowid = " . (int) $id;
+
+            $result = $this->db->query($sql);
+            if (!$result || $this->db->num_rows($result) == 0) {
+                throw new RestException(404, 'Tong process not found');
+            }
+
+            $process = $this->db->fetch_object($result);
+            
+            // Get cost data
+            $sql = "SELECT * FROM " . MAIN_DB_PREFIX . "vicentina_tong_proceso_costo";
+            $sql .= " WHERE tong_process_id = " . (int) $id;
+            
+            $result = $this->db->query($sql);
+            if (!$result) {
+                throw new RestException(500, 'Error retrieving tong process costs: ' . $this->db->lasterror());
+            }
+            
+            $costs = [];
+            while ($cost = $this->db->fetch_object($result)) {
+                $costs[] = [
+                    'rowid' => $cost->rowid,
+                    'date' => $cost->date,
+                    'fuel_liters' => $cost->fuel_liters,
+                    'fuel_cost' => $cost->fuel_cost,
+                    'lift_cost' => $cost->lift_cost,
+                    'gata_cost' => $cost->gata_cost
+                ];
+            }
+            
+            // Get caliber outputs
+            $sql = "SELECT c.*, cal.name as caliber_name";
+            $sql .= " FROM " . MAIN_DB_PREFIX . "vicentina_tong_proceso_caliber as c";
+            $sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "vicentina_caliber as cal ON c.caliber_id = cal.rowid";
+            $sql .= " WHERE c.tong_process_id = " . (int) $id;
+            
+            $result = $this->db->query($sql);
+            if (!$result) {
+                throw new RestException(500, 'Error retrieving tong process calibers: ' . $this->db->lasterror());
+            }
+            
+            $calibers = [];
+            while ($caliber = $this->db->fetch_object($result)) {
+                $calibers[] = [
+                    'rowid' => $caliber->rowid,
+                    'caliber_id' => $caliber->caliber_id,
+                    'caliber_name' => $caliber->caliber_name,
+                    'bins' => $caliber->bins
+                ];
+            }
+            
+            // Get product information
+            require_once DOL_DOCUMENT_ROOT . '/product/class/product.class.php';
+            
+            $sourceProduct = new Product($this->db);
+            $sourceProduct->fetch($process->potato_id);
+            
+            $parentProduct = new Product($this->db);
+            $parentProduct->fetch($process->parent_potato_id);
+            
+            // Build response
+            $response = [
+                'rowid' => $process->rowid,
+                'date' => $process->date,
+                'number_of_bins' => $process->number_of_bins,
+                'potato_id' => $process->potato_id,
+                'potato_ref' => $sourceProduct->ref,
+                'potato_label' => $sourceProduct->label,
+                'parent_potato_id' => $process->parent_potato_id,
+                'parent_potato_ref' => $parentProduct->ref,
+                'parent_potato_label' => $parentProduct->label,
+                'user_created' => $process->user_created,
+                'date_creation' => $process->date_creation,
+                'costs' => $costs,
+                'caliber_outputs' => $calibers
+            ];
+            
+            return $response;
+            
+        } catch (Exception $e) {
+            throw new RestException(500, $e->getMessage());
+        }
+    }
+
+    /**
+     * List all tong processes
+     *
+     * @url GET /tong/processes
+     * @return array List of tong processes
+     * @throws RestException 500 Internal Server Error
+     */
+    public function listTongProcesses()
+    {
+        global $db;
+
+        try {
+            $sql = "SELECT p.*, u.login as user_created";
+            $sql .= " FROM " . MAIN_DB_PREFIX . "vicentina_tong_proceso as p";
+            $sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "user as u ON p.fk_user_creat = u.rowid";
+            $sql .= " ORDER BY p.date DESC";
+            
+            $result = $this->db->query($sql);
+            if (!$result) {
+                throw new RestException(500, 'Error retrieving tong processes: ' . $this->db->lasterror());
+            }
+            
+            $processes = [];
+            while ($process = $this->db->fetch_object($result)) {
+                // Get source and parent product info
+                require_once DOL_DOCUMENT_ROOT . '/product/class/product.class.php';
+                
+                $sourceProduct = new Product($this->db);
+                $sourceProduct->fetch($process->potato_id);
+                
+                $parentProduct = new Product($this->db);
+                $parentProduct->fetch($process->parent_potato_id);
+                
+                // Get source product variety from extrafields
+                $sql_extra = "SELECT variedad FROM " . MAIN_DB_PREFIX . "product_extrafields WHERE fk_object = " . (int) $process->potato_id;
+                $res_extra = $this->db->query($sql_extra);
+                $variety = "";
+                if ($res_extra && $obj_extra = $this->db->fetch_object($res_extra)) {
+                    $variety = $obj_extra->variedad;
+                }
+                
+                // Get costs
+                $sql2 = "SELECT * FROM " . MAIN_DB_PREFIX . "vicentina_tong_proceso_costo";
+                $sql2 .= " WHERE tong_process_id = " . (int) $process->rowid;
+                
+                $costResult = $this->db->query($sql2);
+                $costs = [];
+                if ($costResult) {
+                    while ($cost = $this->db->fetch_object($costResult)) {
+                        $costs[] = [
+                            'rowid' => $cost->rowid,
+                            'date' => $cost->date,
+                            'fuel_liters' => $cost->fuel_liters,
+                            'fuel_cost' => $cost->fuel_cost,
+                            'lift_cost' => $cost->lift_cost,
+                            'gata_cost' => $cost->gata_cost,
+                            'total_cost' => floatval($cost->fuel_cost) + floatval($cost->lift_cost) + floatval($cost->gata_cost)
+                        ];
+                    }
+                }
+                
+                // Get caliber outputs
+                $sql3 = "SELECT c.*, cal.name as caliber_name";
+                $sql3 .= " FROM " . MAIN_DB_PREFIX . "vicentina_tong_proceso_caliber as c";
+                $sql3 .= " LEFT JOIN " . MAIN_DB_PREFIX . "vicentina_caliber as cal ON c.caliber_id = cal.rowid";
+                $sql3 .= " WHERE c.tong_process_id = " . (int) $process->rowid;
+                
+                $caliberResult = $this->db->query($sql3);
+                $calibers = [];
+                $totalOutputBins = 0;
+                if ($caliberResult) {
+                    while ($caliber = $this->db->fetch_object($caliberResult)) {
+                        $calibers[] = [
+                            'rowid' => $caliber->rowid,
+                            'caliber_id' => $caliber->caliber_id,
+                            'caliber_name' => $caliber->caliber_name,
+                            'bins' => $caliber->bins
+                        ];
+                        $totalOutputBins += intval($caliber->bins);
+                    }
+                }
+                
+                $processes[] = [
+                    'rowid' => $process->rowid,
+                    'date' => $process->date,
+                    'input_bins' => $process->number_of_bins,
+                    'potato_id' => $process->potato_id,
+                    'potato_name' => $sourceProduct->label,
+                    'potato_variety' => $variety,
+                    'parent_potato_id' => $process->parent_potato_id,
+                    'parent_potato_name' => $parentProduct->label,
+                    'user_created' => $process->user_created,
+                    'date_creation' => $process->date_creation,
+                    'costs' => $costs,
+                    'caliber_outputs' => $calibers
+                ];
+            }
+            
+            return $processes;
+            
+        } catch (Exception $e) {
+            throw new RestException(500, $e->getMessage());
+        }
     }
 }

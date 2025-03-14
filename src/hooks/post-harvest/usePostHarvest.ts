@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { CreateCaliberForm } from "../../interfaces";
+import { CreateCaliberForm, CreateTongCostForm, TongProccesForm } from "../../interfaces";
 import { toast } from "react-toastify";
-import { getCalibers, postCreateCaliber } from "../../actions";
+import { deleteTongCostById, getCalibers, getTongCosts, postCreateCaliber, postCreateTongCost, postCreateTongProcess, getTongProcesses } from "../../actions";
 
 
 export const usePostHarvest = () => {
@@ -20,5 +20,45 @@ export const usePostHarvest = () => {
         queryFn: () => getCalibers(),
     });
 
-    return { createCaliber, listCalibers };
+    const createTongCost = useMutation({
+        mutationFn: (data: CreateTongCostForm) => postCreateTongCost(data),
+        onSuccess: () => {
+            toast.success('Costo de tong creado correctamente');
+        },
+        onError: (error) => {
+            toast.error('Error al crear el costo de tong: ' + error);
+        }
+    });
+
+    const listTongCosts = useQuery({
+        queryKey: ['tongCosts'],
+        queryFn: () => getTongCosts(),
+    });
+
+    const deleteTongCost = useMutation({
+        mutationFn: (id: string) => deleteTongCostById(id),
+        onSuccess: () => {
+            toast.success('Costo de tong eliminado correctamente');
+        },
+        onError: (error) => {
+            toast.error('Error al eliminar el costo de tong: ' + error);
+        }
+    });
+
+    const createTongProcess = useMutation({
+        mutationFn: (data: TongProccesForm) => postCreateTongProcess(data),
+        onSuccess: () => {
+            toast.success('Proceso de tong creado correctamente');
+        },
+        onError: (error) => {
+            toast.error('Error al crear el proceso de tong: ' + error);
+        }
+    });
+
+    const listTongProcesses = useQuery({
+        queryKey: ['tongProcesses'],
+        queryFn: () => getTongProcesses(),
+    });
+
+    return { createCaliber, listCalibers, createTongCost, listTongCosts, deleteTongCost, createTongProcess, listTongProcesses };
 }

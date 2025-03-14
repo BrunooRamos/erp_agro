@@ -77,6 +77,15 @@ export const HomePage = () => {
           to="/movements"
           description="Gestión de movimientos"
         />
+
+        <OptionCard
+          visible={true}
+          icon="fa-solid fa-file-invoice"
+          title="Post-cosecha"
+          to="/post-harvest"
+          description="Gestión de post-cosecha"
+        />
+
         <OptionCard
           visible={true}
           icon="fa-solid fa-money-bill"

@@ -6,16 +6,16 @@ export const PostHarvest = () => {
       <OptionCard
         visible={true}
         icon="fa-solid fa-layer-group"
-        title="Proceso Tong"
+        title="Tong"
         to="/post-harvest/tong"
-        description="Formulario para crear movimiento"
+        description="Formulario para crear y listar procesos de tong"
       />
       <OptionCard
         visible={true}
-        icon="fa-solid fa-layer-group"
-        title="Calibres"
-        to="/post-harvest/create-caliber"
-        description="Formulario para crear y listar calibres"
+        icon="fa-solid fa-droplet"
+        title="Lavado"
+        to="/post-harvest/wash"
+        description="Formulario para crear y listar procesos del lavadero"
       />
     </div>
   );

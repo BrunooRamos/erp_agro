@@ -6,7 +6,7 @@ export const FormField = ({
   helpText 
 }: { 
   label: string, 
-  error: string, 
+  error?: string, 
   children: React.ReactNode, 
   required?: boolean,
   helpText?: string 
