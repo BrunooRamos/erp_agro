@@ -534,3 +534,46 @@ CREATE TABLE `llx_vicentina_tong_costo` (
     CONSTRAINT `llx_vicentina_tong_costo_fk_user_creat` FOREIGN KEY (`fk_user_creat`) REFERENCES `llx_user` (`rowid`),
     CONSTRAINT `llx_vicentina_tong_costo_fk_user_modif` FOREIGN KEY (`fk_user_modif`) REFERENCES `llx_user` (`rowid`)
 ) ENGINE=InnoDB;
+
+
+CREATE TABLE `llx_vicentina_wash_cost` (
+    `rowid` int(11) NOT NULL AUTO_INCREMENT,
+    `date` date NOT NULL,
+    `energy_cost` decimal(24,8) DEFAULT 0.00000000,
+    `maintenance_cost` decimal(24,8) DEFAULT 0.00000000,
+    `bag_cost` decimal(24,8) DEFAULT 0.00000000,
+    `film_cost` decimal(24,8) DEFAULT 0.00000000,
+    `thread_cost` decimal(24,8) DEFAULT 0.00000000,
+    `pallet_cost` decimal(24,8) DEFAULT 0.00000000,
+    `other_cost` decimal(24,8) DEFAULT 0.00000000,
+    `fk_user_creat` int(11) DEFAULT NULL,
+    `fk_user_modif` int(11) DEFAULT NULL,
+    PRIMARY KEY (`rowid`),
+    KEY `fk_user_creat` (`fk_user_creat`),
+    KEY `fk_user_modif` (`fk_user_modif`),
+    CONSTRAINT `llx_vicentina_wash_cost_fk_user_creat` FOREIGN KEY (`fk_user_creat`) REFERENCES `llx_user` (`rowid`),
+    CONSTRAINT `llx_vicentina_wash_cost_fk_user_modif` FOREIGN KEY (`fk_user_modif`) REFERENCES `llx_user` (`rowid`)
+) ENGINE=InnoDB;
+
+ALTER TABLE `llx_vicentina_wash_cost`
+ADD COLUMN `label_cost` decimal(24,8) DEFAULT 0.00000000 AFTER `other_cost`;
+
+ALTER TABLE `llx_vicentina_wash_cost`
+ADD COLUMN `lift_cost` decimal(24,8) DEFAULT 0.00000000 AFTER `label_cost`;
+
+
+
+CREATE TABLE `llx_vicentina_wash_quality` (
+    `rowid` int(11) NOT NULL AUTO_INCREMENT,
+    `quality_name` varchar(255) NOT NULL,
+    `quality_description` text DEFAULT NULL,
+    `label_name` varchar(255) NOT NULL,
+    `label_description` text DEFAULT NULL,
+    `fk_user_creat` int(11) DEFAULT NULL,
+    `fk_user_modif` int(11) DEFAULT NULL,
+    PRIMARY KEY (`rowid`),
+    KEY `fk_user_creat` (`fk_user_creat`),
+    KEY `fk_user_modif` (`fk_user_modif`),
+    CONSTRAINT `llx_vicentina_wash_quality_fk_user_creat` FOREIGN KEY (`fk_user_creat`) REFERENCES `llx_user` (`rowid`),
+    CONSTRAINT `llx_vicentina_wash_quality_fk_user_modif` FOREIGN KEY (`fk_user_modif`) REFERENCES `llx_user` (`rowid`)
+) ENGINE=InnoDB;

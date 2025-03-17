@@ -55,6 +55,7 @@ import {
   HomeWash,
   QualitiesAndLabels,
   CostWash,
+  ProcessWash,
 } from "../features/index";
 import { MenuRoute } from "../interfaces";
 
@@ -398,6 +399,14 @@ export const menuRoutes: MenuRoute[] = [
     icon: "fa-solid fa-plus",
   },
   // WASH
+  {
+    to: "/post-harvest/wash/proceso-wash",
+    title: "Proceso Wash",
+    description: "Proceso Wash",
+    component: <ProcessWash />,
+    visible: false,
+    icon: "fa-solid fa-plus",
+  },
   {
     to: "/post-harvest/wash/qualities",
     title: "Crear y listar calidades y etiquetas",

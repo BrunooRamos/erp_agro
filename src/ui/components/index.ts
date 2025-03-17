@@ -14,8 +14,9 @@ export * from './common/EditProductModal';
 export * from './common/ActionButtons';
 export * from './common/ProductFilters';
 export * from './common/CategoryDropdowns';
-export * from './common/CaliberOutput';
 export * from './common/DeleteConfirmModal';
+export * from './common/CaliberOutput';
+export * from './common/QualityOutput';
 
 export * from './common/MultiLevelDropdown';
 export * from './common/ProductFilterWithTree';

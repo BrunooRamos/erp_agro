@@ -86,10 +86,18 @@ export interface CreateQualityForm {
   label: LabelForm;
 }
 
+export interface WashQualityResponse {
+  rowid:        string;
+  quality:      LabelForm;
+  label:        LabelForm;
+  user_created: string;
+}
+
 export interface LabelForm {
   name: string;
   descripcion: string;
 }
+
 
 
 export interface CostWashForm {
@@ -100,7 +108,35 @@ export interface CostWashForm {
   film_cost: number;
   thread_cost: number;
   pallet_cost: number;
+  label_cost: number;
+  lift_cost: number;
   other_cost: number;
 }
 
+export interface CostWashResponse extends CostWashForm {
+  id: number;
+}
 
+
+export interface WashProcessForm {
+  date: string;
+  parent_potato_id: string;
+  potato_id: string;
+  number_of_bins: number;
+  warehouse_id: number;
+  quality_outputs: QualityOutput[];
+  energy_cost: number;
+  maintenance_cost: number;
+  bag_cost: number;
+  film_cost: number;
+  thread_cost: number;
+  pallet_cost: number;
+  label_cost: number;
+  lift_cost: number;
+  other_cost: number;
+}
+
+export interface QualityOutput {
+  quality_id: number;
+  bins: number;
+}

@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { CreateCaliberForm, CreateTongCostForm, TongProccesForm } from "../../interfaces";
+import { CreateCaliberForm, CreateTongCostForm, TongProccesForm, CostWashForm, CreateQualityForm } from "../../interfaces";
 import { toast } from "react-toastify";
-import { deleteTongCostById, getCalibers, getTongCosts, postCreateCaliber, postCreateTongCost, postCreateTongProcess, getTongProcesses } from "../../actions";
+import { deleteTongCostById, getCalibers, getTongCosts, postCreateCaliber, postCreateTongCost, postCreateTongProcess, getTongProcesses, postCreateWashCost, getWashCosts, postCreateWashQuality, getWashQualities } from "../../actions";
 
 
 export const usePostHarvest = () => {
@@ -60,5 +60,35 @@ export const usePostHarvest = () => {
         queryFn: () => getTongProcesses(),
     });
 
-    return { createCaliber, listCalibers, createTongCost, listTongCosts, deleteTongCost, createTongProcess, listTongProcesses };
+    const createWashCost = useMutation({
+        mutationFn: (data: CostWashForm) => postCreateWashCost(data),
+        onSuccess: () => {
+            toast.success('Costo de lavado creado correctamente');
+        },
+        onError: (error) => {
+            toast.error('Error al crear el costo de lavado: ' + error);
+        }
+    });
+
+    const listWashCosts = useQuery({
+        queryKey: ['washCosts'],
+        queryFn: () => getWashCosts(),
+    });
+
+    const createWashQuality = useMutation({
+        mutationFn: (data: CreateQualityForm) => postCreateWashQuality(data),
+        onSuccess: () => {
+            toast.success('Calidad de lavado creada correctamente');
+        },
+        onError: (error) => {
+            toast.error('Error al crear la calidad de lavado: ' + error);
+        }
+    });
+
+    const listWashQualities = useQuery({
+        queryKey: ['washQualities'],
+        queryFn: () => getWashQualities(),
+    }); 
+
+    return { createCaliber, listCalibers, createTongCost, listTongCosts, deleteTongCost, createTongProcess, listTongProcesses, createWashCost, listWashCosts, createWashQuality, listWashQualities   };
 }

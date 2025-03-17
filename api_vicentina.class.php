@@ -1707,9 +1707,6 @@ class Vicentina extends DolibarrApi
         }
     }
 
-
-
-
     /**
      * Create new Seed Map
      *
@@ -3327,14 +3324,14 @@ class Vicentina extends DolibarrApi
             // Determine which variant to use based on type
             $variantType = ($request_data['type'] === 'semilla') ? 'S' : 'C';
             $variantRef = $request_data['variety_code'] . '_' . $variantType . '_SP';
-            
+
             // Create variant product
             $variantProduct = new Product($this->db);
             $result = $variantProduct->fetch(null, $variantRef);
 
             if ($result <= 0) {
                 $variantProduct->ref = $variantRef;
-                $variantProduct->label = $variantRef;
+                $variantProduct->label = $mainProduct->ref; // Cambiado: ahora usa el ref del padre como label
                 $variantProduct->type = 0;
                 $variantProduct->status = 1;
                 $variantProduct->tosell = 0; // Not for sale
@@ -3437,9 +3434,9 @@ class Vicentina extends DolibarrApi
             }
 
             $harvest_id = $this->db->last_insert_id(MAIN_DB_PREFIX . 'vicentina_papa_cosecha');
-            
+
             $this->db->commit();
-            
+
             return array(
                 'main_product_id' => $mainProduct->id,
                 'variant_product_id' => $variantProduct->id,
@@ -3652,10 +3649,10 @@ class Vicentina extends DolibarrApi
 
             // Calculate total fuel consumption in liters (hours × fuel_consumption_per_hour)
             $totalFuelConsumption = floatval($request_data['hours']) * floatval($latest_cost->fuel_consumption_per_hour);
-            
+
             // Calculate total fuel cost in local currency (total consumption × fuel price)
             $totalFuelCostLocal = $totalFuelConsumption * $fuelPrice;
-            
+
             // Calculate total fuel cost in USD
             $totalFuelCostUSD = $totalFuelCostLocal / $dollarAvg;
 
@@ -4355,7 +4352,7 @@ class Vicentina extends DolibarrApi
                          WHERE DATE(date) = CURDATE()";
             $checkResult = $this->db->query($checkSql);
             $dollarUpdatedToday = false;
-            
+
             if ($checkResult) {
                 $row = $this->db->fetch_object($checkResult);
                 $dollarUpdatedToday = ($row->count > 0);
@@ -4383,7 +4380,7 @@ class Vicentina extends DolibarrApi
                              WHERE DATE(date) = CURDATE()";
             $checkFuelResult = $this->db->query($checkFuelSql);
             $fuelsUpdatedToday = false;
-            
+
             if ($checkFuelResult) {
                 $row = $this->db->fetch_object($checkFuelResult);
                 $fuelsUpdatedToday = ($row->count > 0);
@@ -4460,12 +4457,12 @@ class Vicentina extends DolibarrApi
                     FROM " . MAIN_DB_PREFIX . "vicentina_dolar 
                     WHERE date >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR) 
                     ORDER BY date DESC";
-                    
+
             $result = $this->db->query($sql);
             if (!$result) {
                 throw new Exception('Error retrieving dollar prices: ' . $this->db->lasterror());
             }
-            
+
             $dollarPrices = array();
             while ($row = $this->db->fetch_object($result)) {
                 $dollarPrices[] = array(
@@ -4477,18 +4474,18 @@ class Vicentina extends DolibarrApi
                     'moneda' => $row->moneda
                 );
             }
-            
+
             // Get fuel prices for the last year
             $sql = "SELECT rowid, date, super, premium, gasoil10s, gasoil50s 
                     FROM " . MAIN_DB_PREFIX . "vicentina_fuels 
                     WHERE date >= DATE_SUB(CURDATE(), INTERVAL 1 YEAR) 
                     ORDER BY date DESC";
-                    
+
             $result = $this->db->query($sql);
             if (!$result) {
                 throw new Exception('Error retrieving fuel prices: ' . $this->db->lasterror());
             }
-            
+
             $fuelPrices = array();
             while ($row = $this->db->fetch_object($result)) {
                 $fuelPrices[] = array(
@@ -4500,13 +4497,13 @@ class Vicentina extends DolibarrApi
                     'gasoil50s' => floatval($row->gasoil50s)
                 );
             }
-            
+
             // Return combined results
             return array(
                 'dollar' => $dollarPrices,
                 'fuels' => $fuelPrices
             );
-            
+
         } catch (Exception $e) {
             throw new RestException(503, 'Error retrieving historical prices: ' . $e->getMessage());
         }
@@ -4526,12 +4523,12 @@ class Vicentina extends DolibarrApi
             $sql = "SELECT super, premium, gasoil10s, gasoil50s 
                     FROM " . MAIN_DB_PREFIX . "vicentina_fuels 
                     WHERE date = '" . $this->db->escape($date) . "'";
-            
+
             $result = $this->db->query($sql);
             if (!$result) {
                 throw new Exception('Error retrieving fuel prices: ' . $this->db->lasterror());
             }
-            
+
             $fuelPrices = array();
             while ($row = $this->db->fetch_object($result)) {
                 $fuelPrices['super'] = floatval($row->super);
@@ -4539,7 +4536,7 @@ class Vicentina extends DolibarrApi
                 $fuelPrices['gasoil10s'] = floatval($row->gasoil10s);
                 $fuelPrices['gasoil50s'] = floatval($row->gasoil50s);
             }
-            
+
             return $fuelPrices;
         } catch (Exception $e) {
             throw new RestException(503, 'Error retrieving fuel prices: ' . $e->getMessage());
@@ -4906,7 +4903,7 @@ class Vicentina extends DolibarrApi
             // Delete the record
             $sql = "DELETE FROM " . MAIN_DB_PREFIX . "vicentina_tong_costo WHERE rowid = " . (int) $id;
             $result = $this->db->query($sql);
-            
+
             if (!$result) {
                 throw new Exception('Error deleting tong cost record: ' . $this->db->lasterror());
             }
@@ -5065,17 +5062,17 @@ class Vicentina extends DolibarrApi
                 if (!$res) {
                     throw new Exception('Error fetching caliber name: ' . $this->db->lasterror());
                 }
-                
+
                 $obj = $this->db->fetch_object($res);
                 if (!$obj) {
                     throw new Exception('Caliber not found with ID: ' . $caliber_output['caliber_id']);
                 }
-                
+
                 $caliber_name = $obj->name;
 
                 // Create new variant with caliber name
                 $variantRef = $baseRef . '_' . $caliber_name;
-                
+
                 // Check if variant already exists
                 $variantProduct = new Product($this->db);
                 $result = $variantProduct->fetch(null, $variantRef);
@@ -5083,7 +5080,7 @@ class Vicentina extends DolibarrApi
                 if ($result <= 0) {
                     // Create new variant
                     $variantProduct->ref = $variantRef;
-                    $variantProduct->label = $variantRef;
+                    $variantProduct->label = $parentProduct->ref; // Cambiado: ahora usa el ref del padre como label
                     $variantProduct->type = 0;
                     $variantProduct->status = 1;
                     $variantProduct->tosell = 0; // Not for sale
@@ -5109,10 +5106,10 @@ class Vicentina extends DolibarrApi
                                     $variantProduct->array_options['options_' . $key] = $value;
                                 }
                             }
-                            
+
                             // Update tipo to caliber name
                             $variantProduct->array_options['options_tipo'] = $caliber_name;
-                            
+
                             $result = $variantProduct->insertExtraFields();
                             if ($result < 0) {
                                 throw new Exception('Error adding extrafields to variant: ' . $variantProduct->error);
@@ -5170,7 +5167,7 @@ class Vicentina extends DolibarrApi
             }
 
             $this->db->commit();
-            
+
             return [
                 'tong_process_id' => $tong_process_id,
                 'source_product_id' => $sourceProduct->id,
@@ -5214,16 +5211,16 @@ class Vicentina extends DolibarrApi
             }
 
             $process = $this->db->fetch_object($result);
-            
+
             // Get cost data
             $sql = "SELECT * FROM " . MAIN_DB_PREFIX . "vicentina_tong_proceso_costo";
             $sql .= " WHERE tong_process_id = " . (int) $id;
-            
+
             $result = $this->db->query($sql);
             if (!$result) {
                 throw new RestException(500, 'Error retrieving tong process costs: ' . $this->db->lasterror());
             }
-            
+
             $costs = [];
             while ($cost = $this->db->fetch_object($result)) {
                 $costs[] = [
@@ -5235,18 +5232,18 @@ class Vicentina extends DolibarrApi
                     'gata_cost' => $cost->gata_cost
                 ];
             }
-            
+
             // Get caliber outputs
             $sql = "SELECT c.*, cal.name as caliber_name";
             $sql .= " FROM " . MAIN_DB_PREFIX . "vicentina_tong_proceso_caliber as c";
             $sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "vicentina_caliber as cal ON c.caliber_id = cal.rowid";
             $sql .= " WHERE c.tong_process_id = " . (int) $id;
-            
+
             $result = $this->db->query($sql);
             if (!$result) {
                 throw new RestException(500, 'Error retrieving tong process calibers: ' . $this->db->lasterror());
             }
-            
+
             $calibers = [];
             while ($caliber = $this->db->fetch_object($result)) {
                 $calibers[] = [
@@ -5256,35 +5253,53 @@ class Vicentina extends DolibarrApi
                     'bins' => $caliber->bins
                 ];
             }
-            
+
             // Get product information
             require_once DOL_DOCUMENT_ROOT . '/product/class/product.class.php';
-            
+
             $sourceProduct = new Product($this->db);
             $sourceProduct->fetch($process->potato_id);
-            
+
             $parentProduct = new Product($this->db);
             $parentProduct->fetch($process->parent_potato_id);
-            
+
             // Build response
             $response = [
                 'rowid' => $process->rowid,
                 'date' => $process->date,
                 'number_of_bins' => $process->number_of_bins,
                 'potato_id' => $process->potato_id,
-                'potato_ref' => $sourceProduct->ref,
-                'potato_label' => $sourceProduct->label,
+                'potato_name' => $sourceProduct->label,
+                'potato_variety' => $sourceProduct->array_options['options_variedad'],
+                'potato_type' => $sourceProduct->array_options['options_tipo'],
                 'parent_potato_id' => $process->parent_potato_id,
-                'parent_potato_ref' => $parentProduct->ref,
-                'parent_potato_label' => $parentProduct->label,
+                'parent_potato_name' => $parentProduct->label,
                 'user_created' => $process->user_created,
                 'date_creation' => $process->date_creation,
                 'costs' => $costs,
                 'caliber_outputs' => $calibers
             ];
-            
+
+            // Get output products
+            $output_products = [];
+            foreach ($calibers as $caliber) {
+                $variantRef = substr($sourceProduct->ref, 0, -3) . '_' . $caliber['caliber_name'];
+                $variantProduct = new Product($this->db);
+                $variantProduct->fetch(null, $variantRef);
+
+                $output_products[] = [
+                    'caliber_id' => $caliber['caliber_id'],
+                    'caliber_name' => $caliber['caliber_name'],
+                    'product_id' => $variantProduct->id,
+                    'product_name' => $variantProduct->label,
+                    'bins' => $caliber['bins']
+                ];
+            }
+
+            $response['output_products'] = $output_products;
+
             return $response;
-            
+
         } catch (Exception $e) {
             throw new RestException(500, $e->getMessage());
         }
@@ -5306,23 +5321,23 @@ class Vicentina extends DolibarrApi
             $sql .= " FROM " . MAIN_DB_PREFIX . "vicentina_tong_proceso as p";
             $sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "user as u ON p.fk_user_creat = u.rowid";
             $sql .= " ORDER BY p.date DESC";
-            
+
             $result = $this->db->query($sql);
             if (!$result) {
                 throw new RestException(500, 'Error retrieving tong processes: ' . $this->db->lasterror());
             }
-            
+
             $processes = [];
             while ($process = $this->db->fetch_object($result)) {
                 // Get source and parent product info
                 require_once DOL_DOCUMENT_ROOT . '/product/class/product.class.php';
-                
+
                 $sourceProduct = new Product($this->db);
                 $sourceProduct->fetch($process->potato_id);
-                
+
                 $parentProduct = new Product($this->db);
                 $parentProduct->fetch($process->parent_potato_id);
-                
+
                 // Get source product variety from extrafields
                 $sql_extra = "SELECT variedad FROM " . MAIN_DB_PREFIX . "product_extrafields WHERE fk_object = " . (int) $process->potato_id;
                 $res_extra = $this->db->query($sql_extra);
@@ -5330,11 +5345,11 @@ class Vicentina extends DolibarrApi
                 if ($res_extra && $obj_extra = $this->db->fetch_object($res_extra)) {
                     $variety = $obj_extra->variedad;
                 }
-                
+
                 // Get costs
                 $sql2 = "SELECT * FROM " . MAIN_DB_PREFIX . "vicentina_tong_proceso_costo";
                 $sql2 .= " WHERE tong_process_id = " . (int) $process->rowid;
-                
+
                 $costResult = $this->db->query($sql2);
                 $costs = [];
                 if ($costResult) {
@@ -5350,13 +5365,13 @@ class Vicentina extends DolibarrApi
                         ];
                     }
                 }
-                
+
                 // Get caliber outputs
                 $sql3 = "SELECT c.*, cal.name as caliber_name";
                 $sql3 .= " FROM " . MAIN_DB_PREFIX . "vicentina_tong_proceso_caliber as c";
                 $sql3 .= " LEFT JOIN " . MAIN_DB_PREFIX . "vicentina_caliber as cal ON c.caliber_id = cal.rowid";
                 $sql3 .= " WHERE c.tong_process_id = " . (int) $process->rowid;
-                
+
                 $caliberResult = $this->db->query($sql3);
                 $calibers = [];
                 $totalOutputBins = 0;
@@ -5371,7 +5386,7 @@ class Vicentina extends DolibarrApi
                         $totalOutputBins += intval($caliber->bins);
                     }
                 }
-                
+
                 $processes[] = [
                     'rowid' => $process->rowid,
                     'date' => $process->date,
@@ -5384,14 +5399,253 @@ class Vicentina extends DolibarrApi
                     'user_created' => $process->user_created,
                     'date_creation' => $process->date_creation,
                     'costs' => $costs,
-                    'caliber_outputs' => $calibers
+                    'caliber_outputs' => $calibers,
+                    'output_bins' => $totalOutputBins,
+                    'efficiency' => ($totalOutputBins > 0) ? round(($totalOutputBins / $process->number_of_bins) * 100, 2) : 0
                 ];
             }
-            
+
             return $processes;
-            
+
         } catch (Exception $e) {
             throw new RestException(500, $e->getMessage());
         }
     }
+
+    /**
+     * Create wash cost
+     *
+     * @url POST /wash/cost/create
+     * @param array $request_data {
+     *     @var string $date Date
+     *     @var float $energy_cost Energy cost
+     *     @var float $maintenance_cost Maintenance cost
+     *     @var float $bag_cost Bag cost
+     *     @var float $film_cost Film cost
+     *     @var float $thread_cost Thread cost
+     *     @var float $pallet_cost Pallet cost
+     *     @var float $other_cost Other costs
+     *     @var float $label_cost Label cost
+     *     @var float $lift_cost Lift cost
+     * }
+     * @return array Created wash cost info
+     * @throws RestException 400 Bad Request
+     * @throws RestException 500 Internal Server Error
+     */
+    public function createWashCost($request_data)
+    {
+        global $user, $db;
+
+        if (empty($request_data['date'])) {
+            throw new RestException(400, 'Date is required');
+        }
+
+        $this->db->begin();
+
+        try {
+            $sql = "INSERT INTO " . MAIN_DB_PREFIX . "vicentina_wash_cost (";
+            $sql .= "date, energy_cost, maintenance_cost, bag_cost, film_cost, ";
+            $sql .= "thread_cost, pallet_cost, other_cost, label_cost, lift_cost, fk_user_creat";
+            $sql .= ") VALUES (";
+            $sql .= "'" . $this->db->escape($request_data['date']) . "', ";
+            $sql .= (isset($request_data['energy_cost']) ? floatval($request_data['energy_cost']) : 0) . ", ";
+            $sql .= (isset($request_data['maintenance_cost']) ? floatval($request_data['maintenance_cost']) : 0) . ", ";
+            $sql .= (isset($request_data['bag_cost']) ? floatval($request_data['bag_cost']) : 0) . ", ";
+            $sql .= (isset($request_data['film_cost']) ? floatval($request_data['film_cost']) : 0) . ", ";
+            $sql .= (isset($request_data['thread_cost']) ? floatval($request_data['thread_cost']) : 0) . ", ";
+            $sql .= (isset($request_data['pallet_cost']) ? floatval($request_data['pallet_cost']) : 0) . ", ";
+            $sql .= (isset($request_data['other_cost']) ? floatval($request_data['other_cost']) : 0) . ", ";
+            $sql .= (isset($request_data['label_cost']) ? floatval($request_data['label_cost']) : 0) . ", ";
+            $sql .= (isset($request_data['lift_cost']) ? floatval($request_data['lift_cost']) : 0) . ", ";
+            $sql .= (int) $user->id;
+            $sql .= ")";
+
+            $result = $this->db->query($sql);
+            if (!$result) {
+                throw new Exception('Error creating wash cost: ' . $this->db->lasterror());
+            }
+
+            $id = $this->db->last_insert_id(MAIN_DB_PREFIX . 'vicentina_wash_cost');
+
+            $this->db->commit();
+
+            return array(
+                'rowid' => $id,
+                'date' => $request_data['date'],
+                'energy_cost' => floatval($request_data['energy_cost'] ?? 0),
+                'maintenance_cost' => floatval($request_data['maintenance_cost'] ?? 0),
+                'bag_cost' => floatval($request_data['bag_cost'] ?? 0),
+                'film_cost' => floatval($request_data['film_cost'] ?? 0),
+                'thread_cost' => floatval($request_data['thread_cost'] ?? 0),
+                'pallet_cost' => floatval($request_data['pallet_cost'] ?? 0),
+                'other_cost' => floatval($request_data['other_cost'] ?? 0),
+                'label_cost' => floatval($request_data['label_cost'] ?? 0),
+                'lift_cost' => floatval($request_data['lift_cost'] ?? 0),
+                'message' => 'Wash cost created successfully'
+            );
+
+        } catch (Exception $e) {
+            $this->db->rollback();
+            throw new RestException(500, $e->getMessage());
+        }
+    }
+
+    /**
+     * List wash costs
+     *
+     * @url GET /wash/costs/list
+     * @return array List of wash costs
+     * @throws RestException 500 Internal Server Error
+     */
+    public function listWashCosts()
+    {
+        try {
+            $sql = "SELECT w.*, u.login as user_created";
+            $sql .= " FROM " . MAIN_DB_PREFIX . "vicentina_wash_cost as w";
+            $sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "user as u ON w.fk_user_creat = u.rowid";
+            $sql .= " ORDER BY w.date DESC";
+
+            $result = $this->db->query($sql);
+            if (!$result) {
+                throw new Exception('Error retrieving wash costs: ' . $this->db->lasterror());
+            }
+
+            $costs = array();
+            while ($obj = $this->db->fetch_object($result)) {
+                $costs[] = array(
+                    'rowid' => $obj->rowid,
+                    'date' => $obj->date,
+                    'energy_cost' => floatval($obj->energy_cost),
+                    'maintenance_cost' => floatval($obj->maintenance_cost),
+                    'bag_cost' => floatval($obj->bag_cost),
+                    'film_cost' => floatval($obj->film_cost),
+                    'thread_cost' => floatval($obj->thread_cost),
+                    'pallet_cost' => floatval($obj->pallet_cost),
+                    'other_cost' => floatval($obj->other_cost),
+                    'label_cost' => floatval($obj->label_cost),
+                    'lift_cost' => floatval($obj->lift_cost),
+                    'total_cost' => floatval($obj->energy_cost) + 
+                                   floatval($obj->maintenance_cost) + 
+                                   floatval($obj->bag_cost) + 
+                                   floatval($obj->film_cost) + 
+                                   floatval($obj->thread_cost) + 
+                                   floatval($obj->pallet_cost) + 
+                                   floatval($obj->other_cost) +
+                                   floatval($obj->label_cost) +
+                                   floatval($obj->lift_cost),
+                    'user_created' => $obj->user_created
+                );
+            }
+
+            return $costs;
+
+        } catch (Exception $e) {
+            throw new RestException(500, $e->getMessage());
+        }
+    }
+
+    /**
+ * Create wash quality
+ *
+ * @url POST /wash/quality/create
+ * @param array $request_data {
+ *     @var array $label Label information {
+ *         @var string $name Label name
+ *         @var string $descripcion Label description
+ *     }
+ *     @var string $name Quality name
+ *     @var string $description Quality description
+ * }
+ * @return array Created wash quality info
+ * @throws RestException 400 Bad Request
+ * @throws RestException 500 Internal Server Error
+ */
+public function createWashQuality($request_data)
+{
+    global $user, $db;
+
+    if (empty($request_data['name']) || empty($request_data['label']['name'])) {
+        throw new RestException(400, 'Quality name and label name are required');
+    }
+
+    $this->db->begin();
+
+    try {
+        $sql = "INSERT INTO " . MAIN_DB_PREFIX . "vicentina_wash_quality (";
+        $sql .= "quality_name, quality_description, label_name, label_description, fk_user_creat";
+        $sql .= ") VALUES (";
+        $sql .= "'" . $this->db->escape($request_data['name']) . "', ";
+        $sql .= "'" . $this->db->escape($request_data['description'] ?? '') . "', ";
+        $sql .= "'" . $this->db->escape($request_data['label']['name']) . "', ";
+        $sql .= "'" . $this->db->escape($request_data['label']['descripcion'] ?? '') . "', ";
+        $sql .= (int) $user->id;
+        $sql .= ")";
+
+        $result = $this->db->query($sql);
+        if (!$result) {
+            throw new Exception('Error creating wash quality: ' . $this->db->lasterror());
+        }
+
+        $id = $this->db->last_insert_id(MAIN_DB_PREFIX . 'vicentina_wash_quality');
+
+        $this->db->commit();
+
+        return array(
+            'rowid' => $id,
+            'quality_name' => $request_data['name'],
+            'quality_description' => $request_data['description'] ?? '',
+            'label_name' => $request_data['label']['name'],
+            'label_description' => $request_data['label']['descripcion'] ?? '',
+            'message' => 'Wash quality created successfully'
+        );
+
+    } catch (Exception $e) {
+        $this->db->rollback();
+        throw new RestException(500, $e->getMessage());
+    }
+}
+
+/**
+ * List wash qualities
+ *
+ * @url GET /wash/quality/list
+ * @return array List of wash qualities
+ * @throws RestException 500 Internal Server Error
+ */
+public function listWashQualities()
+{
+    try {
+        $sql = "SELECT w.*, u.login as user_created";
+        $sql .= " FROM " . MAIN_DB_PREFIX . "vicentina_wash_quality as w";
+        $sql .= " LEFT JOIN " . MAIN_DB_PREFIX . "user as u ON w.fk_user_creat = u.rowid";
+        $sql .= " ORDER BY w.quality_name ASC";
+
+        $result = $this->db->query($sql);
+        if (!$result) {
+            throw new Exception('Error retrieving wash qualities: ' . $this->db->lasterror());
+        }
+
+        $qualities = array();
+        while ($obj = $this->db->fetch_object($result)) {
+            $qualities[] = array(
+                'rowid' => $obj->rowid,
+                'quality' => [
+                    'name' => $obj->quality_name,
+                    'description' => $obj->quality_description
+                ],
+                'label' => [
+                    'name' => $obj->label_name,
+                    'description' => $obj->label_description
+                ],
+                'user_created' => $obj->user_created
+            );
+        }
+
+        return $qualities;
+
+    } catch (Exception $e) {
+        throw new RestException(500, $e->getMessage());
+    }
+}
+
 }

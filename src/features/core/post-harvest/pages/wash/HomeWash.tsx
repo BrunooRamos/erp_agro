@@ -5,6 +5,13 @@ export const HomeWash = () => {
     <div className="flex flex-col gap-4 h-full justify-center">
       <OptionCard
         visible={true}
+        icon="fa-solid fa-plus"
+        title="Proceso Wash"
+        to="/post-harvest/wash/proceso-wash"
+        description="Formulario para crear proceso wash"
+      />
+      <OptionCard
+        visible={true}
         icon="fa-solid fa-star"
         title="Calidades y Etiquetas"
         to="/post-harvest/wash/qualities"
