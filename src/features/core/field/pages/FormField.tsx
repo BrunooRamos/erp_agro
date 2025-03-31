@@ -15,7 +15,6 @@ export const FormField = () => {
     
     const navigate = useNavigate();
 
-
     console.log('code', code);
 
     // Form
@@ -45,6 +44,7 @@ export const FormField = () => {
     //!Form submit
     const onSubmit = handleSubmit((data) => {
         if (code) {
+            data.rented = rented === "true" ? true : false;
             console.log('data', data);
             updateFieldMutation({ 
                 code, 

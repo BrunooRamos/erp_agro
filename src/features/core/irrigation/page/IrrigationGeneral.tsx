@@ -96,7 +96,7 @@ export const IrrigationGeneral = () => {
       {/* Spinner de carga oculto por defecto */}
       <div
         id="loading-spinner"
-        className="fixed inset-0 flex items-center justify-center bg-white bg-opacity-75 z-50 hidden"
+        className="fixed inset-0 items-center justify-center bg-white bg-opacity-75 z-50 hidden"
       >
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-zinc-800"></div>
       </div>
@@ -190,13 +190,13 @@ export const IrrigationGeneral = () => {
                 </tr>
               </thead>
               <tbody>
-                {selectedLots.map((lot) => {
+                {/* Usar Set para obtener lotes únicos */}
+                {Array.from(new Set(selectedLots.map(lot => lot.rowid))).map((lotId) => {
+                  const lot = selectedLots.find(l => l.rowid === lotId)!;
                   // Filtrar sublotes que pertenecen a este lote
                   const childSublots = selectedSublots.filter(
                     (sublot) => sublot.id_parent_lote === lot.rowid
                   );
-
-                  const hasChildSublots = childSublots.length > 0;
 
                   return (
                     <React.Fragment key={lot.rowid}>
@@ -205,9 +205,7 @@ export const IrrigationGeneral = () => {
                         <td className="py-2 px-4">{lot.campo_name}</td>
                         <td className="py-2 px-4">Lote</td>
                         <td className="py-2 px-4 text-right">
-                          {hasChildSublots && lot.area_utilizada === 0
-                            ? ""
-                            : lot.area_utilizada.toFixed(2)}
+                          {childSublots.length > 0 ? "" : lot.area_utilizada.toFixed(2)}
                         </td>
                       </tr>
                       {childSublots.map((sublot) => (
@@ -224,25 +222,6 @@ export const IrrigationGeneral = () => {
                   );
                 })}
 
-                {/* Mostrar sublotes que no tienen un lote padre en la lista */}
-                {selectedSublots
-                  .filter(
-                    (sublot) =>
-                      !selectedLots.some(
-                        (lot) => lot.rowid === sublot.id_parent_lote
-                      )
-                  )
-                  .map((sublot) => (
-                    <tr key={sublot.id_sub_lote} className="border-b">
-                      <td className="py-2 px-4">{sublot.name}</td>
-                      <td className="py-2 px-4"></td>
-                      <td className="py-2 px-4">Sublote</td>
-                      <td className="py-2 px-4 text-right">
-                        {sublot.area_utilizada.toFixed(2)}
-                      </td>
-                    </tr>
-                  ))}
-
                 {/* Fila de total */}
                 <tr className="border-t-2 border-gray-300 font-bold bg-gray-100">
                   <td colSpan={3} className="py-2 px-4 text-right">
@@ -252,11 +231,10 @@ export const IrrigationGeneral = () => {
                     {(
                       selectedLots
                         .filter((lot) => {
-                          // Si tiene sublotes y área 0, no lo contamos
                           const hasChildSublots = selectedSublots.some(
                             (sublot) => sublot.id_parent_lote === lot.rowid
                           );
-                          return !(hasChildSublots && lot.area_utilizada === 0);
+                          return !hasChildSublots;
                         })
                         .reduce((sum, lot) => sum + lot.area_utilizada, 0) +
                       selectedSublots.reduce(

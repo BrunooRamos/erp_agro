@@ -111,10 +111,11 @@ export interface CostWashForm {
   label_cost: number;
   lift_cost: number;
   other_cost: number;
+  total_cost: number;
 }
 
 export interface CostWashResponse extends CostWashForm {
-  id: number;
+  rowid: string;
 }
 
 
@@ -138,5 +139,5 @@ export interface WashProcessForm {
 
 export interface QualityOutput {
   quality_id: number;
-  bins: number;
+  bags: number;
 }

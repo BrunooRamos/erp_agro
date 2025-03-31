@@ -49,34 +49,38 @@ export const IrrigationCard = ({ data }: { data: IrrigationResponse }) => {
           Lotes Utilizados
         </p>
         <div className="flex flex-col gap-2">
-          {data.selectedLots.map((lot) => (
-            <div key={lot.rowid} className="flex flex-col gap-1">
-              <div className="text-sm text-gray-700 font-medium">
-                Lote padre:{" "}
-                <span className="font-semibold">{lot.name}</span>
-              </div>
-              {lot.area_utilizada === 0 ? (
-                // Sublotes
-                <div className="flex flex-wrap gap-2">
-                  {data.selectedSublots
-                    .filter((sublot) => sublot.id_parent_lote === lot.rowid)
-                    .map((sublot) => (
-                      <span
-                        key={sublot.id_sub_lote}
-                        className="text-xs text-gray-600 bg-gray-100 rounded px-2 py-1"
-                      >
-                        {sublot.name} - {sublot.area_utilizada} ha
-                      </span>
-                    ))}
+          {/* Use Set to get unique lot IDs */}
+          {Array.from(new Set(data.selectedLots.map(lot => lot.rowid))).map(lotId => {
+            const lot = data.selectedLots.find(l => l.rowid === lotId)!;
+            return (
+              <div key={lot.rowid} className="flex flex-col gap-1">
+                <div className="text-sm text-gray-700 font-medium">
+                  Lote padre:{" "}
+                  <span className="font-semibold">{lot.name}</span>
                 </div>
-              ) : (
-                // Área del lote padre
-                <span className="text-xs text-gray-600 bg-gray-100 rounded px-2 py-1">
-                  Área utilizada: {lot.area_utilizada} ha
-                </span>
-              )}
-            </div>
-          ))}
+                {lot.area_utilizada === 0 ? (
+                  // Sublotes
+                  <div className="flex flex-wrap gap-2">
+                    {data.selectedSublots
+                      .filter((sublot) => sublot.id_parent_lote === lot.rowid)
+                      .map((sublot) => (
+                        <span
+                          key={sublot.id_sub_lote}
+                          className="text-xs text-gray-600 bg-gray-100 rounded px-2 py-1"
+                        >
+                          {sublot.name} - {sublot.area_utilizada} ha
+                        </span>
+                      ))}
+                  </div>
+                ) : (
+                  // Área del lote padre
+                  <span className="text-xs text-gray-600 bg-gray-100 rounded px-2 py-1">
+                    {lot.name} - {lot.area_utilizada} ha
+                  </span>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 

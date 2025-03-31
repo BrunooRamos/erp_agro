@@ -105,6 +105,9 @@ export interface RAFSendData {
   selectedProducts: SelectedProducts[];
   sub_type: string;
   type: string;
+  labor_code: string;
+  cusa_cost: number;
+  lts: number;
 }
 
 

@@ -183,6 +183,13 @@ CREATE TABLE `llx_vicentina_raf` (
 ) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_uca1400_ai_ci;
 
 
+ALTER TABLE `llx_vicentina_raf`
+ADD COLUMN `cusa_code` varchar(255) NOT NULL AFTER `total_area`,
+ADD COLUMN `laboreo` varchar(255) NOT NULL AFTER `cusa_code`,
+ADD COLUMN `cusa_cost` decimal(10,2) DEFAULT 0.00 AFTER `laboreo`,
+ADD COLUMN `lts` decimal(10,2) DEFAULT 0.00 AFTER `cusa_cost`;
+
+
 CREATE TABLE `llx_vicentina_seed_map` (
     `rowid` int(11) NOT NULL AUTO_INCREMENT,
     `date` date NOT NULL,
@@ -334,6 +341,9 @@ ADD COLUMN `cost_mother_line` decimal(24,8) DEFAULT 0.00000000 AFTER `second_equ
 ADD COLUMN `meters_of_line_mother` decimal(24,8) DEFAULT 0.00000000 AFTER `cost_mother_line`;
 
 
+    ALTER TABLE `llx_vicentina_irrigation`
+    ADD COLUMN `name` varchar(255) DEFAULT NULL AFTER `crop_code`;
+
 
 CREATE TABLE `llx_vicentina_irrigation_hours` (
     `rowid` int(11) NOT NULL AUTO_INCREMENT,
@@ -356,6 +366,11 @@ CREATE TABLE `llx_vicentina_irrigation_hours` (
 
 ALTER TABLE `llx_vicentina_irrigation_hours` ADD COLUMN `fuel_price` decimal(24,8) DEFAULT 0.00000000 AFTER `hours`;
 
+ALTER TABLE `llx_vicentina_irrigation_hours`
+ADD COLUMN `fk_riego` int(11) DEFAULT NULL AFTER `fuel_price`,
+ADD CONSTRAINT `llx_vicentina_irrigation_hours_fk_riego` FOREIGN KEY (`fk_riego`) REFERENCES `llx_vicentina_irrigation` (`rowid`);
+
+
 
 CREATE TABLE `llx_vicentina_irrigation_fertirriego` (
     `rowid` int(11) NOT NULL AUTO_INCREMENT,
@@ -374,6 +389,9 @@ CREATE TABLE `llx_vicentina_irrigation_fertirriego` (
 ) ENGINE=InnoDB;
 
 
+ALTER TABLE `llx_vicentina_irrigation_fertirriego`
+ADD COLUMN `fk_riego` int(11) DEFAULT NULL AFTER `total_area`,
+ADD CONSTRAINT `llx_vicentina_irrigation_fertirriego_fk_riego` FOREIGN KEY (`fk_riego`) REFERENCES `llx_vicentina_irrigation` (`rowid`);
 
 CREATE TABLE `llx_vicentina_fuels` (
     `rowid` int(11) NOT NULL AUTO_INCREMENT,
@@ -577,3 +595,65 @@ CREATE TABLE `llx_vicentina_wash_quality` (
     CONSTRAINT `llx_vicentina_wash_quality_fk_user_creat` FOREIGN KEY (`fk_user_creat`) REFERENCES `llx_user` (`rowid`),
     CONSTRAINT `llx_vicentina_wash_quality_fk_user_modif` FOREIGN KEY (`fk_user_modif`) REFERENCES `llx_user` (`rowid`)
 ) ENGINE=InnoDB;
+
+
+
+
+CREATE TABLE `llx_vicentina_wash_proceso_calidad` (
+    `rowid` int(11) NOT NULL AUTO_INCREMENT,
+    `date` date NOT NULL,
+    `wash_process_id` int(11) DEFAULT 0,
+    `quality_id` int(11) DEFAULT 0,
+    `fk_user_creat` int(11) DEFAULT NULL,
+    `fk_user_modif` int(11) DEFAULT NULL,
+    PRIMARY KEY (`rowid`),
+    KEY `fk_user_creat` (`fk_user_creat`),
+    KEY `fk_user_modif` (`fk_user_modif`),
+    CONSTRAINT `llx_vicentina_wash_proceso_calidad_fk_user_creat` FOREIGN KEY (`fk_user_creat`) REFERENCES `llx_user` (`rowid`),
+    CONSTRAINT `llx_vicentina_wash_proceso_calidad_fk_user_modif` FOREIGN KEY (`fk_user_modif`) REFERENCES `llx_user` (`rowid`),
+    CONSTRAINT `llx_vicentina_wash_proceso_calidad_fk_wash_process` FOREIGN KEY (`wash_process_id`) REFERENCES `llx_vicentina_wash_proceso` (`rowid`)
+) ENGINE=InnoDB;
+
+
+CREATE TABLE `llx_vicentina_wash_proceso_costo` (
+    `rowid` int(11) NOT NULL AUTO_INCREMENT,
+    `date` date NOT NULL,
+    `wash_process_id` int(11) DEFAULT 0,
+    `energy_cost` decimal(24,8) DEFAULT 0.00000000,
+    `maintenance_cost` decimal(24,8) DEFAULT 0.00000000,
+    `bag_cost` decimal(24,8) DEFAULT 0.00000000,
+    `film_cost` decimal(24,8) DEFAULT 0.00000000,
+    `thread_cost` decimal(24,8) DEFAULT 0.00000000,
+    `label_cost` decimal(24,8) DEFAULT 0.00000000,
+    `lift_cost` decimal(24,8) DEFAULT 0.00000000,
+    `pallet_cost` decimal(24,8) DEFAULT 0.00000000,
+    `other_cost` decimal(24,8) DEFAULT 0.00000000,
+    `fk_user_creat` int(11) DEFAULT NULL,
+    `fk_user_modif` int(11) DEFAULT NULL,
+    PRIMARY KEY (`rowid`),
+    KEY `fk_user_creat` (`fk_user_creat`),
+    KEY `fk_user_modif` (`fk_user_modif`),
+    CONSTRAINT `llx_vicentina_wash_proceso_costo_fk_user_creat` FOREIGN KEY (`fk_user_creat`) REFERENCES `llx_user` (`rowid`),
+    CONSTRAINT `llx_vicentina_wash_proceso_costo_fk_user_modif` FOREIGN KEY (`fk_user_modif`) REFERENCES `llx_user` (`rowid`),
+    CONSTRAINT `llx_vicentina_wash_proceso_costo_fk_wash_process` FOREIGN KEY (`wash_process_id`) REFERENCES `llx_vicentina_wash_proceso` (`rowid`)
+) ENGINE=InnoDB;    
+
+
+CREATE TABLE `llx_vicentina_wash_proceso` (
+    `rowid` int(11) NOT NULL AUTO_INCREMENT,
+    `date` date NOT NULL,
+    `parent_potato_id` int(11) DEFAULT 0,
+    `potato_id` int(11) DEFAULT 0,
+    `number_of_bags` int(11) DEFAULT 0,
+    `warehouse_id` int(11) DEFAULT 0,
+    `fk_user_creat` int(11) DEFAULT NULL,
+    `fk_user_modif` int(11) DEFAULT NULL,
+    PRIMARY KEY (`rowid`),
+    KEY `fk_user_creat` (`fk_user_creat`),
+    KEY `fk_user_modif` (`fk_user_modif`),
+    CONSTRAINT `llx_vicentina_wash_proceso_fk_user_creat` FOREIGN KEY (`fk_user_creat`) REFERENCES `llx_user` (`rowid`),
+    CONSTRAINT `llx_vicentina_wash_proceso_fk_user_modif` FOREIGN KEY (`fk_user_modif`) REFERENCES `llx_user` (`rowid`)
+) ENGINE=InnoDB;
+
+
+

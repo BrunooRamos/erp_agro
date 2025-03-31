@@ -6,9 +6,9 @@ export const HomeWash = () => {
       <OptionCard
         visible={true}
         icon="fa-solid fa-plus"
-        title="Proceso Wash"
+        title="Proceso Lavado"
         to="/post-harvest/wash/proceso-wash"
-        description="Formulario para crear proceso wash"
+        description="Formulario para crear proceso lavado"
       />
       <OptionCard
         visible={true}

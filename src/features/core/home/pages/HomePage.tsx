@@ -90,7 +90,7 @@ export const HomePage = () => {
           visible={true}
           icon="fa-solid fa-money-bill"
           title="Centro de Costo"
-          to="/cost-center/list"
+          to="/cost-center/home"
           description="Gestión de centro de costo"
         />
       </div>

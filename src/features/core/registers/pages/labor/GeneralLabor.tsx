@@ -21,7 +21,7 @@ import {
 import {
   useCropAndLots,
   useCusa,
-  useListMachinery,
+  useMachinery,
   useRegisters,
 } from "../../../../../hooks";
 import { useNavigate } from "react-router-dom";
@@ -54,7 +54,8 @@ export const GeneralLabor = () => {
   } = useCropAndLots(control);
 
   // Machinery
-  const { data: machinery, isLoading: isLoadingMachinery } = useListMachinery();
+  const { listMachinery } = useMachinery(null)
+  const { data: machinery, isLoading: isLoadingMachinery } = listMachinery;
 
   // Cusa
   const { data: cusa, isLoading: isLoadingCusa } = useCusa();

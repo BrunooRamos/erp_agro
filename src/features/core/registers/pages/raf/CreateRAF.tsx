@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 
@@ -14,6 +14,7 @@ import {
   useRegisters,
   useCropAndLots,
   useGetProductsByCategory,
+  useCusa,
 } from "../../../../../hooks";
 import {
   FormField,
@@ -33,6 +34,8 @@ export const CreateRAF = () => {
     handleSubmit,
     formState: { errors },
     control,
+    watch,
+    setValue,
     reset,
   } = useForm<RAFSendData>();
 
@@ -77,9 +80,29 @@ export const CreateRAF = () => {
     categories: categoriesProducts,
   } = useGetProductsByCategory(shouldFetchChemicals, "Insumos");
 
+
   const [filteredProducts, setFilteredProducts] = useState<ProductsResponse[]>(
     []
   );
+
+  //!Fetch cusa
+// Cusa
+const { data: cusa, isLoading: isLoadingCusa } = useCusa();
+const selectedLabor = watch("labor_code");
+
+// Actualiza el costo cusa según el labor seleccionado
+useEffect(() => {
+  if (selectedLabor && cusa) {
+    const selectedCusaItem = cusa.find(
+      (item) => item.cod_laboreo === selectedLabor
+    );
+    if (selectedCusaItem) {
+      setValue("cusa_cost", selectedCusaItem.precio_cusa);
+      setValue("lts", selectedCusaItem.lts_ha);
+    }
+  }
+}, [selectedLabor, cusa, setValue]);
+
 
   //!Submit form - Create and update RAF
   const { createRAF } = useRegisters();
@@ -101,7 +124,7 @@ export const CreateRAF = () => {
     data.selectedLots = selectedLots;
     data.selectedProducts = selectedProducts;
     data.selectedSublots = selectedSublots;
-
+    data.labor_code = selectedLabor;
     console.log(JSON.stringify(data, null, 2));
 
     createRAFMutation(data, {
@@ -209,7 +232,7 @@ export const CreateRAF = () => {
   }, [products, selectedProducts]);
 
   // Loading crops
-  if (isLoadingProducts || isLoadingCropAndLots) {
+  if (isLoadingProducts || isLoadingCropAndLots || isLoadingCusa) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-white bg-opacity-75 z-50">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-zinc-800"></div>
@@ -265,6 +288,65 @@ export const CreateRAF = () => {
               ))}
             </select>
           </FormField>
+
+          <FormField
+              label="Cusa"
+              error={errors.labor_code?.message || ""}
+              required
+            >
+              <select
+                {...register("labor_code", {
+                  required: "Este campo es requerido",
+                })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
+              >
+                <option value="">Seleccione una cusa</option>
+                {cusa?.map((labor) => (
+                  <option key={labor.cod_laboreo} value={labor.cod_laboreo}>
+                    {labor.laboreo}
+                  </option>
+                ))}
+              </select>
+            </FormField>
+
+            {/* Cusa Cost */}
+            <FormField
+              label="Costo de cusa"
+              error={errors.cusa_cost?.message || ""}
+            >
+              <input
+                {...register("cusa_cost", {
+                  min: {
+                    value: 0,
+                    message: "El costo debe ser mayor a 0",
+                  },
+                })}
+                name="cusa_cost"
+                placeholder="100"
+                type="number"
+                step="0.01"
+                autoComplete="off"
+                className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
+              />
+            </FormField>
+
+            {/* Lts Field */}
+            <FormField label="Lts/ha" error={errors.lts?.message || ""}>
+              <input
+                {...register("lts", {
+                  min: {
+                    value: 0,
+                    message: "El costo debe ser mayor a 0",
+                  },
+                })}
+                name="lts"
+                placeholder="100"
+                type="number"
+                step="0.01"
+                autoComplete="off"
+                className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
+              />
+            </FormField>
 
           {/* Crop type */}
           <CropInfoCard crop={selectedCrop} />

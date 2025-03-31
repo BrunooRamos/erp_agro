@@ -1,5 +1,5 @@
 import { dolibarrApi } from "../../api";
-import { Caliber, CostWashForm, CostWashResponse, CreateCaliberForm, CreateQualityForm, CreateTongCostForm, TongCost, TongProccesForm, TongProcessResponse, WashQualityResponse } from "../../interfaces";
+import { Caliber, CostWashForm, CostWashResponse, CreateCaliberForm, CreateQualityForm, CreateTongCostForm, TongCost, TongProccesForm, TongProcessResponse, WashProcessForm, WashQualityResponse } from "../../interfaces";
 
 export const postCreateCaliber = async (data: CreateCaliberForm) => {
   const response = await dolibarrApi.post("/vicentina/tong/caliber", data);
@@ -59,10 +59,7 @@ export const getWashQualities = async (): Promise<WashQualityResponse[]> => {
   return response.data;
 };
 
-
-
-
-
-
-
-
+export const postCreateWashProcess = async (data: WashProcessForm) => {
+  const response = await dolibarrApi.post("/vicentina/wash/process/create", data);
+  return response.data;
+};

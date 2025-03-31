@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { CreateCaliberForm, CreateTongCostForm, TongProccesForm, CostWashForm, CreateQualityForm } from "../../interfaces";
+import { CreateCaliberForm, CreateTongCostForm, TongProccesForm, CostWashForm, CreateQualityForm, WashProcessForm } from "../../interfaces";
 import { toast } from "react-toastify";
-import { deleteTongCostById, getCalibers, getTongCosts, postCreateCaliber, postCreateTongCost, postCreateTongProcess, getTongProcesses, postCreateWashCost, getWashCosts, postCreateWashQuality, getWashQualities } from "../../actions";
+import { deleteTongCostById, getCalibers, getTongCosts, postCreateCaliber, postCreateTongCost, postCreateTongProcess, getTongProcesses, postCreateWashCost, getWashCosts, postCreateWashQuality, getWashQualities, postCreateWashProcess } from "../../actions";
 
 
 export const usePostHarvest = () => {
@@ -90,5 +90,15 @@ export const usePostHarvest = () => {
         queryFn: () => getWashQualities(),
     }); 
 
-    return { createCaliber, listCalibers, createTongCost, listTongCosts, deleteTongCost, createTongProcess, listTongProcesses, createWashCost, listWashCosts, createWashQuality, listWashQualities   };
+    const createWashProcess = useMutation({
+        mutationFn: (data: WashProcessForm) => postCreateWashProcess(data),
+        onSuccess: () => {
+            toast.success('Proceso de lavado creado correctamente');
+        },
+        onError: (error) => {
+            toast.error('Error al crear el proceso de lavado: ' + error);
+        }
+    });
+
+    return { createCaliber, listCalibers, createTongCost, listTongCosts, deleteTongCost, createTongProcess, listTongProcesses, createWashCost, listWashCosts, createWashQuality, listWashQualities, createWashProcess };
 }

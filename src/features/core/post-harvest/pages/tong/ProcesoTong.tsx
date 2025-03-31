@@ -15,6 +15,7 @@ export const TongProcces = () => {
 
   const { listCalibers, listTongCosts, createTongProcess } = usePostHarvest();
   const { data: products = [] } = useGetProductsByCategory(true, "Papa");
+  console.log(JSON.stringify(products, null, 2));
 
   //!Calibres
   const { data: calibers = [] } = listCalibers;

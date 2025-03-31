@@ -31,6 +31,7 @@ export const QualitiesAndLabels = () => {
   const { data: washQualities } = listWashQualities;
 
   const onSubmit = handleSubmit((data) => {
+    console.log(JSON.stringify(data, null, 2));
     // Si no se incluye etiqueta, eliminar la propiedad label
     const dataToSubmit = includeLabel ? data : { name: data.name, description: data.description };
     
@@ -166,9 +167,9 @@ export const QualitiesAndLabels = () => {
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-2">
-                    {quality.label && (
+                    {quality.label.name !== "" && (
                       <div className="flex flex-col items-end">
-                        <span className="text-xs font-medium text-blue-600 bg-blue-100 px-2 py-1 rounded-full">
+                        <span className="text-xs font-medium bg-zinc-100 px-2 py-1 rounded-full">
                           Etiqueta: {quality.label.name}
                         </span>
                         {quality.label.descripcion && (

@@ -49,8 +49,8 @@ const MultiLevelDropdown: React.FC<MultiLevelDropdownProps> = ({ category, onCha
         className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-zinc-800 focus:border-zinc-800"
       >
         <option value="">Seleccione una opción</option>
-        {options.map(option => (
-          <option key={option.rowid} value={option.rowid}>
+        {options.map((option, index) => (
+          <option key={`${option.rowid}-${level}-${index}`} value={option.rowid}>
             {option.label}
           </option>
         ))}

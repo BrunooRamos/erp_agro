@@ -2,15 +2,10 @@
 export * from "./useReduxConfig"
 
 // Machinery
-export * from "./machinery/useCreateMachinery"
-export * from "./machinery/useListMachinery"
-export * from "./machinery/useDeleteMachinery"
-export * from "./machinery/useUpdateMachinery"
-export * from "./machinery/useGetByIdMachinery"
+export * from "./machinery/useMachinery"
 
 // Field lot
 export * from "./crop/useCrop"
-
 
 // Field
 export * from "./field/useField"

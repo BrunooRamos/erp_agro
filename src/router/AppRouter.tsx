@@ -56,6 +56,8 @@ import {
   QualitiesAndLabels,
   CostWash,
   ProcessWash,
+  HomeCostCenter,
+  ResultStatus,
 } from "../features/index";
 import { MenuRoute } from "../interfaces";
 
@@ -347,23 +349,38 @@ export const menuRoutes: MenuRoute[] = [
     component: <DolarAndFuelPrice />,
     visible: true,
   },
-  {
-    to: "/cost-center/list",
-    icon: "fa-solid fa-money-bill",
-    title: "Centro de Costos",
-    description: "Centro de Costos",
-    component: <ListOfCrops />,
-    visible: true,
-  },
-  {
-    to: "/cost-center/details/:code",
-    icon: "fa-solid fa-money-bill",
-    title: "Centro de Costos",
-    description: "Centro de Costos",
-    component: <DetailsCost />,
-    visible: false,
-  },
 
+  {
+    to: "/cost-center/home",
+    icon: "fa-solid fa-money-bill",
+    title: "Centro de Costos",
+    description: "Centro de Costos",
+    component: <HomeCostCenter />,
+    visible: true,
+    subMenu: [
+      {
+        to: "/cost-center/list",
+        title: "Centro de Costos",
+        description: "Centro de Costos",
+        component: <ListOfCrops />,
+        visible: false,
+      },
+      {
+        to: "/cost-center/details/:code",
+        title: "Centro de Costos",
+        description: "Centro de Costos",
+        component: <DetailsCost />,
+        visible: false,
+      },
+      {
+        to: "/cost-center/result-status",
+        title: "Resultados",
+        description: "Resultados",
+        component: <ResultStatus />,
+        visible: true,
+      },
+    ],
+  },
   //!Sub menus de post cosecha
   // TONG  
   {

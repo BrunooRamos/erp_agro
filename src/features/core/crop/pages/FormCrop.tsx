@@ -136,8 +136,7 @@ export const FormCrop = () => {
       }))
     );
     formData.sub_lots = subLots;
-
-    console.log(formData);  
+  
     createCropMutation(formData, {
       onSuccess: () => {
         navigate("/crop/list");

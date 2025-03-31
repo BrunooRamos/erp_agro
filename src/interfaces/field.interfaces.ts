@@ -17,7 +17,9 @@ export interface FieldEntity {
     location: string;
     area_real: number;
     area_web: number;
-    rented: boolean;
+    rented: string;
+    period: string;
+    rent_cost: string;
     fk_user_creat: string;
     fk_user_modif: string | null;
     status: string;

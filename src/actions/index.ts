@@ -1,12 +1,7 @@
 export * from "./auth/post-login.action";
 
-
-export * from "./machinery/get-cusa";
-export * from "./machinery/post-create-machinery";
-export * from "./machinery/get-list-machinery";
-export * from "./machinery/put-update-machinery";
-export * from "./machinery/delete-machinery-id";
-export * from "./machinery/get-by-id-machinery";
+// Machinery
+export * from "./machinery/machinery_actions";
 
 // General
 export * from "./general/general.actions";

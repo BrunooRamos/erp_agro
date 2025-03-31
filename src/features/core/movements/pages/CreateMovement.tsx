@@ -27,7 +27,7 @@ export const CreateMovement = () => {
     console.log(JSON.stringify(data, null, 2));
     createMovementMutation(data, {
       onSuccess: () => {
-        navigate("/home");
+        navigate("/movements");
       },
     });
   });

@@ -1,17 +1,23 @@
 import { useForm } from "react-hook-form";
 import { usePostHarvest, useGetProductsByCategory } from "../../../../../hooks";
 import { WashProcessForm } from "../../../../../interfaces";
-import { FormField, QualityOutputs, ActionButtons } from "../../../../../ui/components";
+import {
+  FormField,
+  QualityOutputs,
+  ActionButtons,
+} from "../../../../../ui/components";
 import { useEffect, useState } from "react";
-
+import { WashCosts } from "../../../../../ui/components/common/WashCosts";
 
 export const ProcessWash = () => {
-  const { listWashQualities } = usePostHarvest();
-
+  const { listWashQualities, listWashCosts, createWashProcess } = usePostHarvest();
   const { data: washQualities = [] } = listWashQualities;
+  const { data: washCosts = [] } = listWashCosts;
+  const {mutate: createWashProcessMutation} = createWashProcess;
+
   const { data: products = [] } = useGetProductsByCategory(true, "Papa");
 
-   //!Form
+  //!Form
   const {
     register,
     handleSubmit,
@@ -21,24 +27,26 @@ export const ProcessWash = () => {
     watch,
   } = useForm<WashProcessForm>();
 
+  const [selectedWashCost, setSelectedWashCost] = useState<number>(0);
 
-    // Estado para el producto padre seleccionado
-    const [selectedParentId, setSelectedParentId] = useState<string>("");
+  //!Pipeline
+  // Filtrar productos padre (sin parent_key) que tienen hijos en el galpón principal
+  const parentProducts = products?.filter((product) => !product.parent_key);
 
-    // Estado para el stock máximo disponible
-    const [maxStock, setMaxStock] = useState<number>(0);
-  
-    // Filtrar productos padre (sin parent_key) que tienen hijos en el warehouse 7
-    const parentProducts = products?.filter((product) => !product.parent_key);
-  
-    // Obtener productos hijo basados en el padre seleccionado y que estén en warehouse 7
-    const childProducts = products?.filter(
-      (product) =>
-        product.parent_key == selectedParentId &&
-        product.warehouses?.some((w) => w.id === 7)
-    );
+  // Id del producto padre seleccionado
+  const [selectedParentId, setSelectedParentId] = useState<string>("");
 
-      // Cuando cambia el padre, actualizar el estado y limpiar la selección del hijo
+  // Obtener productos hijo basados en el padre seleccionado y que estén en warehouse 7
+  const childProducts = products?.filter(
+    (product) =>
+      product.parent_key == selectedParentId &&
+      product.warehouses?.some((w) => w.id === 7)
+  );
+
+  // Estado para el stock máximo disponible
+  const [maxStock, setMaxStock] = useState<number>(0);
+
+  // Cuando cambia el padre, actualizar el estado y limpiar la selección del hijo
   const handleParentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const parentId = e.target.value;
     setSelectedParentId(parentId);
@@ -48,44 +56,97 @@ export const ProcessWash = () => {
 
   const inputBins = watch("number_of_bins") || 0;
   const qualityOutputs = watch("quality_outputs") || [];
-  const totalOutputBins = qualityOutputs.reduce(
-    (sum, item) => sum + (Number(item.bins) || 0),
+
+  // Obtener el total de bolsas de los quality outputs
+  const totalBags = qualityOutputs.reduce(
+    (sum, item) => sum + (Number(item.bags) || 0),
     0
   );
 
+  // Observar el producto hijo seleccionado para actualizar el stock máximo
+  const selectedChildId = watch("potato_id");
+
+  // Actualizar el stock máximo cuando cambia el producto hijo seleccionado
+  useEffect(() => {
+    if (selectedChildId) {
+      const selectedChild = products?.find((p) => p.id === selectedChildId);
+      const warehouse7 = selectedChild?.warehouses?.find((w) => w.id === 7);
+      const availableStock = warehouse7?.stock || 0;
+      setMaxStock(availableStock);
+
+      // Si el número de bines actual es mayor que el stock disponible, ajustarlo
+      const currentBins = watch("number_of_bins");
+      if (currentBins > availableStock) {
+        setValue("number_of_bins", availableStock);
+      }
+    } else {
+      setMaxStock(0);
+    }
+  }, [selectedChildId, products, setValue, watch]);
+
+  // Agregar función de cálculo de costos
+  const calculateWashCosts = () => {
+    if (!selectedWashCost || !totalBags) return null;
+
+    const selectedCost = washCosts.find(
+      (cost) => cost.rowid === selectedWashCost.toString()
+    );
+    if (!selectedCost) return null;
+
+    return {
+      energyCost: (selectedCost.energy_cost * totalBags).toFixed(2),
+      maintenanceCost: (selectedCost.maintenance_cost * totalBags).toFixed(2),
+      bagCost: (selectedCost.bag_cost * totalBags).toFixed(2),
+      filmCost: (selectedCost.film_cost * totalBags).toFixed(2),
+      threadCost: (selectedCost.thread_cost * totalBags).toFixed(2),
+      palletCost: (selectedCost.pallet_cost * totalBags).toFixed(2),
+      labelCost: (selectedCost.label_cost * totalBags).toFixed(2),
+      liftCost: (selectedCost.lift_cost * totalBags).toFixed(2),
+      otherCost: (selectedCost.other_cost * totalBags).toFixed(2),
+      totalCost: (selectedCost.total_cost * totalBags).toFixed(2),
+    };
+  };
+
+  const washCost = calculateWashCosts();
+
+  // Actualizar los valores en el formulario cuando cambian los costos
+  useEffect(() => {
+    if (washCost) {
+      setValue("energy_cost", parseFloat(washCost.energyCost));
+      setValue("maintenance_cost", parseFloat(washCost.maintenanceCost));
+      setValue("bag_cost", parseFloat(washCost.bagCost));
+      setValue("film_cost", parseFloat(washCost.filmCost));
+      setValue("thread_cost", parseFloat(washCost.threadCost));
+      setValue("pallet_cost", parseFloat(washCost.palletCost));
+      setValue("label_cost", parseFloat(washCost.labelCost));
+      setValue("lift_cost", parseFloat(washCost.liftCost));
+      setValue("other_cost", parseFloat(washCost.otherCost));
+    } else {
+      setValue("energy_cost", 0);
+      setValue("maintenance_cost", 0);
+      setValue("bag_cost", 0);
+      setValue("film_cost", 0);
+      setValue("thread_cost", 0);
+      setValue("pallet_cost", 0);
+      setValue("label_cost", 0);
+      setValue("lift_cost", 0);
+      setValue("other_cost", 0);
+    }
+  }, [washCost, setValue]);
+
+
 
   const onSubmit = handleSubmit((data) => {
-    if (data.number_of_bins !== totalOutputBins) {
-      return; // No permitir enviar si los bins no coinciden
-    }
-
     console.log(JSON.stringify(data, null, 2));
+    createWashProcessMutation(data,
+      {
+        onSuccess: () => {
+          reset();
+        },
+      }
+    );
   });
 
-
-
-
-//!Observar el producto hijo seleccionado para actualizar el stock máximo
-    const selectedChildId = watch("potato_id");
-
-    // Actualizar el stock máximo cuando cambia el producto hijo seleccionado
-    useEffect(() => {
-      if (selectedChildId) {
-        const selectedChild = products?.find((p) => p.id === selectedChildId);
-        const warehouse7 = selectedChild?.warehouses?.find((w) => w.id === 7);
-        const availableStock = warehouse7?.stock || 0;
-        setMaxStock(availableStock);
-  
-        // Si el número de bines actual es mayor que el stock disponible, ajustarlo
-        const currentBins = watch("number_of_bins");
-        if (currentBins > availableStock) {
-          setValue("number_of_bins", availableStock);
-        }
-      } else {
-        setMaxStock(0);
-      }
-    }, [selectedChildId, products, setValue, watch]);
-  
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">Proceso Lavadero</h1>
@@ -185,7 +246,7 @@ export const ProcessWash = () => {
           {/* Campo oculto para warehouse_id */}
           <input type="hidden" {...register("warehouse_id")} value={7} />
 
-          {/* <FormField label="Seleccionar Costo de Lavado" required>
+          <FormField label="Seleccionar Costo de Lavado" required>
             <select
               id="wash-cost-select"
               aria-label="Seleccionar costo de lavado"
@@ -195,73 +256,29 @@ export const ProcessWash = () => {
             >
               <option value="">Seleccione un costo de lavado</option>
               {washCosts?.map((cost) => (
-                <option key={cost.id} value={cost.id}>
-                  {`${new Date(cost.date).toLocaleDateString()} - Max Bins: ${
-                    cost.max_bins
-                  } - Combustible: $${cost.fuel_cost}`}
+                <option key={cost.rowid} value={cost.rowid}>
+                  {`${new Date(cost.date).toLocaleDateString()} - ID: ${
+                    cost.rowid
+                  }`}
                 </option>
               ))}
             </select>
           </FormField>
 
-          {selectedTongCost && inputBins > 0 && (
-            <div className="col-span-2 p-4 bg-gray-50 rounded-md border border-gray-200">
-              <h3 className="font-semibold mb-2">
-                Costos Proporcionales ({inputBins} bins de{" "}
-                {tongCosts.find((c) => c.id === selectedTongCost)?.max_bins ||
-                  0}
-                )
-              </h3>
-              <div className="grid grid-cols-4 gap-3">
-                <div>
-                  <p className="text-sm text-gray-600">Combustible</p>
-                  <p className="font-medium">${proportionalCost?.fuelCost}</p>
-                  <input
-                    type="hidden"
-                    {...register("fuel_cost", { valueAsNumber: true })}
-                  />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Litros de Combustible</p>
-                  <p className="font-medium">
-                    {proportionalCost?.fuelLiters} L
-                  </p>
-                  <input
-                    type="hidden"
-                    {...register("fuel_liters", { valueAsNumber: true })}
-                  />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Gata</p>
-                  <p className="font-medium">
-                    USD {proportionalCost?.gataCost}
-                  </p>
-                  <input
-                    type="hidden"
-                    {...register("gata_cost", { valueAsNumber: true })}
-                  />
-                </div>
-                <div>
-                  <p className="text-sm text-gray-600">Elevador</p>
-                  <p className="font-medium">
-                    USD {proportionalCost?.liftCost}
-                  </p>
-                  <input
-                    type="hidden"
-                    {...register("lift_cost", { valueAsNumber: true })}
-                  />
-                </div>
-              </div>
-            </div>
-          )} */}
-
-        <QualityOutputs
+          <QualityOutputs
             qualities={washQualities || []}
             inputBins={inputBins}
             register={register}
             errors={errors}
             watch={watch}
             setValue={setValue}
+          />
+
+          <WashCosts
+            selectedWashCost={selectedWashCost}
+            totalBags={totalBags}
+            washCost={washCost}
+            register={register}
           />
 
           <ActionButtons

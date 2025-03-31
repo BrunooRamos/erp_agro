@@ -8,9 +8,7 @@ export interface MachineryForm {
     year_purchase: number;
     state: string;
     plate: string;
-    labor: string;
-    cusa_cost: number;
-    lts: number;
+    cusa_id: number;
     maintenance_hours: number;
     padron: string;
     id_padron: string;
@@ -18,6 +16,7 @@ export interface MachineryForm {
 }
 
 export interface CusaInfo {
+    rowid: number;
     cod_laboreo: string;
     laboreo:     string;
     precio_cusa: number;
@@ -27,28 +26,35 @@ export interface CusaInfo {
 export interface MachineryEntity {
     rowid:             string;
     code:              string;
+    cusa_id:           string;
     name:              string;
     brand:             string;
     model:             string;
-    year_fabrication:  number | null;
-    description:       string | null;
-    year_purchase:     number | null;
-    plate:             string | null;
-    labor:             string | null;
-    cusa_cost:         number | null;
-    lts:               number | null;
-    maintenance_hours: number | null;
-    padron:            string | null;
-    id_padron:         string | null;
-    insurance:         string | null;
-    date_creation:     Date | null;
-    tms:               Date | null;
-    fk_user_creat:     string | null;
-    fk_user_modif:     string | null;
-    import_key:        string | null;
-    status:            string | null;
-    user_creation:     string | null;
-    user_modification: string | null;
+    year_fabrication:  null;
+    description:       null;
+    year_purchase:     null;
+    plate:             null;
+    maintenance_hours: string;
+    padron:            null;
+    id_padron:         null;
+    insurance:         null;
+    date_creation:     Date;
+    tms:               Date;
+    fk_user_creat:     string;
+    fk_user_modif:     null;
+    import_key:        null;
+    status:            string;
+    user_creation:     string;
+    user_modification: null;
+    cusa:              Cusa;
+}
+
+export interface Cusa {
+    id:          string;
+    cod_laboreo: string;
+    laboreo:     string;
+    precio_cusa: number;
+    lts_ha:      number;
 }
 
 

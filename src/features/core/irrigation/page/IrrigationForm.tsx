@@ -18,8 +18,8 @@ import {
 import {
   useCropAndLots,
   useGetProductsByCategory,
-  useListMachinery,
   useIrrigation,
+  useMachinery,
 } from "../../../../hooks";
 import { useNavigate } from "react-router-dom";
 import { useCallback, useMemo, useState } from "react";
@@ -50,7 +50,8 @@ export const IrrigationForm = () => {
   } = useCropAndLots(control);
 
   //!Machinery
-  const { data: machinery, isLoading: isLoadingMachinery } = useListMachinery();
+  const { listMachinery } = useMachinery(null);
+  const { data: machinery, isLoading: isLoadingMachinery } = listMachinery;
 
   //!Irrigation materials
   const {
