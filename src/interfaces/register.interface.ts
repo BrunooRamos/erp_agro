@@ -14,32 +14,148 @@ export interface GeneralLabor {
 
 export interface SeedMapRegisterInterface {
   date: string;
-  labor_code: string;
-  labor: string;
-  cusa_cost: number;
-  lts: number;
+  crop_id: string;
+  cusa_id: string;
   first_equipment: string;
   second_equipment?: string;
-  crop_code: string;
   selectedLots: SelectedLot[];
   selectedSeeds: SelectedProducts[];
   selectedChemicals: SelectedProducts[];
   selectedSublots: SelectedSubLot[];
-
-
   grooves?: number;
 }
 
+// List RAF
+
 export interface RAFRegister {
-  date: string;
-  crop_code: string;
-  type: string;
-  sub_type: string;
-  selected_products: string[];
-  product_quantities: {
-    [key: string]: number;
-  };
+  raf:      RAFRegisterInfo;
+  lots:     RAFRegisterLot[];
+  products: RAFRegisterProduct[];
 }
+
+export interface RAFRegisterLot {
+  rowid:       string;
+  name:        string;
+  campo_name:  string;
+  area_total:  number;
+  description: string;
+  sublots:     RAFRegisterSublot[];
+}
+
+export interface RAFRegisterSublot {
+  id:             string;
+  name:           string;
+  area_utilizada: number;
+}
+
+export interface RAFRegisterProduct {
+  product_name:      string;
+  product_ref:       string;
+  rowid:             string;
+  fk_product:        string;
+  quantity:          number;
+  warehouse_id:      string;
+  type:              string;
+  stock_used:        number;
+  total_price:       number;
+  total_price_usd:   number;
+  date_creation:     Date;
+  warehouse_name:    string;
+  unit:              string;
+  tipo_presentacion: string;
+  presentacion:      number;
+  medida:            string;
+  dosisha:           number;
+  variedad:          null;
+}
+
+export interface RAFRegisterInfo {
+  rowid:             string;
+  crop_id:           string;
+  crop_code:         string;
+  cusa_id:           string;
+  first_equipment:   string;
+  second_equipment:  null;
+  date:              Date;
+  type:              string;
+  sub_type:          string;
+  total_area:        number;
+  lts:               number;
+  description:       null;
+  user_creation:     string;
+  user_modification: null;
+  date_creation:     Date;
+  tms:               Date;
+}
+
+
+// List seed map
+
+export interface SeedMapRegister {
+  seed_map: SeedMapRegisterInfo;
+  lots:     LotSeedMap[];
+  products: ProductSeedMap[];
+}
+
+export interface LotSeedMap {
+  rowid:       string;
+  name:        string;
+  campo_name:  string;
+  area_total:  number;
+  description: string;
+  sublots:     SublotSeedMap[];
+}
+
+export interface SublotSeedMap {
+  id:             string;
+  name:           string;
+  area_utilizada: number;
+}
+
+export interface ProductSeedMap {
+  product_name:      string;
+  product_ref:       string;
+  rowid:             string;
+  fk_product:        string;
+  quantity:          number;
+  warehouse_id:      string;
+  type:              string;
+  stock_used:        number;
+  total_price:       number;
+  total_price_usd:   number;
+  warehouse_name:    string;
+  unit:              string;
+  tipo_presentacion: string;
+  presentacion:      number;
+  medida:            string;
+  dosisha:           number;
+  variedad:          null;
+}
+
+export interface SeedMapRegisterInfo {
+  rowid:             string;
+  crop_id:           string;
+  crop_code:         string;
+  cusa_id:           string;
+  cusa_code:         string;
+  date:              Date;
+  first_equipment:   EquipmentSeedMap;
+  second_equipment:  EquipmentSeedMap;
+  lts:               number;
+  grooves:           number;
+  date_creation:     number;
+  date_modification: number;
+  user_creation:     string;
+  user_modification: null;
+}
+
+export interface EquipmentSeedMap {
+  id: null | string;
+}
+
+
+
+
 
 export interface CategoryResponse {
   rowid: number;
@@ -98,25 +214,18 @@ export interface SelectedProducts {
 }
 
 export interface RAFSendData {
-  crop_code: string;
+  crop_id: string;
+  cusa_id: string;
   date: string;
   selectedLots: SelectedLot[];
   selectedSublots: SelectedSubLot[];
   selectedProducts: SelectedProducts[];
   sub_type: string;
   type: string;
-  labor_code: string;
-  cusa_cost: number;
-  lts: number;
+  first_equipment: string;
+  second_equipment?: string;
 }
 
-
-
-export interface MapSeedGetResponse {
-  seed_map: SeedMap;
-  lots: Lot[];
-  products: ProductsResponse[];
-}
 
 export interface GeneralLaborResponse {
   date: string;
@@ -149,23 +258,7 @@ export interface Lot {
   area_utilizada: number;
 }
 
-export interface SeedMap {
-  rowid: string;
-  crop_code: string;
-  date: Date;
-  first_equipment: Equipment;
-  second_equipment: Equipment;
-  labor: string;
-  cusa_cost: number;
-  lts: number;
-  grooves: number;
-  date_creation: number;
-  date_modification: number;
-  user_creation: string;
-  user_modification: null;
-}
 
-export interface Equipment {
-  id: string;
-  ref: null;
-}
+
+
+

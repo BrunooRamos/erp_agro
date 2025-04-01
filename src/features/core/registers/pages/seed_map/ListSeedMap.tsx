@@ -1,9 +1,24 @@
 import { useRegisters } from "../../../../../hooks";
+import { useState, useMemo } from "react";
 
 export const ListSeedMap = () => {
     const { listSeedMap } = useRegisters();
     const { data: seedMapList, isLoading, error } = listSeedMap;
-    
+    const [selectedCropCode, setSelectedCropCode] = useState<string>('all');
+
+    // Obtener códigos de cultivo únicos
+    const uniqueCropCodes = useMemo(() => {
+        if (!seedMapList) return [];
+        return Array.from(new Set(seedMapList.map(register => register.seed_map.crop_code)));
+    }, [seedMapList]);
+
+    // Filtrar la lista según el código de cultivo seleccionado
+    const filteredSeedMapList = useMemo(() => {
+        if (!seedMapList) return [];
+        if (selectedCropCode === 'all') return seedMapList;
+        return seedMapList.filter(register => register.seed_map.crop_code === selectedCropCode);
+    }, [seedMapList, selectedCropCode]);
+
     if (isLoading) {
         return (
             <div className="fixed inset-0 flex items-center justify-center bg-white bg-opacity-75 z-50">
@@ -22,11 +37,23 @@ export const ListSeedMap = () => {
 
     return (
         <div className="space-y-6">
-            <h1 className="text-2xl font-bold text-zinc-900">Registros de Siembra</h1>
+            <div className="flex items-center justify-between">
+                <h1 className="text-2xl font-bold text-zinc-900">Registros de Siembra</h1>
+                <select 
+                    title="Filtrar por código de cultivo"
+                    value={selectedCropCode}
+                    onChange={(e) => setSelectedCropCode(e.target.value)}
+                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                >
+                    <option value="all">Todos los cultivos</option>
+                    {uniqueCropCodes.map(code => (
+                        <option key={code} value={code}>{code}</option>
+                    ))}
+                </select>
+            </div>
 
             <div className="grid gap-4">
-                {seedMapList?.map((register) => (
-                    console.log(register),
+                {filteredSeedMapList.map((register) => (
                     <div 
                         key={register.seed_map.rowid}
                         className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200"
@@ -40,10 +67,11 @@ export const ListSeedMap = () => {
                                     </div>
                                     <div>
                                         <h3 className="font-medium text-zinc-900">
-                                        {new Date(register.seed_map.date).toLocaleDateString()}
+                                            Siembra
                                         </h3>
                                         <p className="text-sm text-zinc-500">
-                                            Total: {register.lots?.reduce((acc, lot) => acc + lot.area_utilizada, 0)?.toFixed(2) ?? 0} ha
+                                            <i className="fa-regular fa-calendar-days mr-1" />
+                                            {new Date(register.seed_map.date).toLocaleDateString()}
                                         </p>
                                     </div>
                                 </div>
@@ -51,25 +79,33 @@ export const ListSeedMap = () => {
                                     <span className="px-3 py-1 bg-zinc-100 text-zinc-600 text-sm rounded-full">
                                         {register.seed_map.crop_code}
                                     </span>
+                                    {register.seed_map.grooves && (
+                                        <span className="text-sm text-zinc-500">
+                                            Surcos: {register.seed_map.grooves}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         </div>
 
-                        {/* Seeds and Chemicals */}
+                        {/* Products */}
                         <div className="p-4">
-                            <h4 className="text-sm font-medium text-zinc-500 mb-3">Semillas y Productos</h4>
+                            <h4 className="text-sm font-medium text-zinc-500 mb-3">Productos Utilizados</h4>
                             <div className="space-y-3">
                                 {register.products.map((product) => (
                                     <div 
-                                        key={product.product_ref}
+                                        key={product.rowid}
                                         className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
                                     >
                                         <div>
                                             <p className="font-medium text-zinc-800">{product.product_name}</p>
+                                            <p className="text-sm text-zinc-500">
+                                                {product.warehouse_name} - {product.tipo_presentacion}
+                                            </p>
                                         </div>
                                         <div className="text-right">
                                             <p className="font-medium text-zinc-800">
-                                                {product.quantity} {product.unit}
+                                                {product.stock_used} {product.medida}
                                             </p>
                                         </div>
                                     </div>
@@ -81,20 +117,35 @@ export const ListSeedMap = () => {
                         <div className="p-4 bg-gray-50 rounded-b-lg border-t border-gray-100">
                             <h4 className="text-sm font-medium text-zinc-500 mb-3">Lotes Afectados</h4>
                             <div className="flex flex-wrap gap-2">
-                                {register.lots?.map((lot) => (
-                                    <span 
+                                {register.lots.map((lot) => (
+                                    <div 
                                         key={lot.rowid}
-                                        className="px-3 py-1 bg-white border border-gray-200 rounded-full text-sm text-zinc-600"
+                                        className="inline-flex items-center gap-2"
                                     >
-                                        {lot.name} ({lot.area_utilizada} ha)
-                                    </span>
+                                        <span className="px-3 py-1 bg-white border border-gray-200 rounded-l-full text-sm text-zinc-600">
+                                            {lot.name} ({lot.area_total} ha)
+                                        </span>
+                                        {lot.sublots && lot.sublots.length > 0 && (
+                                            <div className="flex items-center gap-1">
+                                                <span className="w-5 h-[1px] bg-gray-200"></span>
+                                                {lot.sublots.map((sublot) => (
+                                                    <span 
+                                                        key={sublot.id}
+                                                        className="px-3 py-1 bg-emerald-50 border border-emerald-100 rounded-full text-xs text-emerald-600"
+                                                    >
+                                                        {sublot.name} ({sublot.area_utilizada} ha)
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 ))}
                             </div>
                         </div>
                     </div>
                 ))}
 
-                {(!seedMapList || seedMapList.length === 0) && (
+                {(!filteredSeedMapList || filteredSeedMapList.length === 0) && (
                     <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-200">
                         <i className="fa-solid fa-seedling text-gray-300 text-4xl mb-3" />
                         <p className="text-gray-500">No hay registros de siembra</p>

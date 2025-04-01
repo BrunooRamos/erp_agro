@@ -160,7 +160,7 @@ export const FormCrop = () => {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-4">Create Crop</h1>
+      <h1 className="text-2xl font-bold mb-4">Crear Cultivo</h1>
       <form onSubmit={onSubmit} className="w-full">
         <div className="w-full grid grid-cols-2 gap-4">
           {/* Basic Information Section */}
@@ -193,7 +193,7 @@ export const FormCrop = () => {
                 register("codigo_campo").onChange(e);
               }}
             >
-              <option value="">Select a field</option>
+              <option value="">Seleccionar Campo</option>
               {fieldsData?.map((field: FieldEntity) => (
                 <option key={field.rowid} value={field.rowid}>
                   {field.name}
@@ -402,7 +402,7 @@ export const FormCrop = () => {
               </div>
             ) : (
               <p className="text-gray-500 italic text-center py-8 bg-gray-50 rounded-md">
-                Select a field to see available lots
+                Seleccione un campo para ver los lotes disponibles
               </p>
             )}
           </div>

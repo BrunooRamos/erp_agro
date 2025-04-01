@@ -80,7 +80,7 @@ export const ListRAF = () => {
                                         {register.raf.crop_code}
                                     </span>
                                     <span className="text-sm font-medium text-emerald-600">
-                                        Total: {register.lots?.reduce((acc, lot) => acc + parseFloat(lot.area_utilizada), 0)?.toFixed(2) ?? 0} ha
+                                        Total: {register.raf.total_area?.toFixed(2) ?? 0} ha
                                     </span>
                                 </div>
                             </div>
@@ -114,12 +114,27 @@ export const ListRAF = () => {
                             <h4 className="text-sm font-medium text-zinc-500 mb-3">Lotes Afectados</h4>
                             <div className="flex flex-wrap gap-2">
                                 {register.lots.map((lot) => (
-                                    <span 
+                                    <div 
                                         key={lot.rowid}
-                                        className="px-3 py-1 bg-white border border-gray-200 rounded-full text-sm text-zinc-600"
+                                        className="inline-flex items-center gap-2 group"
                                     >
-                                        {lot.name} ({lot.area_utilizada} ha)
-                                    </span>
+                                        <span className="px-3 py-1 bg-white border border-gray-200 rounded-l-full text-sm text-zinc-600">
+                                            {lot.name} ({lot.area_total} ha)
+                                        </span>
+                                        {lot.sublots && lot.sublots.length > 0 && (
+                                            <div className="flex items-center gap-1">
+                                                <span className="w-5 h-[1px] bg-gray-200"></span>
+                                                {lot.sublots.map((sublot) => (
+                                                    <span 
+                                                        key={sublot.id}
+                                                        className="px-3 py-1 bg-emerald-50 border border-emerald-100 rounded-full text-xs text-emerald-600"
+                                                    >
+                                                        {sublot.name} ({sublot.area_utilizada} ha)
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
                                 ))}
                             </div>
                         </div>

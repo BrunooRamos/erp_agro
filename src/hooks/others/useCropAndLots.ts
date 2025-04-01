@@ -23,11 +23,11 @@ export const useCropAndLots = <T extends RAFSendData | SeedMapRegisterInterface 
     // Watch crop code
     const selectedCropCode = useWatch({ 
         control, 
-        name: "crop_code" as Path<T> 
+        name: "crop_id" as Path<T> 
     }) || initialCropCode;
     
     // Get crop rowid
-    const selectedCrop = crops?.find(crop => crop.code === selectedCropCode);
+    const selectedCrop = crops?.find(crop => crop.rowid === selectedCropCode);
 
     // Get lots by crop
     const { getLotsByCropId } = useCrop(undefined, selectedCrop?.rowid);

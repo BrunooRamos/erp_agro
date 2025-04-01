@@ -1,5 +1,5 @@
 import { dolibarrApi } from "../../api";
-import { CategoryResponse, GeneralLabor, GeneralLaborResponse, MapSeedGetResponse, ProductsResponse, RAFRegister, RAFSendData, SeedMapRegisterInterface } from "../../interfaces";
+import { CategoryResponse, GeneralLabor, GeneralLaborResponse, ProductsResponse, RAFRegister, RAFSendData, SeedMapRegister, SeedMapRegisterInterface } from "../../interfaces";
 
 
 export const getCategoryIdByLabel = async (label: string) => {
@@ -38,9 +38,9 @@ export const getListRAF = async () : Promise<RAFRegister[]> => {
     return response.data as RAFRegister[];
 };
 
-export const getListSeedMap = async () : Promise<MapSeedGetResponse[]> => {
+export const getListSeedMap = async () : Promise<SeedMapRegister[]> => {
     const response = await dolibarrApi.get('/vicentina/register/seed-map/list');
-    return response.data as MapSeedGetResponse[];
+    return response.data as SeedMapRegister[];
 };
 
 

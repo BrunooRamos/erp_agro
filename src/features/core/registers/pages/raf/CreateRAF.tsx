@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
 
@@ -15,6 +15,7 @@ import {
   useCropAndLots,
   useGetProductsByCategory,
   useCusa,
+  useMachinery,
 } from "../../../../../hooks";
 import {
   FormField,
@@ -34,8 +35,6 @@ export const CreateRAF = () => {
     handleSubmit,
     formState: { errors },
     control,
-    watch,
-    setValue,
     reset,
   } = useForm<RAFSendData>();
 
@@ -55,6 +54,9 @@ export const CreateRAF = () => {
     handleSublotAreaChange,
   } = useCropAndLots(control);
 
+  //!Machinery
+  const { listMachinery } = useMachinery(null);
+  const { data: machinery, isLoading: isLoadingMachinery } = listMachinery;
 
   //!Fetch category by label
   // Watch type and sub_type
@@ -80,29 +82,13 @@ export const CreateRAF = () => {
     categories: categoriesProducts,
   } = useGetProductsByCategory(shouldFetchChemicals, "Insumos");
 
-
   const [filteredProducts, setFilteredProducts] = useState<ProductsResponse[]>(
     []
   );
 
   //!Fetch cusa
-// Cusa
-const { data: cusa, isLoading: isLoadingCusa } = useCusa();
-const selectedLabor = watch("labor_code");
-
-// Actualiza el costo cusa según el labor seleccionado
-useEffect(() => {
-  if (selectedLabor && cusa) {
-    const selectedCusaItem = cusa.find(
-      (item) => item.cod_laboreo === selectedLabor
-    );
-    if (selectedCusaItem) {
-      setValue("cusa_cost", selectedCusaItem.precio_cusa);
-      setValue("lts", selectedCusaItem.lts_ha);
-    }
-  }
-}, [selectedLabor, cusa, setValue]);
-
+  // Cusa
+  const { data: cusa, isLoading: isLoadingCusa } = useCusa();
 
   //!Submit form - Create and update RAF
   const { createRAF } = useRegisters();
@@ -111,7 +97,6 @@ useEffect(() => {
   const navigate = useNavigate(); // Hook para navegar a la lista de RAF
 
   const onSubmit = handleSubmit((data) => {
-
     // Check if chemicals are required and if they're selected
     const chemicalsRequired = shouldFetchChemicals;
     const hasChemicals = selectedProducts.length > 0;
@@ -124,7 +109,6 @@ useEffect(() => {
     data.selectedLots = selectedLots;
     data.selectedProducts = selectedProducts;
     data.selectedSublots = selectedSublots;
-    data.labor_code = selectedLabor;
     console.log(JSON.stringify(data, null, 2));
 
     createRAFMutation(data, {
@@ -232,7 +216,12 @@ useEffect(() => {
   }, [products, selectedProducts]);
 
   // Loading crops
-  if (isLoadingProducts || isLoadingCropAndLots || isLoadingCusa) {
+  if (
+    isLoadingProducts ||
+    isLoadingCropAndLots ||
+    isLoadingCusa ||
+    isLoadingMachinery
+  ) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-white bg-opacity-75 z-50">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-zinc-800"></div>
@@ -272,17 +261,17 @@ useEffect(() => {
           {/*Crop code*/}
           <FormField
             label="Código de cultivo"
-            error={errors.crop_code?.message || ""}
+            error={errors.crop_id?.message || ""}
           >
             <select
-              {...register("crop_code", {
+              {...register("crop_id", {
                 required: "Este campo es requerido",
               })}
               className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
             >
               <option value="">Seleccione un cultivo</option>
               {sortedCrops?.map((crop) => (
-                <option key={crop.code} value={crop.code}>
+                <option key={crop.rowid} value={crop.rowid}>
                   {crop.code}
                 </option>
               ))}
@@ -290,63 +279,63 @@ useEffect(() => {
           </FormField>
 
           <FormField
-              label="Cusa"
-              error={errors.labor_code?.message || ""}
-              required
+            label="Cusa"
+            error={errors.cusa_id?.message || ""}
+            required
+          >
+            <select
+              {...register("cusa_id", {
+                required: "Este campo es requerido",
+              })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
             >
-              <select
-                {...register("labor_code", {
-                  required: "Este campo es requerido",
-                })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
-              >
-                <option value="">Seleccione una cusa</option>
-                {cusa?.map((labor) => (
-                  <option key={labor.cod_laboreo} value={labor.cod_laboreo}>
-                    {labor.laboreo}
-                  </option>
-                ))}
-              </select>
-            </FormField>
+              <option value="">Seleccione una cusa</option>
+              {cusa?.map((labor) => (
+                <option key={labor.rowid} value={labor.rowid}>
+                  {labor.laboreo}
+                </option>
+              ))}
+            </select>
+          </FormField>
 
-            {/* Cusa Cost */}
-            <FormField
-              label="Costo de cusa"
-              error={errors.cusa_cost?.message || ""}
+          {/* Machinery */}
+          <FormField
+            label="Maquinaria"
+            error={errors.first_equipment?.message || ""}
+            required
+          >
+            <select
+              {...register("first_equipment", {
+                required: "Este campo es requerido",
+              })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
             >
-              <input
-                {...register("cusa_cost", {
-                  min: {
-                    value: 0,
-                    message: "El costo debe ser mayor a 0",
-                  },
-                })}
-                name="cusa_cost"
-                placeholder="100"
-                type="number"
-                step="0.01"
-                autoComplete="off"
-                className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
-              />
-            </FormField>
+              <option value="">Seleccione una maquinaria</option>
+              {machinery?.map((machinery) => (
+                <option key={machinery.rowid} value={machinery.rowid}>
+                  {`${machinery.name} - ${machinery.brand} ${machinery.model}`}
+                </option>
+              ))}
+            </select>
+          </FormField>
 
-            {/* Lts Field */}
-            <FormField label="Lts/ha" error={errors.lts?.message || ""}>
-              <input
-                {...register("lts", {
-                  min: {
-                    value: 0,
-                    message: "El costo debe ser mayor a 0",
-                  },
-                })}
-                name="lts"
-                placeholder="100"
-                type="number"
-                step="0.01"
-                autoComplete="off"
-                className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
-              />
-            </FormField>
+          {/* Second equipment */}
+          <FormField
+            label="Maquinaria acoplada"
+            error={errors.second_equipment?.message || ""}
+          >
+            <select
+              {...register("second_equipment")}
+              className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
+            >
+              <option value="">Seleccione una maquinaria</option>
+              {machinery?.map((machinery) => (
+                <option key={machinery.rowid} value={machinery.rowid}>
+                  {`${machinery.name} - ${machinery.brand} ${machinery.model}`}
+                </option>
+              ))}
+            </select>
+          </FormField>
 
           {/* Crop type */}
           <CropInfoCard crop={selectedCrop} />
@@ -358,20 +347,21 @@ useEffect(() => {
             </label>
             <LotSelection
               lots={lots}
-              
               onLotSelect={handleLotSelection}
               onAreaChange={handleLotAreaChange}
               selectedLots={selectedLots}
-
               //Sublot
               onSublotSelect={handleSublotSelection}
               selectedSublots={selectedSublots}
               onSublotAreaChange={handleSublotAreaChange}
-              />
+            />
           </div>
 
           {/* Total applied area */}
-          <TotalAreaDisplay selectedLots={selectedLots} selectedSublots={selectedSublots} />
+          <TotalAreaDisplay
+            selectedLots={selectedLots}
+            selectedSublots={selectedSublots}
+          />
 
           {/* Type Field */}
           <FormField

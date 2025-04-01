@@ -19,6 +19,7 @@ export const ListCrop = () => {
   const { listCrop, deleteCrop } = useCrop();
 
   const { data = [], isLoading, error, refetch } = listCrop;
+  console.log('data', data);
   const { mutate: deleteCropAction, isPending: isDeletePending } = deleteCrop;
 
   const columnHelper = createColumnHelper<CropEntity>();
@@ -218,15 +219,15 @@ export const ListCrop = () => {
               </div>
 
               {/* Details */}
-              <div className="p-6">
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="p-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   {/* Campo */}
-                  <div className="flex items-center gap-3 p-4 bg-zinc-50 rounded-lg">
-                    <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                      <i className="fa-solid fa-map text-zinc-600"></i>
+                  <div className="flex items-center gap-2 p-2 bg-zinc-50 rounded-lg">
+                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
+                      <i className="fa-solid fa-map text-zinc-600 text-sm"></i>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-zinc-500">Campo</p>
+                      <p className="text-xs text-zinc-500 -mb-0.5">Campo</p>
                       <p className="text-sm font-medium text-zinc-800 truncate">
                         {crop.campo_name || "-"}
                       </p>
@@ -234,12 +235,12 @@ export const ListCrop = () => {
                   </div>
 
                   {/* Periodo */}
-                  <div className="flex items-center gap-3 p-4 bg-zinc-50 rounded-lg">
-                    <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                      <i className="fa-solid fa-calendar text-zinc-600"></i>
+                  <div className="flex items-center gap-2 p-2 bg-zinc-50 rounded-lg">
+                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
+                      <i className="fa-solid fa-calendar text-zinc-600 text-sm"></i>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-zinc-500">Periodo</p>
+                      <p className="text-xs text-zinc-500 -mb-0.5">Periodo</p>
                       <p className="text-sm font-medium text-zinc-800 truncate">
                         {crop.periodo || "-"}
                       </p>
@@ -247,12 +248,12 @@ export const ListCrop = () => {
                   </div>
 
                   {/* Año */}
-                  <div className="flex items-center gap-3 p-4 bg-zinc-50 rounded-lg">
-                    <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                      <i className="fa-solid fa-clock text-zinc-600"></i>
+                  <div className="flex items-center gap-2 p-2 bg-zinc-50 rounded-lg">
+                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
+                      <i className="fa-solid fa-clock text-zinc-600 text-sm"></i>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-zinc-500">Año</p>
+                      <p className="text-xs text-zinc-500 -mb-0.5">Año</p>
                       <p className="text-sm font-medium text-zinc-800 truncate">
                         {crop.anio || "-"}
                       </p>
@@ -260,12 +261,12 @@ export const ListCrop = () => {
                   </div>
 
                   {/* Etapa */}
-                  <div className="flex items-center gap-3 p-4 bg-zinc-50 rounded-lg">
-                    <div className="w-10 h-10 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                      <i className="fa-solid fa-tasks text-zinc-600"></i>
+                  <div className="flex items-center gap-2 p-2 bg-zinc-50 rounded-lg">
+                    <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center shadow-sm">
+                      <i className="fa-solid fa-tasks text-zinc-600 text-sm"></i>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-zinc-500">Etapa</p>
+                      <p className="text-xs text-zinc-500 -mb-0.5">Etapa</p>
                       <p className="text-sm font-medium text-zinc-800 truncate">
                         {crop.etapa || "-"}
                       </p>
@@ -273,10 +274,55 @@ export const ListCrop = () => {
                   </div>
                 </div>
 
+                {/* Lots Information */}
+                {crop.lots && crop.lots.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-gray-100">
+                    <h4 className="text-sm font-semibold text-zinc-700 mb-3 flex items-center">
+                      <i className="fa-solid fa-layer-group mr-2 text-zinc-500"></i>
+                      Lotes y Sublotes
+                    </h4>
+                    <div className="space-y-1">
+                      {crop.lots.map((lot) => (
+                        <div 
+                          key={lot.id} 
+                          className="bg-zinc-50 p-2 rounded-lg flex items-center justify-between"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="flex items-center gap-2">
+                              <i className="fa-solid fa-map-marker-alt text-zinc-500 text-sm"></i>
+                              <span className="text-sm font-medium text-zinc-700">{lot.name}</span>
+                              <span className="text-xs text-zinc-500">({lot.area_utilizada} ha)</span>
+                            </div>
+                            
+                            {/* Sub Lots inline */}
+                            {lot.sub_lots && lot.sub_lots.length > 0 && (
+                              <div className="flex items-center gap-1">
+                                <span className="text-zinc-400">|</span>
+                                <div className="flex items-center gap-2">
+                                  {lot.sub_lots.map((subLot, index) => (
+                                    <div 
+                                      key={index}
+                                      className="flex items-center gap-1 bg-white px-2 py-0.5 rounded"
+                                    >
+                                      <i className="fa-solid fa-puzzle-piece text-zinc-400 text-xs"></i>
+                                      <span className="text-xs text-zinc-600">{subLot.name}</span>
+                                      <span className="text-xs text-zinc-400">({subLot.area_utilizada} ha)</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {/* Description if exists */}
                 {crop.description && (
                   <div className="mt-4 pt-4 border-t border-gray-100">
-                    <p className="text-sm text-zinc-600">
+                    <p className="text-xs text-zinc-600">
                       <i className="fa-solid fa-comment-alt mr-2 text-zinc-400"></i>
                       {crop.description}
                     </p>

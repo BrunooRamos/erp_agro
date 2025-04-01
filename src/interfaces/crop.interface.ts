@@ -24,22 +24,40 @@ export interface CropForm {
 }
 
 export interface CropEntity {
-    rowid: string;
-    code: string;
-    codigo_campo: string | null;
-    campo_name: string | null;
-    cultivo: string | null;
-    periodo: string | null;
-    anio: string | null;
-    etapa: string | null;
-    description: string | null;
-    date_creation: Date | null;
-    tms: Date | null;
-    fk_user_creat: string | null;
-    fk_user_modif: string | null;
-    status: string | null;
-    user_creation: string | null;
-    user_modification: string | null;
+    rowid:             string;
+    code:              string;
+    codigo_campo:      string;
+    cultivo:           string;
+    periodo:           string;
+    anio:              string;
+    etapa:             string;
+    description:       string;
+    date_creation:     Date;
+    tms:               Date;
+    fk_user_creat:     string;
+    fk_user_modif:     null;
+    status:            string;
+    user_creation:     string;
+    user_modification: null;
+    campo_name:        string;
+    lots:              Lot[];
+}
+
+interface Lot {
+    id:             number;
+    lot_id:         number;
+    name:           string;
+    area_real:      number;
+    area_web:       number;
+    area_utilizada: number;
+    description:    string;
+    sub_lots:       SubLot[];
+}
+
+interface SubLot {
+    id:             number;
+    name:           string;
+    area_utilizada: number;
 }
 
 
