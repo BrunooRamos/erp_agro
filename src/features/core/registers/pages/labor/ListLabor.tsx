@@ -5,18 +5,16 @@ export const ListLabor = () => {
     const { listLabor } = useRegisters();
     const { data: laborList, isLoading, error } = listLabor;
     const [selectedLaborType, setSelectedLaborType] = useState<string>('all');
-    const [selectedCropType, setSelectedCropType] = useState<string>('all');
-
-    console.log(JSON.stringify(laborList, null, 2));
+    const [selectedCropCode, setSelectedCropCode] = useState<string>('all');
 
     // Obtener tipos de labor únicos
     const uniqueLaborTypes = useMemo(() => {
         if (!laborList) return [];
-        return Array.from(new Set(laborList.map(labor => labor.labor_code)));
+        return Array.from(new Set(laborList.map(labor => labor.cusa_info.cod_laboreo)));
     }, [laborList]);
 
-    // Obtener tipos de cultivos únicos
-    const uniqueCropTypes = useMemo(() => {
+    // Obtener códigos de cultivo únicos
+    const uniqueCropCodes = useMemo(() => {
         if (!laborList) return [];
         return Array.from(new Set(laborList.map(labor => labor.crop_code)));
     }, [laborList]);
@@ -25,11 +23,11 @@ export const ListLabor = () => {
     const filteredLaborList = useMemo(() => {
         if (!laborList) return [];
         return laborList.filter(labor => {
-            const matchesLaborType = selectedLaborType === 'all' || labor.labor_code === selectedLaborType;
-            const matchesCropType = selectedCropType === 'all' || labor.crop_code === selectedCropType;
-            return matchesLaborType && matchesCropType;
+            const matchesLaborType = selectedLaborType === 'all' || labor.cusa_info.cod_laboreo === selectedLaborType;
+            const matchesCropCode = selectedCropCode === 'all' || labor.crop_code === selectedCropCode;
+            return matchesLaborType && matchesCropCode;
         });
-    }, [laborList, selectedLaborType, selectedCropType]);
+    }, [laborList, selectedLaborType, selectedCropCode]);
 
     if (isLoading) {
         return (
@@ -65,13 +63,13 @@ export const ListLabor = () => {
                     </select>
                     <select 
                         title="Filtrar por cultivo"
-                        value={selectedCropType}
-                        onChange={(e) => setSelectedCropType(e.target.value)}
+                        value={selectedCropCode}
+                        onChange={(e) => setSelectedCropCode(e.target.value)}
                         className="px-3 py-2 border border-gray-200 rounded-lg text-sm text-zinc-600 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     >
                         <option value="all">Todos los cultivos</option>
-                        {uniqueCropTypes.map(type => (
-                            <option key={type} value={type}>{type}</option>
+                        {uniqueCropCodes.map(code => (
+                            <option key={code} value={code}>{code}</option>
                         ))}
                     </select>
                 </div>
@@ -80,7 +78,7 @@ export const ListLabor = () => {
             <div className="grid gap-4">
                 {filteredLaborList.map((labor) => (
                     <div 
-                        key={labor.labor_code}
+                        key={labor.rowid}
                         className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200"
                     >
                         {/* Header */}
@@ -93,7 +91,7 @@ export const ListLabor = () => {
                                     <div>
                                         <div className="flex items-center gap-2">
                                             <h3 className="font-medium text-zinc-900">
-                                                {labor.labor_code}
+                                                {labor.cusa_info.laboreo}
                                             </h3>
                                             <span className="px-2 py-0.5 bg-blue-50 text-blue-600 rounded text-xs font-medium">
                                                 {labor.crop_code}
@@ -109,11 +107,11 @@ export const ListLabor = () => {
                                     <div className="flex items-center gap-4">
                                         <span className="text-sm text-zinc-600">
                                             <i className="fa-solid fa-gas-pump mr-1 text-amber-500"></i>
-                                            {labor.lts} lts/ha
+                                            Combustible: {(labor.selectedSublots.reduce((sum, sublot) => sum + sublot.area_utilizada, 0) * labor.cusa_info.lts_ha).toFixed(2)} lts
                                         </span>
                                         <span className="text-sm text-zinc-600">
-                                            <i className="fa-solid fa-dollar-sign mr-1 text-emerald-500"></i>
-                                            {labor.cusa_cost.toFixed(2)} $/ha
+                                            <i className="fa-solid fa-chart-area mr-1 text-emerald-500"></i>
+                                            Área total: {labor.selectedSublots.reduce((sum, sublot) => sum + sublot.area_utilizada, 0)} ha
                                         </span>
                                     </div>
                                 </div>
@@ -121,77 +119,54 @@ export const ListLabor = () => {
                         </div>
 
                         {/* Machinery Info */}
-                        <div className="px-4 py-3 bg-white border-b border-gray-100">
-                            <div className="flex items-center gap-2">
-                                <i className="fa-solid fa-tools text-zinc-400"></i>
-                                <h4 className="text-sm font-medium text-zinc-500">Maquinaria:</h4>
-                                <div className="flex gap-2">
+                        {labor.machinaryUsed.length > 0 && (
+                            <div className="p-4 border-b border-gray-100">
+                                <h4 className="text-sm font-medium text-zinc-500 mb-3">Maquinaria Utilizada</h4>
+                                <div className="flex flex-wrap gap-2">
                                     {labor.machinaryUsed.map((machine) => (
                                         <span 
                                             key={machine.rowid}
-                                            className="inline-flex items-center px-3 py-1 bg-zinc-50 border border-zinc-200 rounded-lg text-sm text-zinc-700"
+                                            className="inline-flex items-center px-3 py-1.5 bg-zinc-50 border border-zinc-200 rounded-lg text-sm text-zinc-700"
                                         >
                                             <i className="fa-solid fa-tractor mr-2 text-zinc-400"></i>
-                                            {machine.name} - {machine.brand} {machine.model}
+                                            {machine.name} • {machine.brand} {machine.model}
                                         </span>
                                     ))}
                                 </div>
                             </div>
-                        </div>
-
-                        {/* Summary */}
-                        <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
-                            <div className="flex items-center justify-between text-sm">
-                                <div className="flex gap-4">
-                                    <span className="text-zinc-600">
-                                        <i className="fa-solid fa-chart-area mr-1 text-blue-500"></i>
-                                        Área total: {labor.selectedSublots.reduce((sum, sublot) => sum + sublot.area_utilizada, 0)} ha
-                                    </span>
-                                    <span className="text-zinc-600">
-                                        <i className="fa-solid fa-gas-pump mr-1 text-amber-500"></i>
-                                        Total combustible: {labor.selectedSublots.reduce((sum, sublot) => sum + (sublot.area_utilizada * labor.lts), 0).toFixed(2)} lts
-                                    </span>
-                                </div>
-                                <span className="font-medium text-emerald-600">
-                                    <i className="fa-solid fa-dollar-sign mr-1"></i>
-                                    Costo total: ${labor.selectedSublots.reduce((sum, sublot) => sum + (sublot.area_utilizada * labor.cusa_cost), 0).toFixed(2)}
-                                </span>
-                            </div>
-                        </div>
+                        )}
 
                         {/* Lots */}
                         <div className="p-4 bg-gray-50 rounded-b-lg">
                             <h4 className="text-sm font-medium text-zinc-500 mb-3">Lotes Afectados</h4>
                             <div className="flex flex-col gap-3">
                                 {labor.selectedLots.map((lot) => (
-                                    <div key={lot.rowid} className="flex flex-wrap items-center gap-2">
-                                        <span className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm font-medium text-zinc-700 shadow-sm">
-                                            <i className="fa-solid fa-layer-group mr-2 text-emerald-500"></i>
-                                            {lot.name} - {lot.campo_name}
+                                    <div 
+                                        key={lot.rowid}
+                                        className="inline-flex items-center gap-2"
+                                    >
+                                        <span className="px-3 py-1 bg-white border border-gray-200 rounded-l-full text-sm text-zinc-600">
+                                            {lot.name} - {lot.campo_name} ({lot.area_utilizada} ha)
                                         </span>
-                                        {lot.area_utilizada === 0 && (
-                                            <>
-                                                <i className="fa-solid fa-chevron-right text-gray-400 mx-1"></i>
+                                        {labor.selectedSublots
+                                            .filter(sublot => sublot.id_parent_lote === lot.rowid)
+                                            .length > 0 && (
+                                            <div className="flex items-center gap-1">
+                                                <span className="w-5 h-[1px] bg-gray-200"></span>
                                                 <div className="flex flex-wrap gap-2">
                                                     {labor.selectedSublots
                                                         .filter(sublot => sublot.id_parent_lote === lot.rowid)
                                                         .map(sublot => (
                                                             <span 
                                                                 key={sublot.id_sub_lote}
-                                                                className="px-3 py-1.5 bg-emerald-50 border border-emerald-100 rounded-lg text-sm text-emerald-600"
+                                                                className="px-3 py-1 bg-emerald-50 border border-emerald-100 rounded-full text-xs text-emerald-600"
                                                             >
-                                                                <i className="fa-solid fa-seedling mr-2"></i>
-                                                                {sublot.name} • {sublot.area_utilizada} ha
+                                                                {sublot.name} ({sublot.area_utilizada} ha)
                                                             </span>
                                                         ))
                                                     }
                                                 </div>
-                                            </>
-                                        )}
-                                        {lot.area_utilizada > 0 && (
-                                            <span className="text-sm text-zinc-500">
-                                                • {lot.area_utilizada} ha
-                                            </span>
+                                            </div>
                                         )}
                                     </div>
                                 ))}

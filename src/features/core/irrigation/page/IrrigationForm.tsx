@@ -32,7 +32,6 @@ export const IrrigationForm = () => {
     formState: { errors },
     control,
     reset,
-    setValue,
   } = useForm<IrrigationFormInterface>();
 
   //!Crops and lots
@@ -59,7 +58,6 @@ export const IrrigationForm = () => {
     isLoading: isLoadingMaterials,
     categories: categoriesMaterials,
   } = useGetProductsByCategory(true, "Materiales");
-
 
   // Filtered materials
   const [filteredMaterials, setFilteredMaterials] = useState<
@@ -153,6 +151,8 @@ export const IrrigationForm = () => {
     data.selectedMaterials = selectedMaterials;
     data.selectedSublots = selectedSublots;
 
+    console.log(JSON.stringify(data, null, 2));
+
     createIrrigationMutation(data, {
       onSuccess: () => {
         navigate("/irrigation");
@@ -209,14 +209,28 @@ export const IrrigationForm = () => {
               />
             </FormField>
 
+            {/*Name*/}
+            <FormField
+              label="Nombre"
+              error={errors.name?.message || ""}
+              required
+            >
+              <input
+                {...register("name", {
+                  required: "Este campo es requerido",
+                })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
+              />
+            </FormField>
+            
             {/*Crop code*/}
             <FormField
               label="Código de cultivo"
-              error={errors.crop_code?.message || ""}
+              error={errors.crop_id?.message || ""}
               required
             >
               <select
-                {...register("crop_code", {
+                {...register("crop_id", {
                   required: "Este campo es requerido",
                 })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
@@ -225,7 +239,7 @@ export const IrrigationForm = () => {
                 {sortedCrops?.map(
                   (crop) =>
                     crop.cultivo === "Papa" && (
-                      <option key={crop.code} value={crop.code}>
+                      <option key={crop.rowid} value={crop.rowid}>
                         {crop.code}
                       </option>
                     )
@@ -277,13 +291,6 @@ export const IrrigationForm = () => {
               <input
                 {...register("meters_of_line_mother", {
                   required: "Este campo es requerido",
-                  onChange: (e) => {
-                    const meters = parseFloat(e.target.value) || 0;
-                    const baseCost = irrigationCostsData?.[0]?.cost_mother_line || 0;
-                    const totalCost = (meters * baseCost) / 100;
-                    // Update the cost_mother_line field
-                    setValue("cost_mother_line", totalCost);
-                  },
                 })}
                 type="number"
                 placeholder="Ingrese los metros de linea madre"
@@ -300,19 +307,21 @@ export const IrrigationForm = () => {
             {/* Cost of line mother */}
             <FormField
               label="Costo de la linea madre"
-              error={errors.cost_mother_line?.message || ""}
+              error={errors.cost_id?.message || ""}
             >
-              <input
-                {...register("cost_mother_line", {
+              <select
+                className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
+                {...register("cost_id", {
                   required: "Este campo es requerido",
                 })}
-                name="cost_mother_line"
-                placeholder="Ingrese el costo de la linea madre"
-                type="number"
-                readOnly
-                autoComplete="off"
-                className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800 bg-gray-50"
-              />
+              >
+                <option value="">Seleccione un costo</option>
+                {irrigationCostsData?.map((cost) => (
+                  <option key={cost.id} value={cost.id}>
+                    Costo de la linea madre: ${cost.cost_mother_line}
+                  </option>
+                ))}
+              </select>
             </FormField>
 
             {/* Crop type */}
@@ -325,20 +334,21 @@ export const IrrigationForm = () => {
               </label>
               <LotSelection
                 lots={lots}
-                
                 onLotSelect={handleLotSelection}
                 onAreaChange={handleLotAreaChange}
                 selectedLots={selectedLots}
-
                 //Sublot
                 onSublotSelect={handleSublotSelection}
                 selectedSublots={selectedSublots}
                 onSublotAreaChange={handleSublotAreaChange}
-                />
+              />
             </div>
 
             {/* Total applied area */}
-            <TotalAreaDisplay selectedLots={selectedLots} selectedSublots={selectedSublots}/>
+            <TotalAreaDisplay
+              selectedLots={selectedLots}
+              selectedSublots={selectedSublots}
+            />
 
             <div className="col-span-2 mb-4">
               <label className="block text-sm font-medium text-gray-700 mb-1">

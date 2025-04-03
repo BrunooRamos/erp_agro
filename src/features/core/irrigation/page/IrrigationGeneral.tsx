@@ -3,6 +3,7 @@ import { useIrrigation } from "../../../../hooks";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import React from "react";
+import { SelectedMaterialInfoResponse } from "../../../../interfaces/irrigation.interface";
 
 export const IrrigationGeneral = () => {
   const location = useLocation();
@@ -12,13 +13,10 @@ export const IrrigationGeneral = () => {
     irrigationInfo,
     irrigationDeleteHours,
     irrigationDeleteFertirriegoProduct,
-  } = useIrrigation(irrigationData.irrigation.rowid);
+  } = useIrrigation(irrigationData.rowid);
   const { data: irrigationInfoData, isLoading } = irrigationInfo;
 
-  console.log(JSON.stringify(irrigationInfoData, null, 2));
-
   const handleDeleteHours = (id: string) => {
-    // Mostrar spinner mientras se elimina
     const loadingElement = document.getElementById("loading-spinner");
     if (loadingElement) {
       loadingElement.classList.remove("hidden");
@@ -26,7 +24,6 @@ export const IrrigationGeneral = () => {
 
     irrigationDeleteHours.mutate(id, {
       onSuccess: () => {
-        // Ocultar spinner cuando termine
         if (loadingElement) {
           loadingElement.classList.add("hidden");
         }
@@ -34,8 +31,6 @@ export const IrrigationGeneral = () => {
       },
       onError: (error) => {
         console.log(error);
-
-        // Ocultar spinner en caso de error
         if (loadingElement) {
           loadingElement.classList.add("hidden");
         }
@@ -43,13 +38,13 @@ export const IrrigationGeneral = () => {
     });
   };
 
-  const handleDeleteFertirriegoProduct = (productRef: string) => {
+  const handleDeleteFertirriegoProduct = (productId: string, fertirriegoId: string) => {
     const loadingElement = document.getElementById("loading-spinner");
     if (loadingElement) {
       loadingElement.classList.remove("hidden");
     }
 
-    irrigationDeleteFertirriegoProduct.mutate(productRef, {
+    irrigationDeleteFertirriegoProduct.mutate({productId, fertirriegoId}, {
       onSuccess: () => {
         if (loadingElement) {
           loadingElement.classList.add("hidden");
@@ -82,18 +77,8 @@ export const IrrigationGeneral = () => {
     return format(new Date(date), "dd 'de' MMMM 'de' yyyy", { locale: es });
   };
 
-  const {
-    irrigation,
-    selectedLots,
-    selectedSublots,
-    materials,
-    hours,
-    fertirriego,
-  } = irrigationInfoData;
-
   return (
     <div className="p-6 bg-white rounded-lg shadow-md">
-      {/* Spinner de carga oculto por defecto */}
       <div
         id="loading-spinner"
         className="fixed inset-0 items-center justify-center bg-white bg-opacity-75 z-50 hidden"
@@ -113,19 +98,15 @@ export const IrrigationGeneral = () => {
           <div className="space-y-2">
             <p>
               <span className="font-medium">Código de Cultivo:</span>{" "}
-              {irrigation.crop_code}
+              {irrigationInfoData.irrigation.crop_code}
             </p>
             <p>
               <span className="font-medium">Fecha:</span>{" "}
-              {formatDate(irrigation.date)}
+              {formatDate(irrigationInfoData.irrigation.date)}
             </p>
             <p>
               <span className="font-medium">Metros de Línea Madre:</span>{" "}
-              {irrigation.meters_of_line_mother}
-            </p>
-            <p>
-              <span className="font-medium">Costo de Línea Madre:</span> $
-              {Number(irrigation.cost_mother_line).toLocaleString()}
+              {irrigationInfoData.irrigation.meters_of_line_mother}
             </p>
           </div>
         </div>
@@ -133,48 +114,53 @@ export const IrrigationGeneral = () => {
         <div className="bg-gray-50 p-4 rounded-lg">
           <h2 className="text-lg font-semibold mb-3 text-zinc-700">Equipos</h2>
           <div className="space-y-2">
-            <p>
-              <span className="font-medium">Equipo Principal:</span>{" "}
-              {irrigation.first_equipment?.name || "No especificado"}
-            </p>
-            {irrigation.first_equipment?.brand && (
-              <p>
-                <span className="font-medium">Marca:</span>{" "}
-                {irrigation.first_equipment.brand}
-              </p>
-            )}
-            {irrigation.first_equipment?.model && (
-              <p>
-                <span className="font-medium">Modelo:</span>{" "}
-                {irrigation.first_equipment.model}
-              </p>
-            )}
-
-            {irrigation.second_equipment?.id && (
-              <>
-                <p className="mt-3">
-                  <span className="font-medium">Equipo Secundario:</span>{" "}
-                  {irrigation.second_equipment?.name || "No especificado"}
+            {irrigationInfoData.irrigation.first_equipment && (
+              <div>
+                <p>
+                  <span className="font-medium">Equipo Principal:</span>{" "}
+                  {irrigationInfoData.irrigation.first_equipment.name || "No especificado"}
                 </p>
-                {irrigation.second_equipment?.brand && (
+                {irrigationInfoData.irrigation.first_equipment.brand && (
                   <p>
                     <span className="font-medium">Marca:</span>{" "}
-                    {irrigation.second_equipment.brand}
+                    {irrigationInfoData.irrigation.first_equipment.brand}
                   </p>
                 )}
-                {irrigation.second_equipment?.model && (
+                {irrigationInfoData.irrigation.first_equipment.model && (
                   <p>
                     <span className="font-medium">Modelo:</span>{" "}
-                    {irrigation.second_equipment.model}
+                    {irrigationInfoData.irrigation.first_equipment.model}
                   </p>
                 )}
-              </>
+              </div>
+            )}
+
+            {irrigationInfoData.irrigation.second_equipment?.id && (
+              <div className="mt-4">
+                <p>
+                  <span className="font-medium">Equipo Secundario:</span>{" "}
+                  {irrigationInfoData.irrigation.second_equipment.name || "No especificado"}
+                </p>
+                {irrigationInfoData.irrigation.second_equipment.brand && (
+                  <p>
+                    <span className="font-medium">Marca:</span>{" "}
+                    {irrigationInfoData.irrigation.second_equipment.brand}
+                  </p>
+                )}
+                {irrigationInfoData.irrigation.second_equipment.model && (
+                  <p>
+                    <span className="font-medium">Modelo:</span>{" "}
+                    {irrigationInfoData.irrigation.second_equipment.model}
+                  </p>
+                )}
+              </div>
             )}
           </div>
         </div>
       </div>
 
-      {(selectedLots.length > 0 || selectedSublots.length > 0) && (
+      {/* Áreas de Riego */}
+      {(irrigationInfoData.selectedLots.length > 0 || irrigationInfoData.selectedSublots.length > 0) && (
         <div className="mb-8">
           <h2 className="text-lg font-semibold mb-3 text-zinc-700 border-b pb-2">
             Áreas de Riego
@@ -190,16 +176,14 @@ export const IrrigationGeneral = () => {
                 </tr>
               </thead>
               <tbody>
-                {/* Usar Set para obtener lotes únicos */}
-                {Array.from(new Set(selectedLots.map(lot => lot.rowid))).map((lotId) => {
-                  const lot = selectedLots.find(l => l.rowid === lotId)!;
-                  // Filtrar sublotes que pertenecen a este lote
-                  const childSublots = selectedSublots.filter(
-                    (sublot) => sublot.id_parent_lote === lot.rowid
+                {Array.from(new Set(irrigationInfoData.selectedLots.map(lot => lot.id_lote))).map((lotId) => {
+                  const lot = irrigationInfoData.selectedLots.find(l => l.id_lote === lotId)!;
+                  const childSublots = irrigationInfoData.selectedSublots.filter(
+                    (sublot) => sublot.id_parent_lote === lot.id_lote
                   );
 
                   return (
-                    <React.Fragment key={lot.rowid}>
+                    <React.Fragment key={lot.id_lote}>
                       <tr className="border-b bg-gray-50">
                         <td className="py-2 px-4 font-medium">{lot.name}</td>
                         <td className="py-2 px-4">{lot.campo_name}</td>
@@ -221,36 +205,14 @@ export const IrrigationGeneral = () => {
                     </React.Fragment>
                   );
                 })}
-
-                {/* Fila de total */}
-                <tr className="border-t-2 border-gray-300 font-bold bg-gray-100">
-                  <td colSpan={3} className="py-2 px-4 text-right">
-                    Área Total:
-                  </td>
-                  <td className="py-2 px-4 text-right">
-                    {(
-                      selectedLots
-                        .filter((lot) => {
-                          const hasChildSublots = selectedSublots.some(
-                            (sublot) => sublot.id_parent_lote === lot.rowid
-                          );
-                          return !hasChildSublots;
-                        })
-                        .reduce((sum, lot) => sum + lot.area_utilizada, 0) +
-                      selectedSublots.reduce(
-                        (sum, sublot) => sum + sublot.area_utilizada,
-                        0
-                      )
-                    ).toFixed(2)}
-                  </td>
-                </tr>
               </tbody>
             </table>
           </div>
         </div>
       )}
 
-      {hours && hours.length > 0 && (
+      {/* Horas de Riego */}
+      {irrigationInfoData.hours && irrigationInfoData.hours.length > 0 && (
         <div className="mb-8">
           <h2 className="text-lg font-semibold mb-3 text-zinc-700 border-b pb-2">
             Horas de Riego
@@ -261,27 +223,22 @@ export const IrrigationGeneral = () => {
                 <tr>
                   <th className="py-2 px-4 text-left">Fecha</th>
                   <th className="py-2 px-4 text-right">Horas</th>
-                  <th className="py-2 px-4 text-right">
-                    Consumo de Combustible
-                  </th>
-                  <th className="py-2 px-4 text-right">
-                    Costo de Combustible
-                  </th>
+                  <th className="py-2 px-4 text-right">Consumo de Combustible</th>
+                  <th className="py-2 px-4 text-right">Costo de Mantenimiento</th>
                   <th className="py-2 px-4 text-center">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {hours.map((hour) => (
+                {irrigationInfoData.hours.map((hour) => (
+                  console.log(hour),
                   <tr key={hour.rowid} className="border-b">
                     <td className="py-2 px-4">{formatDate(hour.date)}</td>
                     <td className="py-2 px-4 text-right">{hour.hours}</td>
                     <td className="py-2 px-4 text-right">
-                      {Number(
-                        hour.fuel_consumption_per_hour * hour.hours
-                      ).toFixed(2)}
+                      {(hour.fuel_consumption_per_hour * hour.hours).toFixed(2)} L
                     </td>
                     <td className="py-2 px-4 text-right">
-                      ${Number(hour.fuel_price).toLocaleString()}
+                      ${hour.maintenance_cost.toLocaleString()}
                     </td>
                     <td className="py-2 px-4 text-center">
                       <button
@@ -300,7 +257,10 @@ export const IrrigationGeneral = () => {
         </div>
       )}
 
-      {fertirriego && fertirriego.length > 0 && (
+
+      
+      {/* Fertirriego */}
+      {irrigationInfoData.fertirriego && irrigationInfoData.fertirriego.length > 0 && (
         <div className="mb-8">
           <h2 className="text-lg font-semibold mb-3 text-zinc-700 border-b pb-2">
             Fertirriego
@@ -311,132 +271,81 @@ export const IrrigationGeneral = () => {
                 <tr>
                   <th className="py-2 px-4 text-left">Fecha</th>
                   <th className="py-2 px-4 text-right">Área Total (ha)</th>
-                  <th className="py-2 px-4 text-right">
-                    Cantidad de Productos
-                  </th>
-                  <th className="py-2 px-4 text-right">Costo Total</th>
+                  <th className="py-2 px-4 text-right">Cantidad de Productos</th>
                   <th className="py-2 px-4 text-center">Acciones</th>
                 </tr>
               </thead>
               <tbody>
-                {fertirriego.map((fert) => (
-                  <>
-                    <tr key={fert.rowid} className="border-b">
-                      <td className="py-2 px-4">{formatDate(fert.date)}</td>
+                {irrigationInfoData.fertirriego.map((fert) => (
+                  <React.Fragment key={fert.rowid}>
+                    <tr className="border-b">
+                      <td className="py-2 px-4">
+                        {formatDate(new Date(fert.date))}
+                      </td>
                       <td className="py-2 px-4 text-right">
                         {fert.total_area.toFixed(2)}
                       </td>
                       <td className="py-2 px-4 text-right">
-                        {fert.product_count}
-                      </td>
-                      <td className="py-2 px-4 text-right">
-                        ${Number(fert.total_cost).toLocaleString()}
+                        {fert.selectedMaterials?.length || 0}
                       </td>
                       <td className="py-2 px-4 text-center">
-                        <button
-                          className="text-blue-600 hover:text-blue-800"
-                          onClick={() => {
-                            const detailRow = document.getElementById(
-                              `fert-detail-${fert.rowid}`
-                            );
-                            if (detailRow) {
-                              detailRow.classList.toggle("hidden");
-                            }
-                          }}
-                        >
-                          Ver productos
-                        </button>
+                        {fert.selectedMaterials && 
+                         fert.selectedMaterials.length > 0 && (
+                          <button
+                            className="text-blue-600 hover:text-blue-800"
+                            onClick={() => {
+                              const detailRow = document.getElementById(`fertirriego-details-${fert.rowid}`);
+                              if (detailRow) {
+                                detailRow.classList.toggle("hidden");
+                              }
+                            }}
+                          >
+                            Ver productos
+                          </button>
+                        )}
                       </td>
                     </tr>
-                    <tr
-                      id={`fert-detail-${fert.rowid}`}
-                      className="hidden bg-gray-50"
-                    >
-                      <td colSpan={5} className="py-2 px-4">
-                        <div className="p-3">
-                          <h4 className="font-medium mb-2">
-                            Productos utilizados:
-                          </h4>
-                          <table className="min-w-full bg-white border">
-                            <thead className="bg-gray-100">
-                              <tr>
-                                <th className="py-1 px-3 text-left text-sm">
-                                  Producto
-                                </th>
-                                <th className="py-1 px-3 text-left text-sm">
-                                  Referencia
-                                </th>
-                                <th className="py-1 px-3 text-left text-sm">
-                                  Almacén
-                                </th>
-                                <th className="py-1 px-3 text-right text-sm">
-                                  Cantidad
-                                </th>
-                                <th className="py-1 px-3 text-left text-sm">
-                                  Tipo
-                                </th>
-                                <th className="py-1 px-3 text-right text-sm">
-                                  Precio Total
-                                </th>
-                                <th className="py-1 px-3 text-center">
-                                  Acciones
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {fert.products &&
-                                fert.products.map((product, idx) => (
-                                  <tr key={idx} className="border-t">
-                                    <td className="py-1 px-3 text-sm">
-                                      {product.product_name}
-                                    </td>
-                                    <td className="py-1 px-3 text-sm">
-                                      {product.product_ref}
-                                    </td>
-                                    <td className="py-1 px-3 text-sm">
-                                      {product.warehouse_name}
-                                    </td>
-                                    <td className="py-1 px-3 text-right text-sm">
-                                      {product.quantity}
-                                    </td>
-                                    <td className="py-1 px-3 text-sm">
-                                      {product.type}
-                                    </td>
-                                    <td className="py-1 px-3 text-right text-sm">
-                                      ${product.total_price.toLocaleString()}
-                                    </td>
-                                    <td className="py-1 px-3 text-center">
+                    {fert.selectedMaterials && 
+                     fert.selectedMaterials.length > 0 && (
+                      <tr id={`fertirriego-details-${fert.rowid}`} className="hidden bg-gray-50">
+                        <td colSpan={4} className="p-4">
+                          <div className="space-y-4">
+                            <h4 className="font-medium">Productos utilizados:</h4>
+                            <table className="min-w-full bg-white border">
+                              <thead className="bg-gray-100">
+                                <tr>
+                                  <th className="py-2 px-4 text-left">Producto</th>
+                                  <th className="py-2 px-4 text-right">Cantidad</th>
+                                  <th className="py-2 px-4 text-left">Unidad</th>
+                                  <th className="py-2 px-4 text-left">Tipo</th>
+                                  <th className="py-2 px-4 text-center">Acciones</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {fert.selectedMaterials.map((material : SelectedMaterialInfoResponse) => (
+                                  <tr key={material.id} className="border-t">
+                                    <td className="py-2 px-4">{material.label}</td>
+                                    <td className="py-2 px-4 text-right">{material.quantity}</td>
+                                    <td className="py-2 px-4">{material.unit}</td>
+                                    <td className="py-2 px-4">{material.type}</td>
+                                    <td className="py-2 px-4 text-center">
                                       <button
                                         title="Eliminar"
                                         className="text-red-600 hover:text-red-800"
-                                        onClick={() =>
-                                          handleDeleteFertirriegoProduct(
-                                            product.rowid || ""
-                                          )
-                                        }
+                                        onClick={() => handleDeleteFertirriegoProduct(material.id, fert.rowid)}
                                       >
                                         <i className="fa-solid fa-trash"></i>
                                       </button>
                                     </td>
                                   </tr>
                                 ))}
-                              {(!fert.products ||
-                                fert.products.length === 0) && (
-                                <tr>
-                                  <td
-                                    colSpan={6}
-                                    className="py-2 px-3 text-center text-sm"
-                                  >
-                                    No hay productos registrados
-                                  </td>
-                                </tr>
-                              )}
-                            </tbody>
-                          </table>
-                        </div>
-                      </td>
-                    </tr>
-                  </>
+                              </tbody>
+                            </table>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 ))}
               </tbody>
             </table>
@@ -444,7 +353,8 @@ export const IrrigationGeneral = () => {
         </div>
       )}
 
-      {materials.length > 0 && (
+      {/* Materiales */}
+      {irrigationInfoData.selectedMaterials.length > 0 && (
         <div className="mb-8">
           <h2 className="text-lg font-semibold mb-3 text-zinc-700 border-b pb-2">
             Materiales
@@ -454,26 +364,20 @@ export const IrrigationGeneral = () => {
               <thead className="bg-gray-100">
                 <tr>
                   <th className="py-2 px-4 text-left">Producto</th>
-                  <th className="py-2 px-4 text-left">Referencia</th>
-                  <th className="py-2 px-4 text-left">Almacén</th>
                   <th className="py-2 px-4 text-right">Cantidad</th>
+                  <th className="py-2 px-4 text-left">Unidad</th>
                   <th className="py-2 px-4 text-left">Tipo</th>
-                  <th className="py-2 px-4 text-right">Precio Total</th>
+                  <th className="py-2 px-4 text-left">Almacén</th>
                 </tr>
               </thead>
               <tbody>
-                {materials.map((material, index) => (
-                  <tr key={index} className="border-b">
-                    <td className="py-2 px-4">{material.product_name}</td>
-                    <td className="py-2 px-4">{material.product_ref}</td>
-                    <td className="py-2 px-4">{material.warehouse_name}</td>
-                    <td className="py-2 px-4 text-right">
-                      {material.quantity}
-                    </td>
+                {irrigationInfoData.selectedMaterials.map((material) => (
+                  <tr key={material.id} className="border-b">
+                    <td className="py-2 px-4">{material.label}</td>
+                    <td className="py-2 px-4 text-right">{material.quantity}</td>
+                    <td className="py-2 px-4">{material.unit}</td>
                     <td className="py-2 px-4">{material.type}</td>
-                    <td className="py-2 px-4 text-right">
-                      ${material.total_price.toLocaleString()}
-                    </td>
+                    <td className="py-2 px-4">{material.warehouse_id}</td>
                   </tr>
                 ))}
               </tbody>

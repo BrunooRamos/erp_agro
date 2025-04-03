@@ -28,7 +28,7 @@ export const IrrigationFertirriego = () => {
         handleLotSelection,
         handleSublotSelection,
         handleSublotAreaChange,
-      } = useCropAndLots(control, irrigationData.irrigation.crop_code);
+      } = useCropAndLots(control, irrigationData.crop_id.toString());
 
     // Add new states for product handling
     const [searchQuery, setSearchQuery] = useState("");
@@ -124,11 +124,11 @@ export const IrrigationFertirriego = () => {
             toast.error("Debe seleccionar al menos un producto");
             return;
         }
-        
-        data.crop_code = irrigationData.irrigation.crop_code;
+        data.irrigation_id = irrigationData.rowid;
         data.selectedLots = selectedLots;
         data.selectedSublots = selectedSublots;
         data.selectedMaterials = selectedProducts;
+
         
         createIrrigationFertirriego.mutate(data);
     });
@@ -144,7 +144,7 @@ export const IrrigationFertirriego = () => {
 
     return  <>
     <h1 className="text-2xl font-bold mb-4">
-      Fertirriego - {irrigationData.irrigation.crop_code}
+      Fertirriego - {irrigationData.crop_code}
     </h1>
 
     <form onSubmit={onSubmit} className="w-full">

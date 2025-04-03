@@ -1,13 +1,11 @@
-import { MachineryLight } from "./machinery.interface";
+
 
 export interface GeneralLabor {
   date: string;
-  labor_code: string;
-  cusa_cost: number;
-  lts: number;
+  crop_id: string;
+  cusa_id: string;
   first_equipment: string;
   second_equipment?: string;
-  crop_code: string;
   selectedLots: SelectedLot[];
   selectedSublots: SelectedSubLot[];
 }
@@ -227,18 +225,59 @@ export interface RAFSendData {
 }
 
 
+// List general labor
 export interface GeneralLaborResponse {
-  date: string;
-  labor_code: string;
-  cusa_cost: number;
-  lts: number;
-  first_equipment: string;
-  second_equipment?: string;
-  crop_code: string;
-  selectedSublots: SelectedSubLot[];
-  selectedLots: Lot[];
-  machinaryUsed: MachineryLight[];  
+  rowid:             number;
+  date:              Date;
+  crop_id:           number;
+  crop_code:         string;
+  cusa_id:           number;
+  cusa_info:         CusaInfoGeneralLabor;
+  first_equipment:   string;
+  second_equipment:  null;
+  lts:               number;
+  fuel_price:        number;
+  date_creation:     number;
+  date_modification: number;
+  selectedSublots:   SelectedSublotGeneralLabor[];
+  selectedLots:      SelectedLotGeneralLabor[];
+  machinaryUsed:     MachinaryUsedGeneralLabor[];
 }
+
+export interface CusaInfoGeneralLabor {
+  cod_laboreo: string;
+  laboreo:     string;
+  precio_cusa: number;
+  lts_ha:      number;
+}
+
+export interface MachinaryUsedGeneralLabor {
+  rowid: string;
+  name:  string;
+  brand: string;
+  model: string;
+}
+
+export interface SelectedLotGeneralLabor {
+  rowid:          string;
+  name:           string;
+  campo_name:     string;
+  area_utilizada: number;
+}
+
+export interface SelectedSublotGeneralLabor {
+  id_sub_lote:    string;
+  id_parent_lote: string;
+  name:           string;
+  area_utilizada: number;
+}
+
+
+
+
+
+
+
 
 export interface ProductsResponse {
   product_name: string;

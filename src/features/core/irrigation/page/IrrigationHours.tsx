@@ -16,7 +16,8 @@ export const IrrigationHours = () => {
   const location = useLocation();
   const irrigationData = location.state?.irrigationData;
 
-  const { createIrrigationHours } = useIrrigation();
+  const { createIrrigationHours, irrigationCosts } = useIrrigation();
+  const { data: irrigationCostsData } = irrigationCosts;
 
   const {
     register,
@@ -25,7 +26,7 @@ export const IrrigationHours = () => {
     control,
   } = useForm<IrrigationHoursSendData>({
     defaultValues: {
-      date: irrigationData?.irrigation.date.split("T")[0],
+      date: irrigationData?.date.split("T")[0],
     },
   });
 
@@ -39,7 +40,7 @@ export const IrrigationHours = () => {
     handleLotSelection,
     handleSublotSelection,
     handleSublotAreaChange,
-  } = useCropAndLots(control, irrigationData.irrigation.crop_code);
+  } = useCropAndLots(control, irrigationData.crop_id.toString());
 
   // Redirect if no irrigation data is present
   if (!irrigationData) {
@@ -48,9 +49,10 @@ export const IrrigationHours = () => {
   }
 
   const onSubmit = handleSubmit((data) => {
-    data.crop_code = irrigationData.irrigation.crop_code;
     data.lots_irrigated = selectedLots;
     data.sublots_irrigated = selectedSublots;
+    data.irrigation_id = irrigationData.rowid;
+    console.log(JSON.stringify(data, null, 2));
 
     createIrrigationHours.mutate(data, {
       onSuccess: () => {
@@ -71,7 +73,7 @@ export const IrrigationHours = () => {
   return (
     <>
       <h1 className="text-2xl font-bold mb-4">
-        Horas de Riego - {irrigationData.irrigation.crop_code}
+        Horas de Riego - {irrigationData.crop_code}
       </h1>
 
       <form onSubmit={onSubmit} className="w-full">
@@ -89,6 +91,25 @@ export const IrrigationHours = () => {
               className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
             />
           </FormField>
+
+          <FormField
+              label="Costo"
+              error={errors.cost_id?.message || ""}
+            >
+              <select
+                className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
+                {...register("cost_id", {
+                  required: "Este campo es requerido",
+                })}
+              >
+                <option value="">Seleccione un costo</option>
+                {irrigationCostsData?.map((cost) => (
+                  <option key={cost.id} value={cost.id}>
+                    Consumo de combustible: ${cost.fuel_consumption_per_hour} y mantenimiento: ${cost.maintenance_cost}
+                  </option>
+                ))}
+              </select>
+            </FormField>
 
           {/* Hours Field */}
           <FormField label="Horas" error={errors.hours?.message || ""}>

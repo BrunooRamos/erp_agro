@@ -30,10 +30,10 @@ export const IrrigationCard = ({ data }: { data: IrrigationResponse }) => {
           Código de Cultivo
         </p>
         <h3 className="text-lg font-semibold text-gray-800">
-          {data.irrigation.crop_code}
+          {data.crop_code}
         </h3>
         <span className="text-xs text-gray-500">
-          {new Date(data.irrigation.date).toLocaleDateString()}
+          {new Date(data.date).toLocaleDateString()}
         </span>
       </div>
 

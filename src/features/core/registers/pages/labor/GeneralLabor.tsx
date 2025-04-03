@@ -8,7 +8,6 @@
     Hacer la lógica del lado del servidor para guardar el registro.
 */
 
-import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { GeneralLabor as GeneralLaborInterface } from "../../../../../interfaces";
 import {
@@ -32,8 +31,6 @@ export const GeneralLabor = () => {
     handleSubmit,
     formState: { errors },
     control,
-    watch,
-    setValue,
     reset,
   } = useForm<GeneralLaborInterface>();
 
@@ -59,20 +56,6 @@ export const GeneralLabor = () => {
 
   // Cusa
   const { data: cusa, isLoading: isLoadingCusa } = useCusa();
-  const selectedLabor = watch("labor_code");
-
-  // Actualiza el costo cusa según el labor seleccionado
-  useEffect(() => {
-    if (selectedLabor && cusa) {
-      const selectedCusaItem = cusa.find(
-        (item) => item.cod_laboreo === selectedLabor
-      );
-      if (selectedCusaItem) {
-        setValue("cusa_cost", selectedCusaItem.precio_cusa);
-        setValue("lts", selectedCusaItem.lts_ha);
-      }
-    }
-  }, [selectedLabor, cusa, setValue]);
 
   const { createGeneralLabor } = useRegisters();
   const { mutate: createGeneralLaborMutation } = createGeneralLabor;
@@ -135,18 +118,18 @@ export const GeneralLabor = () => {
             {/*Crop code*/}
             <FormField
               label="Código de cultivo"
-              error={errors.crop_code?.message || ""}
+              error={errors.crop_id?.message || ""}
               required
             >
               <select
-                {...register("crop_code", {
+                {...register("crop_id", {
                   required: "Este campo es requerido",
                 })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
               >
                 <option value="">Seleccione un cultivo</option>
                 {sortedCrops?.map((crop) => (
-                  <option key={crop.code} value={crop.code}>
+                  <option key={crop.rowid} value={crop.rowid}>
                     {crop.code}
                   </option>
                 ))}
@@ -195,62 +178,24 @@ export const GeneralLabor = () => {
             {/* Cusa information */}
             <FormField
               label="Cusa"
-              error={errors.labor_code?.message || ""}
+              error={errors.cusa_id?.message || ""}
               required
             >
               <select
-                {...register("labor_code", {
+                {...register("cusa_id", {
                   required: "Este campo es requerido",
                 })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
               >
                 <option value="">Seleccione una cusa</option>
                 {cusa?.map((labor) => (
-                  <option key={labor.cod_laboreo} value={labor.cod_laboreo}>
+                  <option key={labor.rowid} value={labor.rowid}>
                     {labor.laboreo}
                   </option>
                 ))}
               </select>
             </FormField>
 
-            {/* Cusa Cost */}
-            <FormField
-              label="Costo de cusa"
-              error={errors.cusa_cost?.message || ""}
-            >
-              <input
-                {...register("cusa_cost", {
-                  min: {
-                    value: 0,
-                    message: "El costo debe ser mayor a 0",
-                  },
-                })}
-                name="cusa_cost"
-                placeholder="100"
-                type="number"
-                step="0.01"
-                autoComplete="off"
-                className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
-              />
-            </FormField>
-
-            {/* Lts Field */}
-            <FormField label="Lts/ha" error={errors.lts?.message || ""}>
-              <input
-                {...register("lts", {
-                  min: {
-                    value: 0,
-                    message: "El costo debe ser mayor a 0",
-                  },
-                })}
-                name="lts"
-                placeholder="100"
-                type="number"
-                step="0.01"
-                autoComplete="off"
-                className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
-              />
-            </FormField>
 
             {/* Crop type */}
             <CropInfoCard crop={selectedCrop} />

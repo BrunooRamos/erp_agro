@@ -76,7 +76,7 @@ export const useIrrigation = (id?: string) => {
     })
 
     const irrigationDeleteFertirriegoProduct = useMutation({
-        mutationFn: (id: string) => deleteIrrigationFertirriegoProduct(id),
+        mutationFn: (data: {productId: string, fertirriegoId: string}) => deleteIrrigationFertirriegoProduct(data.productId, data.fertirriegoId),
         onSuccess: () => {
             toast.success('Producto de fertirriego eliminado correctamente');
         },

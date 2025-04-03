@@ -38,13 +38,13 @@ export const getIrrigationInfo = async (id: string) => {
 };
 
 export const deleteIrrigationHours = async (id: string) => {
+    console.log("estoy aqui", id);
     const response = await dolibarrApi.delete(`/vicentina/irrigation/hours/${id}`);
     return response.data;
 };
 
-export const deleteIrrigationFertirriegoProduct = async (id: string) => {
-    console.log("estoy aqui", id);
-    const response = await dolibarrApi.delete(`/vicentina/irrigation/product/${id}`);
+export const deleteIrrigationFertirriegoProduct = async (productId: string, fertirriegoId: string) => {
+    const response = await dolibarrApi.delete(`/vicentina/irrigation/product/${productId}/${fertirriegoId}`);
     return response.data;
 };
 
