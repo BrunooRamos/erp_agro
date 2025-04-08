@@ -15,7 +15,6 @@ export const TongProcces = () => {
 
   const { listCalibers, listTongCosts, createTongProcess } = usePostHarvest();
   const { data: products = [] } = useGetProductsByCategory(true, "Papa");
-  console.log(JSON.stringify(products, null, 2));
 
   //!Calibres
   const { data: calibers = [] } = listCalibers;
@@ -30,11 +29,11 @@ export const TongProcces = () => {
   const parentProducts = products?.filter((product) => !product.parent_key);
 
   // Obtener productos hijo basados en el padre seleccionado y que estén en warehouse 7
-  const childProducts = products?.filter(
-    (product) =>
-      product.parent_key == selectedParentId &&
-      product.warehouses?.some((w) => w.id === 7)
-  );
+  const childProducts = products
+    ?.find((product) => product.id === selectedParentId)
+    ?.variations?.filter((variation) => 
+      variation.warehouses?.some((w) => w.id === 7)
+    ) || [];
 
   //!Form
   const {
@@ -60,7 +59,7 @@ export const TongProcces = () => {
   // Actualizar el stock máximo cuando cambia el producto hijo seleccionado
   useEffect(() => {
     if (selectedChildId) {
-      const selectedChild = products?.find((p) => p.id === selectedChildId);
+      const selectedChild = childProducts?.find((p) => p.id === selectedChildId);
       const warehouse7 = selectedChild?.warehouses?.find((w) => w.id === 7);
       const availableStock = warehouse7?.stock || 0;
       setMaxStock(availableStock);
@@ -92,13 +91,13 @@ export const TongProcces = () => {
 
   //!Costos y calculos
   const { data: tongCosts = [] } = listTongCosts;
-  const [selectedTongCost, setSelectedTongCost] = useState<number | null>(null);
+  const selectedTongCost = watch("tong_cost_id");
 
   // Calcular costo proporcional basado en los bines utilizados
   const calculateProportionalCost = () => {
     if (!selectedTongCost || !inputBins) return null;
 
-    const selectedCost = tongCosts.find((cost) => cost.id === selectedTongCost);
+    const selectedCost = tongCosts.find((cost) => cost.id.toString() === selectedTongCost);
     if (!selectedCost) return null;
 
     const proportion = inputBins / selectedCost.max_bins;
@@ -113,21 +112,6 @@ export const TongProcces = () => {
 
   const proportionalCost = calculateProportionalCost();
 
-  // Actualizar los valores de costos en el formulario cuando cambian los costos proporcionales
-  useEffect(() => {
-    if (proportionalCost) {
-      setValue("fuel_cost", parseFloat(proportionalCost.fuelCost));
-      setValue("gata_cost", parseFloat(proportionalCost.gataCost));
-      setValue("lift_cost", parseFloat(proportionalCost.liftCost));
-      setValue("fuel_liters", parseFloat(proportionalCost.fuelLiters));
-    } else {
-      setValue("fuel_cost", 0);
-      setValue("gata_cost", 0);
-      setValue("lift_cost", 0);
-      setValue("fuel_liters", 0);
-    }
-  }, [proportionalCost, setValue]);
-
   const { mutate: createTongProcessMutate } = createTongProcess;
 
   const onSubmit = handleSubmit((data) => {
@@ -141,9 +125,9 @@ export const TongProcces = () => {
       // Asegurarse de que warehouse_id esté incluido
       warehouse_id: data.warehouse_id || 7,
     };
-
-    createTongProcessMutate(dataToSubmit);
+    
     console.log(JSON.stringify(dataToSubmit, null, 2));
+    createTongProcessMutate(dataToSubmit);
   });
 
   return (
@@ -249,7 +233,9 @@ export const TongProcces = () => {
             <select
               id="tong-cost-select"
               aria-label="Seleccionar costo de tong"
-              onChange={(e) => setSelectedTongCost(Number(e.target.value))}
+              {...register("tong_cost_id", {
+                required: "Este campo es requerido",
+              })}
               className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
               value={selectedTongCost || ""}
             >
@@ -264,11 +250,22 @@ export const TongProcces = () => {
             </select>
           </FormField>
 
+          <FormField label="Otros costos (en USD)" 
+            error={errors.other_cost?.message || ""}
+          >
+            <input
+              type="number"
+              {...register("other_cost")}
+              placeholder="Otros costos"
+              className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
+            />
+          </FormField>
+
           {selectedTongCost && inputBins > 0 && (
             <div className="col-span-2 p-4 bg-gray-50 rounded-md border border-gray-200">
               <h3 className="font-semibold mb-2">
                 Costos Proporcionales ({inputBins} bins de{" "}
-                {tongCosts.find((c) => c.id === selectedTongCost)?.max_bins ||
+                {tongCosts.find((c) => c.id.toString() === selectedTongCost)?.max_bins ||
                   0}
                 )
               </h3>
@@ -278,7 +275,6 @@ export const TongProcces = () => {
                   <p className="font-medium">${proportionalCost?.fuelCost}</p>
                   <input
                     type="hidden"
-                    {...register("fuel_cost", { valueAsNumber: true })}
                   />
                 </div>
                 <div>
@@ -288,7 +284,6 @@ export const TongProcces = () => {
                   </p>
                   <input
                     type="hidden"
-                    {...register("fuel_liters", { valueAsNumber: true })}
                   />
                 </div>
                 <div>
@@ -298,7 +293,6 @@ export const TongProcces = () => {
                   </p>
                   <input
                     type="hidden"
-                    {...register("gata_cost", { valueAsNumber: true })}
                   />
                 </div>
                 <div>
@@ -308,7 +302,6 @@ export const TongProcces = () => {
                   </p>
                   <input
                     type="hidden"
-                    {...register("lift_cost", { valueAsNumber: true })}
                   />
                 </div>
               </div>

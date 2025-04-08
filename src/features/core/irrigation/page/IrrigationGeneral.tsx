@@ -260,7 +260,7 @@ export const IrrigationGeneral = () => {
 
       
       {/* Fertirriego */}
-      {irrigationInfoData.fertirriego && irrigationInfoData.fertirriego.length > 0 && (
+      {irrigationInfoData.fertirriego  && (
         <div className="mb-8">
           <h2 className="text-lg font-semibold mb-3 text-zinc-700 border-b pb-2">
             Fertirriego

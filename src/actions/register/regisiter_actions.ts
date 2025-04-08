@@ -8,6 +8,7 @@ export const getCategoryIdByLabel = async (label: string) => {
 };
 
 export const getProductsByCategoryId = async (categoryId: string) => {
+    console.log(`/categories/${categoryId}/products/tree`);
     const response = await dolibarrApi.get(`/categories/${categoryId}/products/tree`);
     return response.data as ProductsResponse[];
 };

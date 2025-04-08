@@ -1,11 +1,7 @@
-interface SummaryData {
-  labors: number;
-  rafs: number;
-  seed_maps: number;
-}
+import { TotalsCostCenter } from "../../../interfaces/";
 
 interface SummaryCardsProps {
-  totals: SummaryData;
+  totals: TotalsCostCenter;
   grandTotal: number;
 }
 
@@ -36,6 +32,24 @@ export const SummaryCards: React.FC<SummaryCardsProps> = ({ totals, grandTotal }
       colors: {
         bg: "bg-yellow-50",
         text: "text-yellow-500",
+      },
+    },
+    {
+      title: "Irrigaciones",
+      value: totals.irrigation,
+      icon: "fas fa-spray-can",
+      colors: {
+        bg: "bg-green-50",
+        text: "text-green-500",
+      },
+    },
+    {
+      title: "Fertirriego",
+      value: totals.fertirriego,
+      icon: "fas fa-spray-can",
+      colors: {
+        bg: "bg-green-50",
+        text: "text-green-500",
       },
     },
     {

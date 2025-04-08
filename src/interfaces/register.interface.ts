@@ -177,16 +177,17 @@ export interface Warehouse {
 }
 
 export interface ProductsResponse {
-  id: string;
-  entity: string;
-  array_options: ArrayOptions;
-  ref: string;
-  date_creation: Date;
-  label: string;
-  parent_key: string;
-  subcategory_id: string;
+  id:               string;
+  entity:           string;
+  array_options:    ArrayOptions;
+  ref:              string;
+  date_creation:    Date;
+  label:            string;
+  parent_key:       string;
+  subcategory_id:   string;
   subcategory_name: string;
-  warehouses: Warehouse[];
+  warehouses:       Warehouse[];
+  variations:       ProductsResponse[];
 }
 
 export interface SelectedLot {
@@ -278,17 +279,16 @@ export interface SelectedSublotGeneralLabor {
 
 
 
-
-export interface ProductsResponse {
-  product_name: string;
-  product_ref: string;
-  quantity: number;
-  type: string;
-  unit: string;
-  warehouse_name: string;
-  total_price: number;
-  total_price_usd: number;
-}
+// export interface ProductsResponse {
+//   product_name: string;
+//   product_ref: string;
+//   quantity: number;
+//   type: string;
+//   unit: string;
+//   warehouse_name: string;
+//   total_price: number;
+//   total_price_usd: number;
+// }
 
 export interface Lot {
   rowid: string;

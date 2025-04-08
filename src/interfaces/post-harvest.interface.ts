@@ -7,10 +7,8 @@ export interface TongProccesForm {
   potato_id: string;
   caliber_outputs: CaliberOutput[];
   warehouse_id: number;
-  fuel_liters: number;
-  fuel_cost: number;
-  gata_cost: number;
-  lift_cost: number;
+  tong_cost_id: string;
+  other_cost: number;
 }
 
 // Tong cost
@@ -126,14 +124,7 @@ export interface WashProcessForm {
   number_of_bins: number;
   warehouse_id: number;
   quality_outputs: QualityOutput[];
-  energy_cost: number;
-  maintenance_cost: number;
-  bag_cost: number;
-  film_cost: number;
-  thread_cost: number;
-  pallet_cost: number;
-  label_cost: number;
-  lift_cost: number;
+  wash_cost_id: string;
   other_cost: number;
 }
 

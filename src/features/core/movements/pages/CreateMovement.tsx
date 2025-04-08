@@ -91,7 +91,7 @@ export const CreateMovement = () => {
             >
               <option value="">Seleccione un cultivo</option>
               {availableCrops?.map((crop) => (
-                <option key={crop.code} value={crop.code}>
+                <option key={crop.code} value={crop.rowid}>
                   {crop.code}
                 </option>
               ))}

@@ -43,6 +43,8 @@ export const IrrigationFertirriego = () => {
         categories: categoriesProducts,
     } = useGetProductsByCategory(true, "Insumos");
 
+    console.log(JSON.stringify(products, null, 2));
+
     // Product handling functions
     const handleRemoveProduct = (productId: string) => {
         setSelectedProducts((prev) => prev.filter((p) => p.id !== productId));

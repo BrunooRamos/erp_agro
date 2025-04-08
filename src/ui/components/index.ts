@@ -26,3 +26,8 @@ export * from './core/irrigation/IrrigationCard';
 
 export * from './cost-center/Registers';
 export * from './cost-center/SummaryCards';
+export * from './cost-center/SeedMapCC';
+export * from './cost-center/LaborCC';
+export * from './cost-center/RafCC';
+export * from './cost-center/IrrigationCC';
+export * from './cost-center/FertirriegoCC';
