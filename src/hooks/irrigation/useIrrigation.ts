@@ -1,89 +1,102 @@
-import { useMutation, useQuery } from "@tanstack/react-query"
-import { IrrigationCostForm, IrrigationFertirriegoSendData, IrrigationFormInterface, IrrigationHoursSendData } from "../../interfaces"
+import {
+  IrrigationCostForm,
+  IrrigationFertirriegoSendData,
+  IrrigationFormInterface,
+  IrrigationHoursSendData,
+} from "../../interfaces";
 import { toast } from "react-toastify";
-import { postCreateIrrigation, getIrrigationList, getIrrigationCosts, postIrrigationCosts, postIrrigationHours, postIrrigationFertirriego, getIrrigationInfo, deleteIrrigationHours, deleteIrrigationFertirriegoProduct } from "../../actions/index";
-
+import {
+  postCreateIrrigation,
+  getIrrigationList,
+  getIrrigationCosts,
+  postIrrigationCosts,
+  postIrrigationHours,
+  postIrrigationFertirriego,
+  getIrrigationInfo,
+  deleteIrrigationHours,
+  deleteIrrigationFertirriegoProduct,
+} from "../../actions/index";
+import { useBaseMutation, useBaseQuery } from "../index";
 
 export const useIrrigation = (id?: string) => {
+  const createIrrigation = useBaseMutation(
+    (irrigation: IrrigationFormInterface) => postCreateIrrigation(irrigation),
+    {
+      onSuccess: () => {
+        toast.success("Riego creado correctamente");
+      },
+    }
+  );
 
-    const createIrrigation = useMutation({
-        mutationFn: (irrigation: IrrigationFormInterface) => postCreateIrrigation(irrigation),
-        onSuccess: () => {
-            toast.success('Riego creado correctamente');
-        },
-        onError: (error) => {
-            toast.error('Error al crear el riego: ' + error);
-        }
-    })
+  const irrigationList = useBaseQuery(["irrigationList"], getIrrigationList);
 
-    const irrigationList = useQuery({
-        queryKey: ['irrigationList'],
-        queryFn: () => getIrrigationList(),
-    })
+  const createIrrigationCosts = useBaseMutation(
+    (irrigationCost: IrrigationCostForm) => postIrrigationCosts(irrigationCost),
+    {
+      onSuccess: () => {
+        toast.success("Costo de riego creado correctamente");
+      },
+    }
+  );
 
-    const createIrrigationCosts = useMutation({
-        mutationFn: (irrigationCost: IrrigationCostForm) => postIrrigationCosts(irrigationCost),
-        onSuccess: () => {
-            toast.success('Costo de riego creado correctamente');
-        },
-        onError: (error) => {
-            toast.error('Error al crear el costo de riego: ' + error);
-        }
-    })
+  const irrigationCosts = useBaseQuery(["irrigationCosts"], getIrrigationCosts);
 
-    const irrigationCosts = useQuery({
-        queryKey: ['irrigationCosts'],
-        queryFn: () => getIrrigationCosts(),
-    })
+  const createIrrigationHours = useBaseMutation(
+    (irrigationHours: IrrigationHoursSendData) =>
+      postIrrigationHours(irrigationHours),
+    {
+      onSuccess: () => {
+        toast.success("Horas de riego creado correctamente");
+      },
+    }
+  );
 
-    const createIrrigationHours = useMutation({
-        mutationFn: (irrigationHours: IrrigationHoursSendData) => postIrrigationHours(irrigationHours),
-        onSuccess: () => {
-            toast.success('Horas de riego creado correctamente');
-        },
-        onError: (error) => {
-            toast.error('Error al crear las horas de riego: ' + error);
-        }
-    })
+  const createIrrigationFertirriego = useBaseMutation(
+    (irrigationFertirriego: IrrigationFertirriegoSendData) =>
+      postIrrigationFertirriego(irrigationFertirriego),
+    {
+      onSuccess: () => {
+        toast.success("Fertirriego creado correctamente");
+      },
+    }
+  );
 
-    const createIrrigationFertirriego = useMutation({
-        mutationFn: (irrigationFertirriego: IrrigationFertirriegoSendData) => postIrrigationFertirriego(irrigationFertirriego),
-        onSuccess: () => {
-            toast.success('Fertirriego creado correctamente');
-        },
-        onError: (error) => {
-            toast.error('Error al crear el fertirriego: ' + error);
-        }
-    })
+  const irrigationInfo = useBaseQuery(
+    ["irrigationInfo"],
+    () => getIrrigationInfo(id!),
+    {
+      enabled: !!id,
+    }
+  );
 
-    const irrigationInfo = useQuery({
-        queryKey: ['irrigationInfo'],
-        enabled: !!id,
-        queryFn: () => {
-            if (id) return getIrrigationInfo(id);
-            return null;
-        }
-    })
+  const irrigationDeleteHours = useBaseMutation(
+    (id: string) => deleteIrrigationHours(id),
+    {
+      onSuccess: () => {
+        toast.success("Horas de riego eliminadas correctamente");
+      },
+    }
+  );
 
-    const irrigationDeleteHours = useMutation({
-        mutationFn: (id: string) => deleteIrrigationHours(id),
-        onSuccess: () => {
-            toast.success('Horas de riego eliminadas correctamente');
-        },
-        onError: (error) => {
-            toast.error('Error al eliminar las horas de riego: ' + error);
-        }
-    })
+  const irrigationDeleteFertirriegoProduct = useBaseMutation(
+    (data: { productId: string; fertirriegoId: string }) =>
+      deleteIrrigationFertirriegoProduct(data.productId, data.fertirriegoId),
+    {
+      onSuccess: () => {
+        toast.success("Producto de fertirriego eliminado correctamente");
+      },
+    }
+  );
 
-    const irrigationDeleteFertirriegoProduct = useMutation({
-        mutationFn: (data: {productId: string, fertirriegoId: string}) => deleteIrrigationFertirriegoProduct(data.productId, data.fertirriegoId),
-        onSuccess: () => {
-            toast.success('Producto de fertirriego eliminado correctamente');
-        },
-        onError: (error) => {
-            toast.error('Error al eliminar el producto de fertirriego: ' + error);
-        }
-    })
-
-    return { createIrrigation, irrigationList, irrigationCosts, createIrrigationCosts, createIrrigationHours, createIrrigationFertirriego, irrigationInfo, irrigationDeleteHours, irrigationDeleteFertirriegoProduct };
-}
+  return {
+    createIrrigation,
+    irrigationList,
+    irrigationCosts,
+    createIrrigationCosts,
+    createIrrigationHours,
+    createIrrigationFertirriego,
+    irrigationInfo,
+    irrigationDeleteHours,
+    irrigationDeleteFertirriegoProduct,
+  };
+};

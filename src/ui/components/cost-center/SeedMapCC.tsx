@@ -28,7 +28,7 @@ export const SeedMapCC = ({ data }: SeedMapCCProps) => {
                 {data.map((item) => (
                     <div key={item.id} className="p-6">
                         <div className="flex justify-between items-start">
-                            <div>
+        <div>
                                 <h3 className="text-base font-semibold text-zinc-800">
                                     Siembra - {item.crop_code}
                                 </h3>

@@ -20,8 +20,7 @@ export const ListField = () => {
 
     const { data = [], isLoading, error, refetch } = getFields;
     //const { mutate: deleteFieldLot, isPending: isDeletePending } = deleteField;
-    console.log(data);
-    
+
     const navigate = useNavigate();
     
     const columnHelper = createColumnHelper<FieldEntity>();

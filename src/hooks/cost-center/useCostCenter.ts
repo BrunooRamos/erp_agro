@@ -1,12 +1,18 @@
-import { useQuery } from "@tanstack/react-query";
 import { getCostCenter } from "../../actions/cost-center/cost_center_actions";
+import { useBaseQuery } from "../config/useBaseQuery";
 
-export const useCostCenter = (startDate: string, endDate: string, shouldFetch: boolean = false) => {
-    const getAllCostCenter = useQuery({
-        queryKey: ['cost-center'],
-        queryFn: () => getCostCenter(startDate, endDate),
-        enabled: shouldFetch
-    });
+export const useCostCenter = (
+  startDate: string,
+  endDate: string,
+  shouldFetch: boolean = false
+) => {
+  const getAllCostCenter = useBaseQuery(
+    ["cost-center"],
+    () => getCostCenter(startDate, endDate),
+    {
+      enabled: shouldFetch,
+    }
+  );
 
-    return { getAllCostCenter };
-}
+  return { getAllCostCenter };
+};

@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useForm } from 'react-hook-form';
-import { useAppDispatch, useAppSelector } from '../../../hooks/useReduxConfig';
+import { useAppDispatch, useAppSelector } from '../../../hooks';
 import { startLoginWithEmailPassword } from '../../../store/auth/thunks';
 
 interface LoginForm {

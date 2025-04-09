@@ -1,3 +1,61 @@
+/**
+ * @component CreateRAF
+ * 
+ * @description
+ * Componente para la creación de Registros de Aplicación Fitosanitaria (RAF).
+ * Permite registrar aplicaciones de productos fitosanitarios, incluyendo detalles
+ * sobre cultivos, lotes, maquinaria y productos utilizados.
+ * 
+ * @features
+ * - Formulario completo para registro de RAF con:
+ *   - Información básica (fecha, cultivo, CUSA)
+ *   - Selección de maquinaria principal y acoplada
+ *   - Gestión de lotes y sublotes con áreas
+ *   - Selección de tipo y subtipo de aplicación
+ *   - Sistema de filtrado y selección de productos fitosanitarios
+ *   - Gestión de cantidades y depósitos por producto
+ * 
+ * @validations
+ * - Campos requeridos para información crítica
+ * - Validación de productos químicos cuando son necesarios
+ * - Control de cantidades positivas en productos
+ * - Verificación de selección de depósito
+ * 
+ * @hooks
+ * - useForm: Gestión del formulario y validaciones
+ * - useCropAndLots: Manejo de cultivos y lotes
+ * - useMachinery: Obtención de maquinaria disponible
+ * - useGetProductsByCategory: Filtrado de productos por categoría
+ * - useCusa: Obtención de información CUSA
+ * - useRegisters: Mutación para crear registros
+ * 
+ * @states
+ * - selectedProducts: Productos seleccionados con cantidades y depósitos
+ * - editingProduct: Producto en edición actual
+ * - filteredProducts: Lista de productos filtrados
+ * - searchQuery: Término de búsqueda para productos
+ * 
+ * @performance
+ * - Uso de useMemo para optimizar filtrado de productos
+ * - Carga condicional de productos químicos
+ * - Manejo eficiente de estados de carga
+ * 
+ * @error-handling
+ * - Manejo de errores en carga de datos
+ * - Validación de formularios con mensajes de error
+ * - Notificaciones toast para errores de usuario
+ * 
+ * @dependencies
+ * - react-hook-form: Manejo de formularios
+ * - react-toastify: Notificaciones
+ * - react-router-dom: Navegación
+ * 
+ * @notes
+ * - El componente requiere acceso a la API para productos y depósitos
+ * - Se debe mantener consistencia en las unidades de medida
+ * - Las validaciones dependen del tipo de aplicación seleccionada
+ */
+
 import { useState, useMemo } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { useNavigate } from "react-router-dom";
@@ -30,6 +88,7 @@ import {
 import { SelectedProductsList } from "../../../../../ui/components/common/SelectedProductsList";
 
 export const CreateRAF = () => {
+  //!Form
   const {
     register,
     handleSubmit,
@@ -38,10 +97,14 @@ export const CreateRAF = () => {
     reset,
   } = useForm<RAFSendData>();
 
+  //!Navigation
+  const navigate = useNavigate(); 
+
   //!Get crops and lots
   const {
     selectedLots,
     selectedSublots,
+
     //crops,
     lots,
     sortedCrops,
@@ -70,6 +133,7 @@ export const CreateRAF = () => {
     name: "sub_type",
   });
 
+  // If the type is maintenance or barbecho and the sub_type is chemical, then fetch chemicals
   const shouldFetchChemicals =
     (selectedType === "mantenimiento_cultivo" &&
       selectedSubType === "apl_agroquimico") ||
@@ -82,19 +146,14 @@ export const CreateRAF = () => {
     categories: categoriesProducts,
   } = useGetProductsByCategory(shouldFetchChemicals, "Insumos");
 
-  const [filteredProducts, setFilteredProducts] = useState<ProductsResponse[]>(
-    []
-  );
+  const [filteredProducts, setFilteredProducts] = useState<ProductsResponse[]>([]);
 
-  //!Fetch cusa
-  // Cusa
+  //!Cusa
   const { data: cusa, isLoading: isLoadingCusa } = useCusa();
 
   //!Submit form - Create and update RAF
   const { createRAF } = useRegisters();
   const { mutate: createRAFMutation } = createRAF;
-
-  const navigate = useNavigate(); // Hook para navegar a la lista de RAF
 
   const onSubmit = handleSubmit((data) => {
     // Check if chemicals are required and if they're selected
@@ -119,23 +178,27 @@ export const CreateRAF = () => {
     });
   });
 
-  // Dentro del componente RAF, agrega este nuevo estado después de los otros estados
-  const [searchQuery, setSearchQuery] = useState("");
+  //!This is the product management state, its quite complex and important, so I'll explain it in detail.
 
-  // Add new state for selected products
-  const [selectedProducts, setSelectedProducts] = useState<SelectedProducts[]>(
-    []
-  );
+  //! Search and Product Selection States
+  const [searchQuery, setSearchQuery] = useState(""); // State for product search input
+  const [selectedProducts, setSelectedProducts] = useState<SelectedProducts[]>([]); // State for storing selected products
+  const [editingProduct, setEditingProduct] = useState<SelectedProducts | null>(null); // State for product being edited in modal
 
-  // Add state for product being edited
-  const [editingProduct, setEditingProduct] = useState<SelectedProducts | null>(
-    null
-  );
-
+  /**
+   * Removes a product from the selected products list
+   * @param productId - ID of the product to remove
+   */
   const handleRemoveProduct = (productId: string) => {
     setSelectedProducts((prev) => prev.filter((p) => p.id !== productId));
   };
 
+  /**
+   * Updates the quantity of a selected product
+   * Validates that quantity is greater than 0
+   * @param productId - ID of the product to update
+   * @param quantity - New quantity value
+   */
   const handleUpdateQuantity = (productId: string, quantity: number) => {
     if (quantity <= 0) {
       toast.error("La cantidad debe ser mayor a 0");
@@ -147,7 +210,11 @@ export const CreateRAF = () => {
     );
   };
 
-  // Update handler functions for products
+  /**
+   * Prepares a product for editing in the modal
+   * Transforms ProductResponse into SelectedProducts format
+   * @param product - Product data from API
+   */
   const handleSelectProduct = (product: ProductsResponse) => {
     setEditingProduct({
       id: product.id,
@@ -160,19 +227,27 @@ export const CreateRAF = () => {
     });
   };
 
+  /**
+   * Confirms the product being edited in the modal
+   * Validates warehouse selection and quantity
+   * Updates or adds the product to the selected products list
+   */
   const handleConfirmProduct = () => {
     if (!editingProduct) return;
 
+    // Validate warehouse selection
     if (!editingProduct.warehouse_id) {
       toast.error("Debe seleccionar un depósito");
       return;
     }
 
+    // Validate quantity
     if (editingProduct.quantity <= 0) {
       toast.error("La cantidad debe ser mayor a 0");
       return;
     }
 
+    // Update or add product to selection
     setSelectedProducts((prev) => {
       const exists = prev.find((p) => p.id === editingProduct.id);
       if (exists) {
@@ -182,12 +257,14 @@ export const CreateRAF = () => {
       }
       return [...prev, editingProduct];
     });
-    setEditingProduct(null);
+    setEditingProduct(null); // Close modal
   };
 
-  const handleModalQuantityChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
+  /**
+   * Handles quantity changes in the edit modal
+   * @param e - Input change event
+   */
+  const handleModalQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!editingProduct) return;
     setEditingProduct({
       ...editingProduct,
@@ -195,9 +272,11 @@ export const CreateRAF = () => {
     });
   };
 
-  const handleModalWarehouseChange = (
-    e: React.ChangeEvent<HTMLSelectElement>
-  ) => {
+  /**
+   * Handles warehouse selection changes in the edit modal
+   * @param e - Select change event
+   */
+  const handleModalWarehouseChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     if (!editingProduct) return;
     setEditingProduct({
       ...editingProduct,
@@ -205,7 +284,11 @@ export const CreateRAF = () => {
     });
   };
 
-  // Add useMemo for available products
+  /**
+   * Memoized list of available products
+   * Filters out products that are already selected
+   * Optimizes performance by preventing unnecessary recalculations
+   */
   const availableProducts = useMemo(() => {
     return (
       products?.filter(

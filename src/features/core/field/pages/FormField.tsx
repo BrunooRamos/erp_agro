@@ -15,7 +15,6 @@ export const FormField = () => {
     
     const navigate = useNavigate();
 
-    console.log('code', code);
 
     // Form
     const { register, handleSubmit, formState: { errors }, setValue, reset, watch } = useForm<FieldForm>();
@@ -45,7 +44,7 @@ export const FormField = () => {
     const onSubmit = handleSubmit((data) => {
         if (code) {
             data.rented = rented === "true" ? true : false;
-            console.log('data', data);
+
             updateFieldMutation({ 
                 code, 
                 data,

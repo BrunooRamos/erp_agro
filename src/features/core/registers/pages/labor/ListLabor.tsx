@@ -1,25 +1,72 @@
+/**
+ * @component ListLabor
+ * 
+ * @description
+ * Componente que muestra una lista filtrable de registros de labores agrícolas.
+ * Permite visualizar y filtrar las labores realizadas por tipo de labor y código de cultivo,
+ * mostrando información detallada sobre maquinaria, lotes y sublotes afectados.
+ * 
+ * @features
+ * - Filtrado dinámico por tipo de labor y código de cultivo
+ * - Visualización de detalles de labor incluyendo:
+ *   - Nombre y código de la labor
+ *   - Fecha de realización
+ *   - Consumo de combustible calculado
+ *   - Área total trabajada
+ *   - Maquinaria utilizada
+ *   - Lotes y sublotes afectados con sus áreas
+ * - Estados de carga y manejo de errores
+ * - Diseño responsivo con animaciones y transiciones
+ * 
+ * @hooks
+ * - useRegisters: Obtención de la lista de labores
+ * - useState: Gestión de estados de filtros
+ * - useMemo: Optimización de cálculos y filtrados
+ * 
+ * @performance
+ * - Utiliza useMemo para optimizar el cálculo de tipos de labor únicos
+ * - Memoriza la lista filtrada para evitar recálculos innecesarios
+ * - Implementa lazy loading para la carga de datos
+ * 
+ * 
+ * @states
+ * - selectedLaborType: Tipo de labor seleccionado para filtrar
+ * - selectedCropCode: Código de cultivo seleccionado para filtrar
+ * - isLoading: Estado de carga de datos
+ * - error: Estado de error en la carga
+ * 
+ * @dataStructures
+ * - laborList: Array de objetos con información de labores
+ * - uniqueLaborTypes: Array de tipos de labor únicos
+ * - uniqueCropCodes: Array de códigos de cultivo únicos
+ * - filteredLaborList: Array filtrado según selecciones
+ */
+
 import { useRegisters } from "../../../../../hooks";
 import { useState, useMemo } from "react";
+
 
 export const ListLabor = () => {
     const { listLabor } = useRegisters();
     const { data: laborList, isLoading, error } = listLabor;
+
+    //!Filters
     const [selectedLaborType, setSelectedLaborType] = useState<string>('all');
     const [selectedCropCode, setSelectedCropCode] = useState<string>('all');
 
-    // Obtener tipos de labor únicos
+    // Unique labor types (generally there are many labor types with the same name, so we need to filter them)
     const uniqueLaborTypes = useMemo(() => {
         if (!laborList) return [];
         return Array.from(new Set(laborList.map(labor => labor.cusa_info.cod_laboreo)));
     }, [laborList]);
 
-    // Obtener códigos de cultivo únicos
+    // Unique crop codes (same here)
     const uniqueCropCodes = useMemo(() => {
         if (!laborList) return [];
         return Array.from(new Set(laborList.map(labor => labor.crop_code)));
     }, [laborList]);
 
-    // Filtrar la lista según el tipo de labor y cultivo seleccionado
+    // Filter the list according to the selected labor type and crop code
     const filteredLaborList = useMemo(() => {
         if (!laborList) return [];
         return laborList.filter(labor => {

@@ -19,7 +19,6 @@ export const ListCrop = () => {
   const { listCrop, deleteCrop } = useCrop();
 
   const { data = [], isLoading, error, refetch } = listCrop;
-  console.log('data', data);
   const { mutate: deleteCropAction, isPending: isDeletePending } = deleteCrop;
 
   const columnHelper = createColumnHelper<CropEntity>();

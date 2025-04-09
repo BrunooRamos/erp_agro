@@ -1,16 +1,17 @@
-import { useQuery } from "@tanstack/react-query";
-import { useGetCategoryByLabel } from "..";
+import { useBaseQuery, useGetCategoryByLabel } from "..";
 import { getProductsByCategoryId } from "../../actions";
 
-export const useGetProductsByCategory = ( shouldFetch: boolean, category: string ) => {
+export const useGetProductsByCategory = (shouldFetch: boolean, category: string) => {
     const { data: categoryData } = useGetCategoryByLabel(category);
     const categoryId = categoryData?.rowid.toString();
 
-    const { data, isLoading, error } = useQuery({
-        queryKey: ["products", categoryId],
-        queryFn: () => getProductsByCategoryId(categoryId!),
-        enabled: !!categoryId && shouldFetch
-    });
+    const { data, isLoading, error } = useBaseQuery(
+        ["products", categoryId ?? ''],
+        () => categoryId ? getProductsByCategoryId(categoryId) : Promise.reject('No category ID'),
+        {
+            enabled: !!categoryId && shouldFetch
+        }
+    );
 
     if (!categoryId) return { data: null, isLoading: false, error: null };
 
@@ -20,4 +21,4 @@ export const useGetProductsByCategory = ( shouldFetch: boolean, category: string
         error,
         categories: categoryData
     };
-}
+};

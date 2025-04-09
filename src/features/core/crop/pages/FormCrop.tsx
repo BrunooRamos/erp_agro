@@ -20,6 +20,8 @@ export const FormCrop = () => {
   const { getFields } = useField();
   const { data: fieldsData, isLoading: isLoadingField } = getFields;
 
+  console.log(fieldsData, "fieldsData");
+
   // React Hook Form
   const {
     register,

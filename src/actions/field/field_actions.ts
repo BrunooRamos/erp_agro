@@ -13,6 +13,7 @@ export const postCreateField = async (field: FieldForm) => {
 
 export const getListField = async (): Promise<FieldEntity[]> => {
     const response = await dolibarrApi.get('/vicentina/field/list');
+    console.log("Se esta haciendo la peticion");
     return response.data;
 }; 
 

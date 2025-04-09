@@ -1,14 +1,31 @@
-/*
-  A este componente se le pasa un objeto de tipo GeneralLaborInterface
-  y se renderiza un formulario con los campos que tiene ese objeto.
-
-
-  TODO: 
-    Hacer las peticiones y validaciones de los campos. 
-    Hacer la lógica del lado del servidor para guardar el registro.
-*/
+/**
+ * @component GeneralLabor
+ * 
+ * @description 
+ * Componente para la creación de registros de labores generales en el campo.
+ * Permite seleccionar cultivos, maquinaria, CUSA y lotes, calculando automáticamente
+ * las áreas totales utilizadas.
+ * 
+ * @hooks
+ * - useForm: Manejo del formulario y validaciones
+ * - useCropAndLots: Gestión de cultivos y lotes
+ * - useMachinery: Obtención de lista de maquinaria
+ * - useCusa: Obtención de información CUSA
+ * - useRegisters: Mutación para crear registros
+ * 
+ * @features
+ * - Selección de fecha de labor
+ * - Selección de cultivo por código
+ * - Selección de maquinaria principal y acoplada
+ * - Selección de CUSA
+ * - Selección múltiple de lotes y sublotes con áreas
+ * - Cálculo automático de área total
+ * - Validación de campos requeridos
+ */
 
 import { useForm } from "react-hook-form";
+import { useNavigate } from "react-router-dom";
+
 import { GeneralLabor as GeneralLaborInterface } from "../../../../../interfaces";
 import {
   ActionButtons,
@@ -23,7 +40,6 @@ import {
   useMachinery,
   useRegisters,
 } from "../../../../../hooks";
-import { useNavigate } from "react-router-dom";
 
 export const GeneralLabor = () => {
   const {
@@ -34,7 +50,7 @@ export const GeneralLabor = () => {
     reset,
   } = useForm<GeneralLaborInterface>();
 
-  // Crops and lots
+  //!Crops and lots
   const {
     selectedLots,
     selectedSublots,
@@ -50,20 +66,20 @@ export const GeneralLabor = () => {
     handleSublotAreaChange,
   } = useCropAndLots(control);
 
-  // Machinery
+  //!Machinery
   const { listMachinery } = useMachinery(null)
   const { data: machinery, isLoading: isLoadingMachinery } = listMachinery;
 
-  // Cusa
+  //!Cusa
   const { data: cusa, isLoading: isLoadingCusa } = useCusa();
 
+  //!Submit
   const { createGeneralLabor } = useRegisters();
   const { mutate: createGeneralLaborMutation } = createGeneralLabor;
 
   const onSubmit = handleSubmit((data) => {
     data.selectedLots = selectedLots;
     data.selectedSublots = selectedSublots;
-    console.log(JSON.stringify(data, null, 2));
 
     createGeneralLaborMutation(data, {
       onSuccess: () => {
@@ -129,7 +145,7 @@ export const GeneralLabor = () => {
               >
                 <option value="">Seleccione un cultivo</option>
                 {sortedCrops?.map((crop) => (
-                  <option key={crop.rowid} value={crop.rowid}>
+                  <option key={`${crop.rowid}-${crop.code}`} value={crop.rowid}>
                     {crop.code}
                   </option>
                 ))}
@@ -150,7 +166,7 @@ export const GeneralLabor = () => {
               >
                 <option value="">Seleccione una maquinaria</option>
                 {machinery?.map((machinery) => (
-                  <option key={machinery.rowid} value={machinery.rowid}>
+                  <option key={`${machinery.rowid}-${machinery.date_creation}`} value={machinery.rowid}>
                     {`${machinery.name} - ${machinery.brand} ${machinery.model}`}
                   </option>
                 ))}
@@ -168,7 +184,7 @@ export const GeneralLabor = () => {
               >
                 <option value="">Seleccione una maquinaria</option>
                 {machinery?.map((machinery) => (
-                  <option key={machinery.rowid} value={machinery.rowid}>
+                  <option key={`${machinery.rowid}-${machinery.date_creation}`} value={machinery.rowid}>
                     {`${machinery.name} - ${machinery.brand} ${machinery.model}`}
                   </option>
                 ))}
@@ -189,7 +205,7 @@ export const GeneralLabor = () => {
               >
                 <option value="">Seleccione una cusa</option>
                 {cusa?.map((labor) => (
-                  <option key={labor.rowid} value={labor.rowid}>
+                  <option key={`${labor.rowid}-${labor.laboreo}`} value={labor.rowid}>
                     {labor.laboreo}
                   </option>
                 ))}

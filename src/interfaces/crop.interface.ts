@@ -1,15 +1,5 @@
 
-export interface CropLot {
-    id_lote: string,
-    area_utilizada: number
-}
-
-export interface CropSubLot {
-    id_parent_lot: string;
-    name: string;
-    area_utilizada: number;
-}
-
+// Create crop
 export interface CropForm {
     code: string;
     codigo_campo: string;
@@ -21,6 +11,17 @@ export interface CropForm {
     status: number;
     lots: CropLot[];
     sub_lots?: CropSubLot[];
+}
+
+export interface CropLot {
+    id_lote: string,
+    area_utilizada: number
+}
+
+export interface CropSubLot {
+    id_parent_lot: string;
+    name: string;
+    area_utilizada: number;
 }
 
 export interface CropEntity {
@@ -59,8 +60,6 @@ interface SubLot {
     name:           string;
     area_utilizada: number;
 }
-
-
 
 
 export interface CropWithLot {

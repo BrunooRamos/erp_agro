@@ -27,8 +27,6 @@ import {
   MapLot,
   RAF,
   GeneralLabor,
-  ListOfCrops,
-  DetailsCost,
   IrrigationForm,
   HomeIrrigation,
   IrrigationList,
@@ -358,20 +356,6 @@ export const menuRoutes: MenuRoute[] = [
     component: <HomeCostCenter />,
     visible: true,
     subMenu: [
-      {
-        to: "/cost-center/list",
-        title: "Centro de Costos",
-        description: "Centro de Costos",
-        component: <ListOfCrops />,
-        visible: false,
-      },
-      {
-        to: "/cost-center/details/:code",
-        title: "Centro de Costos",
-        description: "Centro de Costos",
-        component: <DetailsCost />,
-        visible: false,
-      },
       {
         to: "/cost-center/result-status",
         title: "Resultados",

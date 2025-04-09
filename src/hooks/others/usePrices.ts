@@ -1,22 +1,26 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { getPrices, savePrices, getHistoricPrices } from "../../actions/";
+import { getPrices, getHistoricPrices, savePrices } from "../../actions/";
+import { useBaseMutation, useBaseQuery } from "../index";
 
 export const usePrices = () => {
-    const getAllPrices = useQuery({
-        queryKey: ['prices'],
-        queryFn: getPrices,
-        staleTime: 20 * 60 * 60 * 1000, // 20 horas en milisegundos
-    });
+    const getAllPrices = useBaseQuery(
+        ['prices'],
+        getPrices,
+        {
+            staleTime: 20 * 60 * 60 * 1000, // 20 horas en milisegundos
+        }
+    );
 
-    const saveAllPrices = useMutation({
-        mutationFn: savePrices,
-    });
+    const saveAllPrices = useBaseMutation(
+        savePrices,
+    );
 
-    const historicPrices = useQuery({
-        queryKey: ['historicPrices'],
-        queryFn: getHistoricPrices,
-        staleTime: 20 * 60 * 60 * 1000, // 20 horas en milisegundos
-    })
+    const historicPrices = useBaseQuery(
+        ['historicPrices'],
+        getHistoricPrices,
+        {
+            staleTime: 20 * 60 * 60 * 1000, // 20 horas en milisegundos
+        }
+    )
 
     return {
        getAllPrices,

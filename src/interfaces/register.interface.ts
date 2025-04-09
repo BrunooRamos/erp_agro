@@ -24,7 +24,6 @@ export interface SeedMapRegisterInterface {
 }
 
 // List RAF
-
 export interface RAFRegister {
   raf:      RAFRegisterInfo;
   lots:     RAFRegisterLot[];
@@ -273,22 +272,6 @@ export interface SelectedSublotGeneralLabor {
   area_utilizada: number;
 }
 
-
-
-
-
-
-
-// export interface ProductsResponse {
-//   product_name: string;
-//   product_ref: string;
-//   quantity: number;
-//   type: string;
-//   unit: string;
-//   warehouse_name: string;
-//   total_price: number;
-//   total_price_usd: number;
-// }
 
 export interface Lot {
   rowid: string;

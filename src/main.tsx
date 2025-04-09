@@ -4,7 +4,10 @@ import { store } from './store/store'
 import { Provider } from 'react-redux'
 
 import './index.css';
+
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+//import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+
 import { AgroModule } from './AgroModule';
 
 const queryClient = new QueryClient(
@@ -18,6 +21,7 @@ if ( container ) {
   root.render(
     <Provider store={ store }>
       <QueryClientProvider client={ queryClient }>
+        {/* <ReactQueryDevtools initialIsOpen={false} /> */}
         <AgroModule />
       </QueryClientProvider>
     </Provider>
