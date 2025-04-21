@@ -1,5 +1,3 @@
-
-
 export interface GeneralLabor {
   date: string;
   crop_id: string;
@@ -169,7 +167,7 @@ export interface ArrayOptions {
   options_presentacion: string;
 }
 
-export interface Warehouse {
+export interface WarehouseProduct {
   id: number;
   ref: string;
   stock: number;
@@ -185,7 +183,7 @@ export interface ProductsResponse {
   parent_key:       string;
   subcategory_id:   string;
   subcategory_name: string;
-  warehouses:       Warehouse[];
+  warehouses:       WarehouseProduct[];
   variations:       ProductsResponse[];
 }
 

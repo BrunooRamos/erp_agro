@@ -1,12 +1,11 @@
-
 import { LogisticCostForm, MovementForm } from "../../interfaces";
 import { toast } from "react-toastify";
-import { getLogisticCosts, postCreateLogisticCost, postCreateMovement } from "../../actions/index";
+import { getLogisticCosts, postCreateLogisticCost, postCreateMovement, getPotateoHarvest } from "../../actions/index";
 import { useBaseMutation } from "../config/useBaseMutation";
 import { useBaseQuery } from "../config/useBaseQuery";
 
 
-export const useMovement = () => {
+export const useMovement = (cropCode?: string) => {
     const createMovement = useBaseMutation(
         (data: MovementForm) => postCreateMovement(data),
         {
@@ -31,5 +30,14 @@ export const useMovement = () => {
     );
 
 
-    return { createMovement, createLogisticCost, listLogisticCosts };
+    const listPotateoHarvest = useBaseQuery(
+        ['potateo-harvest'],
+        () => getPotateoHarvest(cropCode!),
+        {
+            enabled: !!cropCode,
+        }
+    );
+
+
+    return { createMovement, createLogisticCost, listLogisticCosts, listPotateoHarvest };
 };

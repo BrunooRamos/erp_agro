@@ -34,13 +34,20 @@ export const CreateMovement = () => {
 
   //!Crops
   const selectedCrop = watch("crop");
-  const { listCrop, getCrop, getVarieties } = useCrop(selectedCrop);
+  const selectedLot = watch("lot");
+
+  console.log(selectedCrop, selectedLot);
+
+  const { listCrop, getCrop, getVarieties, getSublots } = useCrop( selectedCrop, selectedLot );
 
   const { data: crops } = listCrop;
   const availableCrops = crops?.filter((crop) => crop.cultivo === "Papa");
 
   const { data: crop, isLoading: isLoadingCrop } = getCrop;
   const lots = crop?.lots;
+
+  const { data: sublots, isLoading: isLoadingSublots } = getSublots;
+  console.log(sublots);
 
   const { data: varieties, isLoading: isLoadingVarieties } = getVarieties;
 
@@ -58,7 +65,7 @@ export const CreateMovement = () => {
   const { listLogisticCosts } = useMovement();
   const { data: logisticCosts, isLoading: isLoadingLogisticCosts } = listLogisticCosts;
 
-  if (isLoadingCrop || isLoadingVarieties || isLoadingLogisticCosts) {
+  if (isLoadingCrop || isLoadingVarieties || isLoadingLogisticCosts || isLoadingSublots)  {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-white bg-opacity-75 z-50">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-zinc-800"></div>
@@ -170,6 +177,25 @@ export const CreateMovement = () => {
               ))}
             </select>
           </FormField>
+
+          <FormField label="Sublote" error={errors.lot?.message || ""} required>
+            <select
+              className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
+              {...register("sublot", {
+                required: "Este campo es requerido",
+              })}
+              disabled={!selectedCrop || isLoadingCrop || isLoadingSublots}
+            >
+              <option value="">Seleccione un sublote</option>
+              {sublots?.map((sublot) => (
+                <option key={sublot.id} value={sublot.id}>
+                  {sublot.name}
+                </option>
+              ))}
+            </select>
+          </FormField>
+
+
 
           <FormField
             label="Variedad"

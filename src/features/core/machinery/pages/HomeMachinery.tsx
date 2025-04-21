@@ -17,6 +17,13 @@ export const HomeMachinery = () => {
                 to="/machinery/list"
                 description="Listado de la maquinaria"
             />
+            <OptionCard
+                visible={true}
+                icon="fa-solid fa-wrench"
+                title="Mantenimiento"
+                to="/machinery/maintenance"
+                description="Mantenimiento de la maquinaria"
+            />
         </div>
     )
 }

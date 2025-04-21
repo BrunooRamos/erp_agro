@@ -185,6 +185,15 @@ export const CreateRAF = () => {
   const [selectedProducts, setSelectedProducts] = useState<SelectedProducts[]>([]); // State for storing selected products
   const [editingProduct, setEditingProduct] = useState<SelectedProducts | null>(null); // State for product being edited in modal
 
+  // Get warehouses for the selected product 
+  const warehouses = useMemo(() => {
+    return products?.find((p) => p.id === editingProduct?.id)?.warehouses.map((w) => ({
+      ...w,
+      id: w.id,
+    })) || [];
+  }, [products, editingProduct]);
+
+
   /**
    * Removes a product from the selected products list
    * @param productId - ID of the product to remove
@@ -517,14 +526,7 @@ export const CreateRAF = () => {
               {editingProduct && (
                 <EditProductModal
                   editingProduct={editingProduct}
-                  warehouses={
-                    products
-                      ?.find((p) => p.id === editingProduct.id)
-                      ?.warehouses.map((w) => ({
-                        ...w,
-                        id: w.id,
-                      })) || []
-                  }
+                  warehouses={warehouses}
                   onClose={() => setEditingProduct(null)}
                   onConfirm={handleConfirmProduct}
                   onChangeQuantity={handleModalQuantityChange}

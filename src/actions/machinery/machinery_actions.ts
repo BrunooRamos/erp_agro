@@ -1,4 +1,4 @@
-import { MachineryEntity, CusaInfo, MachineryForm } from "../../interfaces";
+import { MachineryEntity, CusaInfo, MachineryForm, MaintenanceFormData } from "../../interfaces";
 import { dolibarrApi } from "../../api";
 import { filterMachineryUpdateFields } from "../../helpers";
 
@@ -33,8 +33,14 @@ export const postCreateMachinery = async (machinery: MachineryForm) => {
     const response = await dolibarrApi.post('/vicentina/machinery/create', machinery);
     return response.data;
 };
+
 export const putUpdateMachinery = async (code: string, machinery: MachineryForm) => {
     const filteredData = filterMachineryUpdateFields(machinery);
     const response = await dolibarrApi.put(`/vicentina/machinery/update/${code}`, filteredData);
+    return response.data;
+};
+
+export const postCreateMaintenance = async (maintenance: MaintenanceFormData) => {
+    const response = await dolibarrApi.post('/vicentina/maintenance/create', maintenance);
     return response.data;
 };

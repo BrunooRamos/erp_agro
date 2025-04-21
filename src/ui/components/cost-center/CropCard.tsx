@@ -1,4 +1,4 @@
-import { CropEntity } from "../../../../interfaces";
+import { CropEntity } from "../../../interfaces";
 
 interface CropCardProps {
     crop: CropEntity;

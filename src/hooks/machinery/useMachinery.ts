@@ -6,8 +6,9 @@ import {
   putUpdateMachinery,
   deactivateMachineryId,
   postCreateMachinery,
+  postCreateMaintenance,
 } from "../../actions";
-import { MachineryForm } from "../../interfaces";
+import { MachineryForm, MaintenanceFormData } from "../../interfaces";
 
 import { toast } from "react-toastify";
 import { useBaseQuery, useBaseMutation } from "../index";
@@ -53,11 +54,21 @@ export const useMachinery = (code: string | null | undefined) => {
     }
   );
 
+
+  const createMaintenance = useBaseMutation(
+    (maintenance: MaintenanceFormData) => postCreateMaintenance(maintenance),
+    {
+      onSuccess: () => {
+        toast.success("Mantenimiento creado correctamente");
+      },
+    }
+  );
   return {
     listMachinery,
     machineryById,
     updateMachinery,
     deactivateMachinery,
     createMachinery,
+    createMaintenance,
   };
 };

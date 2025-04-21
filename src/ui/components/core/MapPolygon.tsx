@@ -9,7 +9,7 @@ import {
 import { EditControl } from "react-leaflet-draw";
 import "leaflet/dist/leaflet.css";
 import "leaflet-draw/dist/leaflet.draw.css";
-import { Polygon } from "leaflet";
+import { Polygon, LatLng } from "leaflet";
 import area from '@turf/area';
 
 interface MapPolygonProps extends MapContainerProps {
@@ -35,6 +35,18 @@ const calculateArea = (coordinates: [number, number][]) => {
     return areaInSquareMeters / 10000;
 };
 
+// Definimos una interfaz para el evento de creación
+interface CreateEvent {
+  layerType: string;
+  layer: Polygon;
+}
+
+// Definimos una interfaz para el evento de edición
+interface EditEvent {
+  layers: {
+    eachLayer(callback: (layer: Polygon) => void): void;
+  };
+}
 
 export const MapPolygon: React.FC<MapPolygonProps> = ({
   initialCoordinates,
@@ -47,15 +59,12 @@ export const MapPolygon: React.FC<MapPolygonProps> = ({
   const [, setHectares] = useState<number>(existingPolygon ? calculateArea(existingPolygon) : 0);
   const [, setIsEditing] = useState(false);
 
-
-
-  // Manejar la creación de un polígono
-  const handleCreated = (e: { layerType: string; layer: Polygon }) => {
+  // Actualizamos la tipificación de handleCreated
+  const handleCreated = (e: CreateEvent) => {
     const { layerType, layer } = e;
     if (layerType === "polygon") {
-      const coordinates = layer
-        .getLatLngs()[0]
-        .map((point: { lat: number; lng: number }) => [point.lat, point.lng]);
+      const latLngs = layer.getLatLngs()[0] as LatLng[];
+      const coordinates = latLngs.map((point: LatLng) => [point.lat, point.lng] as [number, number]);
       setPolygonPoints(coordinates);
       const calculatedHectares = calculateArea(coordinates);
       setHectares(calculatedHectares);
@@ -65,13 +74,12 @@ export const MapPolygon: React.FC<MapPolygonProps> = ({
     }
   };
 
-  // Manejar la edición de un polígono
-  const handleEdited = (e: any) => {
+  // Actualizamos la tipificación de handleEdited
+  const handleEdited = (e: EditEvent) => {
     setIsEditing(false);
     e.layers.eachLayer((layer: Polygon) => {
-      const updatedCoordinates = layer
-        .getLatLngs()[0]
-        .map((point: { lat: number; lng: number }) => [point.lat, point.lng]);
+      const latLngs = layer.getLatLngs()[0] as LatLng[];
+      const updatedCoordinates = latLngs.map((point: LatLng) => [point.lat, point.lng] as [number, number]);
 
       setPolygonPoints(updatedCoordinates);
       const calculatedHectares = calculateArea(updatedCoordinates);

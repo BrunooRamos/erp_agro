@@ -14,7 +14,6 @@ export const useRegisters = ( cropId?: string ) => {
         }
     );
 
-
     const createSeedMap = useBaseMutation(
         (field: SeedMapRegisterInterface) => postCreateSeedMap(field),
         {

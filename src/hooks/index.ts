@@ -30,6 +30,7 @@ export * from "./post-harvest/usePostHarvest"
 
 // Cost Center
 export * from "./cost-center/useCostCenter"
+export * from "./cost-center/useExpenses"
 
 // Config
 export * from "./config/useBaseMutation"

@@ -11,10 +11,11 @@ interface Props {
   }[];
   isExpanded?: boolean;
   onToggle?: (isExpanded: boolean) => void;
+  isCollapsed?: boolean;
 }
 
 export const SidebarMenuItem = ({
-  to, icon, title, subMenu, isExpanded = false, onToggle
+  to, icon, title, subMenu, isExpanded = false, onToggle, isCollapsed = false
 }: Props) => {
   const handleChevronClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -35,20 +36,22 @@ export const SidebarMenuItem = ({
         {({ isActive }) => (
           <>
             <i className={`${icon} text-md ${isActive ? 'text-zinc-900' : 'text-zinc-400'}`}></i>
-            <div className="flex items-center justify-between flex-1">
-              <h3 className={`${isActive ? 'text-zinc-900' : 'text-zinc-400'}`}>{title}</h3>
-              {subMenu && (
-                <i 
-                  className={`fas fa-chevron-${isExpanded ? 'down' : 'right'} text-zinc-400`}
-                  onClick={handleChevronClick}
-                ></i>
-              )}
-            </div>
+            {!isCollapsed && (
+              <div className="flex items-center justify-between flex-1">
+                <h3 className={`${isActive ? 'text-zinc-900' : 'text-zinc-400'}`}>{title}</h3>
+                {subMenu && (
+                  <i 
+                    className={`fas fa-chevron-${isExpanded ? 'down' : 'right'} text-zinc-400`}
+                    onClick={handleChevronClick}
+                  ></i>
+                )}
+              </div>
+            )}
           </>
         )}
       </NavLink>
 
-      {subMenu && isExpanded && (
+      {!isCollapsed && subMenu && isExpanded && (
         <div className="ml-6">
           {subMenu.filter(item => item.visible).map((item) => (
             <NavLink

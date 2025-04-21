@@ -10,10 +10,11 @@ import {
   getListCrop,
   getLotsByCrop,
   getVarietiesByCrop,
+  getSublotsByLot,
 } from "../../actions";
 import { useBaseMutation, useBaseQuery } from "../index";
 
-export const useCrop = (code?: string, rowid?: string) => {
+export const useCrop = ( crop_id?: string, lot?: string) => {
   const queryClient = useQueryClient();
 
   const createCrop = useBaseMutation((crop: CropForm) => postCreateCrop(crop), {
@@ -22,8 +23,8 @@ export const useCrop = (code?: string, rowid?: string) => {
     },
   });
 
-  const getCrop = useBaseQuery(["crop", code ?? ""], () => getByIdCrop(code!), {
-    enabled: !!code, // Only run query if code exists
+  const getCrop = useBaseQuery(["crop", crop_id ?? ""], () => getByIdCrop(crop_id!), {
+    enabled: !!crop_id, // Only run query if code exists
   });
 
   const deleteCrop = useBaseMutation(deleteCropAction, {
@@ -45,20 +46,28 @@ export const useCrop = (code?: string, rowid?: string) => {
   );
 
   const getLotsByCropId = useBaseQuery(
-    ["crop-lots", rowid ?? ""],
-    () => getLotsByCrop(rowid!),
+    ["crop-lots", crop_id ?? ""],
+    () => getLotsByCrop(crop_id!),
     {
-      enabled: !!rowid,
+      enabled: !!crop_id,
     }
   );
 
   const listCrop = useBaseQuery(["crop-list"], getListCrop);
 
   const getVarieties = useBaseQuery(
-    ["crop-varieties", code ?? ""],
-    () => getVarietiesByCrop(code!),
+    ["crop-varieties", crop_id ?? ""],
+    () => getVarietiesByCrop(crop_id!),
     {
-      enabled: !!code,
+      enabled: !!crop_id,
+    }
+  );
+
+  const getSublots = useBaseQuery(
+    ["crop-sublots", lot ?? ""],
+    () => getSublotsByLot(crop_id!, lot!),
+    {
+      enabled: !!lot && !!crop_id,
     }
   );
 
@@ -70,5 +79,6 @@ export const useCrop = (code?: string, rowid?: string) => {
     listCrop,
     getLotsByCropId,
     getVarieties,
+    getSublots,
   };
 };

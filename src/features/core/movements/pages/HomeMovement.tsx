@@ -18,6 +18,14 @@ export const HomeMovement = () => {
         to="/movements/logistic-costs"
         description="Formulario para crear costo logístico"
       />
+
+      <OptionCard
+        visible={true}
+        icon="fa-solid fa-file-invoice"
+        title="Listar movimientos"
+        to="/movements/list"
+        description="Listar movimientos de papa desde el campo hasta los depositos"
+      />
     </div>
   );
 };

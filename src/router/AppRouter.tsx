@@ -56,6 +56,14 @@ import {
   ProcessWash,
   HomeCostCenter,
   ResultStatus,
+  ListPotateoHarvest,
+  FormMaintenance,
+  DepreciationCostHome,
+  DepreciationForm,
+  DepreciationList,
+  OtherExpensesHome,
+  OtherExpensesForm,
+  OtherExpensesList
 } from "../features/index";
 import { MenuRoute } from "../interfaces";
 
@@ -96,6 +104,13 @@ export const menuRoutes: MenuRoute[] = [
         title: "Listar maquinaria",
         description: "Listado de maquinaria",
         component: <ListMachinery />,
+        visible: true,
+      },
+      {
+        to: "/machinery/maintenance",
+        title: "Mantenimiento",
+        description: "Mantenimiento",
+        component: <FormMaintenance />,
         visible: true,
       },
     ],
@@ -313,6 +328,13 @@ export const menuRoutes: MenuRoute[] = [
         component: <LogisticCosts />,
         visible: true,
       },
+      {
+        to: "/movements/list",
+        title: "Listar movimimientos",
+        description: "Listar movimientos de papa desde el campo hasta los depositos",
+        component: <ListPotateoHarvest />,
+        visible: true,
+      },
     ],
   },
   {
@@ -363,6 +385,48 @@ export const menuRoutes: MenuRoute[] = [
         component: <ResultStatus />,
         visible: true,
       },
+      {
+        to: "/cost-center/depreciation",
+        title: "Depreciación",
+        description: "Depreciación",
+        component: <DepreciationCostHome />,
+        visible: true,
+      },
+      {
+        to: "/cost-center/depreciation/create",
+        title: "Crear depreciación",
+        description: "Crear depreciación",
+        component: <DepreciationForm />,
+        visible: false,
+      },
+      {
+        to: "/cost-center/depreciation/list",
+        title: "Listar depreciación",
+        description: "Listar depreciación",
+        component: <DepreciationList />,
+        visible: false,
+      },
+      {
+        to: "/cost-center/other-expenses",
+        title: "Otros gastos",
+        description: "Otros gastos",
+        component: <OtherExpensesHome />,
+        visible: true,
+      },
+      {
+        to: "/cost-center/other-expenses/create",
+        title: "Crear otros gastos",
+        description: "Crear otros gastos",
+        component: <OtherExpensesForm />,
+        visible: false,
+      },
+      {
+        to: "/cost-center/other-expenses/list",
+        title: "Listar otros gastos",
+        description: "Listar otros gastos",
+        component: <OtherExpensesList />,
+        visible: false,
+      }
     ],
   },
   //!Sub menus de post cosecha

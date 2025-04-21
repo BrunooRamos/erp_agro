@@ -4,7 +4,7 @@ import { Dayjs } from "dayjs";
 import { useCostCenter } from "../../../../hooks/cost-center/useCostCenter";
 import { useCrop } from "../../../../hooks";
 import { GetCostCenter } from "../../../../interfaces/cost-center.interface";
-import { SummaryCards, LaborCC, RafCC, SeedMapCC, IrrigationCC, FertirriegoCC } from "../../../../ui/components";
+import { LaborCC, RafCC, SeedMapCC, IrrigationCC, FertirriegoCC, LogisticCC, WashProcessCC, TongProcessCC, CostBreakdown, MaintenanceCC, OtherExpensesCC } from "../../../../ui/components";
 
 export const ResultStatus = () => {
     const [dateRange, setDateRange] = useState<[Dayjs | null, Dayjs | null]>([null, null]);
@@ -14,13 +14,6 @@ export const ResultStatus = () => {
     const [startDate, setStartDate] = useState<string>("");
     const [endDate, setEndDate] = useState<string>("");
     const [shouldFetch, setShouldFetch] = useState(false);
-    const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({
-        labors: false,
-        rafs: false,
-        seed_maps: false,
-        irrigations: false,
-        fertirriego: false
-    });
 
     const { listCrop } = useCrop();
     const { data: crops = [] } = listCrop;
@@ -58,7 +51,11 @@ export const ResultStatus = () => {
                 rafs: costData.expenses.rafs.filter(raf => raf.crop_code === selectedCrop),
                 seed_maps: costData.expenses.seed_maps.filter(seed => seed.crop_code === selectedCrop),
                 irrigations: costData.expenses.irrigations.filter(irrigation => irrigation.crop_code === selectedCrop),
-                fertirriego: costData.expenses.fertirriego.filter(fertirriego => fertirriego.crop_code === selectedCrop)
+                fertirriego: costData.expenses.fertirriego.filter(fertirriego => fertirriego.crop_code === selectedCrop),
+                wash_processes: costData.expenses.wash_processes.filter(wash_process => wash_process.crop_code === selectedCrop),
+                tong_processes: costData.expenses.tong_processes.filter(tong_process => tong_process.crop_code === selectedCrop),
+                logistic_costs: costData.expenses.logistic_costs.filter(logistic_cost => logistic_cost.crop_code === selectedCrop),
+                other_expenses: costData.expenses.other_expenses.filter(other_expense => other_expense.crop_code === selectedCrop)
             },
             totals: {
                 labors: costData.expenses.labors
@@ -75,7 +72,19 @@ export const ResultStatus = () => {
                     .reduce((sum, irrigation) => sum + irrigation.total_cost, 0),
                 fertirriego: costData.expenses.fertirriego
                     .filter(fertirriego => fertirriego.crop_code === selectedCrop)
-                    .reduce((sum, fertirriego) => sum + fertirriego.total_cost, 0)
+                    .reduce((sum, fertirriego) => sum + fertirriego.total_cost, 0),
+                wash_processes: costData.expenses.wash_processes
+                    .filter(wash_process => wash_process.crop_code === selectedCrop)
+                    .reduce((sum, wash_process) => sum + wash_process.total_cost, 0),
+                tong_processes: costData.expenses.tong_processes
+                    .filter(tong_process => tong_process.crop_code === selectedCrop)
+                    .reduce((sum, tong_process) => sum + tong_process.total_cost, 0),
+                logistic_costs: costData.expenses.logistic_costs
+                    .filter(logistic_cost => logistic_cost.crop_code === selectedCrop)
+                    .reduce((sum, logistic_cost) => sum + logistic_cost.logistic_cost, 0),
+                other_expenses: costData.expenses.other_expenses
+                    .filter(other_expense => other_expense.crop_code === selectedCrop)
+                    .reduce((sum, other_expense) => sum + other_expense.total_cost, 0),
             },
             grand_total: costData.expenses.labors
                 .filter(labor => labor.crop_code === selectedCrop)
@@ -91,19 +100,24 @@ export const ResultStatus = () => {
                     .reduce((sum, irrigation) => sum + irrigation.total_cost, 0) +
                 costData.expenses.fertirriego
                     .filter(fertirriego => fertirriego.crop_code === selectedCrop)
-                    .reduce((sum, fertirriego) => sum + fertirriego.total_cost, 0),
+                    .reduce((sum, fertirriego) => sum + fertirriego.total_cost, 0) +
+                costData.expenses.wash_processes
+                    .filter(wash_process => wash_process.crop_code === selectedCrop)
+                    .reduce((sum, wash_process) => sum + wash_process.total_cost, 0) +
+                costData.expenses.tong_processes
+                    .filter(tong_process => tong_process.crop_code === selectedCrop)
+                    .reduce((sum, tong_process) => sum + tong_process.total_cost, 0) +
+                costData.expenses.logistic_costs
+                    .filter(logistic_cost => logistic_cost.crop_code === selectedCrop)
+                    .reduce((sum, logistic_cost) => sum + logistic_cost.logistic_cost, 0) +
+                costData.expenses.other_expenses
+                    .filter(other_expense => other_expense.crop_code === selectedCrop)
+                    .reduce((sum, other_expense) => sum + other_expense.total_cost, 0),
             period: costData.period
         };
 
         setFilteredData(filtered);
     }, [selectedCrop, costData]);
-
-    const toggleSection = (section: string) => {
-        setExpandedSections(prev => ({
-            ...prev,
-            [section]: !prev[section]
-        }));
-    };
 
     return (
         <div className="bg-gray-50 p-6 rounded-lg shadow-sm min-h-screen">
@@ -113,8 +127,8 @@ export const ResultStatus = () => {
                     <div>
                         <h1 className="text-2xl font-bold text-white flex items-center">
                             <i className="fa-solid fa-calculator mr-3 opacity-75"></i>
-                    Centro de Costos
-                </h1>
+                            Centro de Costos
+                        </h1>
                         <p className="text-zinc-300 text-sm mt-1">
                             Análisis detallado de costos por período
                         </p>
@@ -167,12 +181,12 @@ export const ResultStatus = () => {
                     >
                         {getAllCostCenter.isLoading ? (
                             <>
-                            <i className="fas fa-spinner fa-spin mr-2"></i>
+                                <i className="fas fa-spinner fa-spin mr-2"></i>
                                 Cargando...
                             </>
                         ) : (
                             <>
-                            <i className="fas fa-search mr-2"></i>
+                                <i className="fas fa-search mr-2"></i>
                                 Analizar
                             </>
                         )}
@@ -182,8 +196,7 @@ export const ResultStatus = () => {
 
             {filteredData && (
                 <>
-                    <SummaryCards totals={filteredData.totals} grandTotal={filteredData.grand_total} />
-
+                    {/* <SummaryCards totals={filteredData.totals} grandTotal={filteredData.grand_total} /> */}
                     {/* Detailed Lists */}
                     <div className="space-y-8">
                         <LaborCC data={filteredData.expenses.labors} />
@@ -191,343 +204,14 @@ export const ResultStatus = () => {
                         <SeedMapCC data={filteredData.expenses.seed_maps} />
                         <IrrigationCC data={filteredData.expenses.irrigations} />
                         <FertirriegoCC data={filteredData.expenses.fertirriego} />
+                        <LogisticCC data={filteredData.expenses.logistic_costs} />
+                        <WashProcessCC data={filteredData.expenses.wash_processes} />
+                        <TongProcessCC data={filteredData.expenses.tong_processes} />
+                        <MaintenanceCC data={filteredData.expenses.maintenance_costs} />
+                        <OtherExpensesCC data={filteredData.expenses.other_expenses} />
                     </div>
 
-                    {/* Cost Breakdown Table */}
-                    <div className="mt-8 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                        <div className="px-6 py-4 bg-zinc-50 border-b border-zinc-100">
-                            <h2 className="text-lg font-semibold text-zinc-800 flex items-center">
-                                <i className="fas fa-chart-pie mr-3 text-zinc-600"></i>
-                                Desglose de Costos
-                            </h2>
-                        </div>
-                        <div className="p-6">
-                            {/* Total General */}
-                            <div className="flex items-center justify-between py-4 border-b-2 border-zinc-800">
-                                <div className="flex items-center">
-                                    <span className="text-xl font-bold text-zinc-800">Total General</span>
-                                </div>
-                                <span className="text-xl font-bold text-zinc-800">
-                                    ${filteredData.grand_total.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-                                </span>
-                            </div>
-
-                            {/* Categorías Principales */}
-                            <div className="mt-4 space-y-4">
-                                {/* Labores */}
-                                <div className="pl-4">
-                                    <div 
-                                        className="flex items-center justify-between py-2 border-b border-zinc-100 cursor-pointer hover:bg-zinc-50 rounded-lg px-2"
-                                        onClick={() => toggleSection('labors')}
-                                    >
-                                        <div className="flex items-center">
-                                            <i className={`fas fa-chevron-${expandedSections.labors ? 'down' : 'right'} text-zinc-400 mr-2`}></i>
-                                            <i className="fas fa-tractor text-blue-500 mr-3"></i>
-                                            <span className="font-medium text-zinc-700">Labores</span>
-                                        </div>
-                                        <div className="flex items-center gap-4">
-                                            <span className="text-sm text-zinc-500">
-                                                {((filteredData.totals.labors / filteredData.grand_total) * 100).toFixed(1)}%
-                                            </span>
-                                            <span className="font-medium text-zinc-700">
-                                                ${filteredData.totals.labors.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    {expandedSections.labors && (
-                                        <div className="pl-8 mt-2 space-y-2">
-                                            <div className="flex items-center justify-between py-1">
-                                                <div className="flex items-center">
-                                                    <i className="fas fa-users text-zinc-400 mr-2"></i>
-                                                    <span className="text-zinc-600">Labor</span>
-                                                </div>
-                                                <div className="flex items-center gap-4">
-                                                    <span className="text-zinc-500">
-                                                        {((filteredData.expenses.labors.reduce((sum, labor) => sum + labor.labor_cost, 0) / filteredData.totals.labors) * 100).toFixed(1)}%
-                                                    </span>
-                                                    <span className="text-zinc-600">
-                                                        ${filteredData.expenses.labors.reduce((sum, labor) => sum + labor.labor_cost, 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center justify-between py-1">
-                                                <div className="flex items-center">
-                                                    <i className="fas fa-gas-pump text-zinc-400 mr-2"></i>
-                                                    <span className="text-zinc-600">Combustible</span>
-                                                </div>
-                                                <div className="flex items-center gap-4">
-                                                    <span className="text-zinc-500">
-                                                        {((filteredData.expenses.labors.reduce((sum, labor) => sum + labor.fuel_cost_usd, 0) / filteredData.totals.labors) * 100).toFixed(1)}%
-                                                    </span>
-                                                    <span className="text-zinc-600">
-                                                        ${filteredData.expenses.labors.reduce((sum, labor) => sum + labor.fuel_cost_usd, 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* RAFs */}
-                                <div className="pl-4">
-                                    <div 
-                                        className="flex items-center justify-between py-2 border-b border-zinc-100 cursor-pointer hover:bg-zinc-50 rounded-lg px-2"
-                                        onClick={() => toggleSection('rafs')}
-                                    >
-                                        <div className="flex items-center">
-                                            <i className={`fas fa-chevron-${expandedSections.rafs ? 'down' : 'right'} text-zinc-400 mr-2`}></i>
-                                            <i className="fas fa-spray-can text-green-500 mr-3"></i>
-                                            <span className="font-medium text-zinc-700">RAFs</span>
-                                        </div>
-                                        <div className="flex items-center gap-4">
-                                            <span className="text-sm text-zinc-500">
-                                                {((filteredData.totals.rafs / filteredData.grand_total) * 100).toFixed(1)}%
-                                            </span>
-                                            <span className="font-medium text-zinc-700">
-                                                ${filteredData.totals.rafs.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    {expandedSections.rafs && (
-                                        <div className="pl-8 mt-2 space-y-2">
-                                            <div className="flex items-center justify-between py-1">
-                                                <div className="flex items-center">
-                                                    <i className="fas fa-users text-zinc-400 mr-2"></i>
-                                                    <span className="text-zinc-600">Labor</span>
-                                                </div>
-                                                <div className="flex items-center gap-4">
-                                                    <span className="text-zinc-500">
-                                                        {((filteredData.expenses.rafs.reduce((sum, raf) => sum + raf.labor_cost, 0) / filteredData.totals.rafs) * 100).toFixed(1)}%
-                                                    </span>
-                                                    <span className="text-zinc-600">
-                                                        ${filteredData.expenses.rafs.reduce((sum, raf) => sum + raf.labor_cost, 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center justify-between py-1">
-                                                <div className="flex items-center">
-                                                    <i className="fas fa-gas-pump text-zinc-400 mr-2"></i>
-                                                    <span className="text-zinc-600">Combustible</span>
-                                                </div>
-                                                <div className="flex items-center gap-4">
-                                                    <span className="text-zinc-500">
-                                                        {((filteredData.expenses.rafs.reduce((sum, raf) => sum + raf.fuel_cost_usd, 0) / filteredData.totals.rafs) * 100).toFixed(1)}%
-                                                    </span>
-                                                    <span className="text-zinc-600">
-                                                        ${filteredData.expenses.rafs.reduce((sum, raf) => sum + raf.fuel_cost_usd, 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center justify-between py-1">
-                                                <div className="flex items-center">
-                                                    <i className="fas fa-box text-zinc-400 mr-2"></i>
-                                                    <span className="text-zinc-600">Productos</span>
-                                                </div>
-                                                <div className="flex items-center gap-4">
-                                                    <span className="text-zinc-500">
-                                                        {((filteredData.expenses.rafs.reduce((sum, raf) => sum + raf.products.reduce((pSum, product) => pSum + parseFloat(product.total_price), 0), 0) / filteredData.totals.rafs) * 100).toFixed(1)}%
-                                                    </span>
-                                                    <span className="text-zinc-600">
-                                                        ${filteredData.expenses.rafs.reduce((sum, raf) => sum + raf.products.reduce((pSum, product) => pSum + parseFloat(product.total_price), 0), 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Siembras */}
-                                <div className="pl-4">
-                                    <div 
-                                        className="flex items-center justify-between py-2 border-b border-zinc-100 cursor-pointer hover:bg-zinc-50 rounded-lg px-2"
-                                        onClick={() => toggleSection('seed_maps')}
-                                    >
-                                        <div className="flex items-center">
-                                            <i className={`fas fa-chevron-${expandedSections.seed_maps ? 'down' : 'right'} text-zinc-400 mr-2`}></i>
-                                            <i className="fas fa-seedling text-yellow-500 mr-3"></i>
-                                            <span className="font-medium text-zinc-700">Siembras</span>
-                                        </div>
-                                        <div className="flex items-center gap-4">
-                                            <span className="text-sm text-zinc-500">
-                                                {((filteredData.totals.seed_maps / filteredData.grand_total) * 100).toFixed(1)}%
-                                            </span>
-                                            <span className="font-medium text-zinc-700">
-                                                ${filteredData.totals.seed_maps.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    {expandedSections.seed_maps && (
-                                        <div className="pl-8 mt-2 space-y-2">
-                                            <div className="flex items-center justify-between py-1">
-                                                <div className="flex items-center">
-                                                    <i className="fas fa-users text-zinc-400 mr-2"></i>
-                                                    <span className="text-zinc-600">Labor</span>
-                                                </div>
-                                                <div className="flex items-center gap-4">
-                                                    <span className="text-zinc-500">
-                                                        {((filteredData.expenses.seed_maps.reduce((sum, seed) => sum + seed.labor_cost, 0) / filteredData.totals.seed_maps) * 100).toFixed(1)}%
-                                                    </span>
-                                                    <span className="text-zinc-600">
-                                                        ${filteredData.expenses.seed_maps.reduce((sum, seed) => sum + seed.labor_cost, 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center justify-between py-1">
-                                                <div className="flex items-center">
-                                                    <i className="fas fa-gas-pump text-zinc-400 mr-2"></i>
-                                                    <span className="text-zinc-600">Combustible</span>
-                                                </div>
-                                                <div className="flex items-center gap-4">
-                                                    <span className="text-zinc-500">
-                                                        {((filteredData.expenses.seed_maps.reduce((sum, seed) => sum + seed.fuel_cost_usd, 0) / filteredData.totals.seed_maps) * 100).toFixed(1)}%
-                                                    </span>
-                                                    <span className="text-zinc-600">
-                                                        ${filteredData.expenses.seed_maps.reduce((sum, seed) => sum + seed.fuel_cost_usd, 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center justify-between py-1">
-                                                <div className="flex items-center">
-                                                    <i className="fas fa-box text-zinc-400 mr-2"></i>
-                                                    <span className="text-zinc-600">Productos</span>
-                                                </div>
-                                                <div className="flex items-center gap-4">
-                                                    <span className="text-zinc-500">
-                                                        {((filteredData.expenses.seed_maps.reduce((sum, seed) => sum + seed.products.reduce((pSum, product) => pSum + parseFloat(product.total_price), 0), 0) / filteredData.totals.seed_maps) * 100).toFixed(1)}%
-                                                    </span>
-                                                    <span className="text-zinc-600">
-                                                        ${filteredData.expenses.seed_maps.reduce((sum, seed) => sum + seed.products.reduce((pSum, product) => pSum + parseFloat(product.total_price), 0), 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Irrigaciones */}
-                                <div className="pl-4">
-                                    <div 
-                                        className="flex items-center justify-between py-2 border-b border-zinc-100 cursor-pointer hover:bg-zinc-50 rounded-lg px-2"
-                                        onClick={() => toggleSection('irrigations')}
-                                    >
-                                        <div className="flex items-center">
-                                            <i className={`fas fa-chevron-${expandedSections.irrigations ? 'down' : 'right'} text-zinc-400 mr-2`}></i>
-                                            <i className="fas fa-water text-blue-400 mr-3"></i>
-                                            <span className="font-medium text-zinc-700">Irrigaciones</span>
-                                        </div>
-                                        <div className="flex items-center gap-4">
-                                            <span className="text-sm text-zinc-500">
-                                                {((filteredData.totals.irrigation / filteredData.grand_total) * 100).toFixed(1)}%
-                                            </span>
-                                            <span className="font-medium text-zinc-700">
-                                                ${filteredData.totals.irrigation.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    {expandedSections.irrigations && (
-                                        <div className="pl-8 mt-2 space-y-2">
-                                            <div className="flex items-center justify-between py-1">
-                                                <div className="flex items-center">
-                                                    <i className="fas fa-tint text-zinc-400 mr-2"></i>
-                                                    <span className="text-zinc-600">Línea Madre</span>
-                                                </div>
-                                                <div className="flex items-center gap-4">
-                                                    <span className="text-zinc-500">
-                                                        {((filteredData.expenses.irrigations.reduce((sum, irr) => sum + irr.cost_mother_line, 0) / filteredData.totals.irrigation) * 100).toFixed(1)}%
-                                                    </span>
-                                                    <span className="text-zinc-600">
-                                                        ${filteredData.expenses.irrigations.reduce((sum, irr) => sum + irr.cost_mother_line, 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center justify-between py-1">
-                                                <div className="flex items-center">
-                                                    <i className="fas fa-tools text-zinc-400 mr-2"></i>
-                                                    <span className="text-zinc-600">Mantenimiento</span>
-                                                </div>
-                                                <div className="flex items-center gap-4">
-                                                    <span className="text-zinc-500">
-                                                        {((filteredData.expenses.irrigations.reduce((sum, irr) => sum + irr.maintenance_cost_usd, 0) / filteredData.totals.irrigation) * 100).toFixed(1)}%
-                                                    </span>
-                                                    <span className="text-zinc-600">
-                                                        ${filteredData.expenses.irrigations.reduce((sum, irr) => sum + irr.maintenance_cost_usd, 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center justify-between py-1">
-                                                <div className="flex items-center">
-                                                    <i className="fas fa-gas-pump text-zinc-400 mr-2"></i>
-                                                    <span className="text-zinc-600">Combustible</span>
-                                                </div>
-                                                <div className="flex items-center gap-4">
-                                                    <span className="text-zinc-500">
-                                                        {((filteredData.expenses.irrigations.reduce((sum, irr) => sum + irr.fuel_cost_usd, 0) / filteredData.totals.irrigation) * 100).toFixed(1)}%
-                                                    </span>
-                                                    <span className="text-zinc-600">
-                                                        ${filteredData.expenses.irrigations.reduce((sum, irr) => sum + irr.fuel_cost_usd, 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center justify-between py-1">
-                                                <div className="flex items-center">
-                                                    <i className="fas fa-box text-zinc-400 mr-2"></i>
-                                                    <span className="text-zinc-600">Productos</span>
-                                                </div>
-                                                <div className="flex items-center gap-4">
-                                                    <span className="text-zinc-500">
-                                                        {((filteredData.expenses.irrigations.reduce((sum, irr) => sum + irr.products.reduce((pSum, product) => pSum + parseFloat(product.total_price), 0), 0) / filteredData.totals.irrigation) * 100).toFixed(1)}%
-                                                    </span>
-                                                    <span className="text-zinc-600">
-                                                        ${filteredData.expenses.irrigations.reduce((sum, irr) => sum + irr.products.reduce((pSum, product) => pSum + parseFloat(product.total_price), 0), 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-
-                                {/* Fertirriego */}
-                                <div className="pl-4">
-                                    <div 
-                                        className="flex items-center justify-between py-2 border-b border-zinc-100 cursor-pointer hover:bg-zinc-50 rounded-lg px-2"
-                                        onClick={() => toggleSection('fertirriego')}
-                                    >
-                                        <div className="flex items-center">
-                                            <i className={`fas fa-chevron-${expandedSections.fertirriego ? 'down' : 'right'} text-zinc-400 mr-2`}></i>
-                                            <i className="fas fa-fill-drip text-purple-500 mr-3"></i>
-                                            <span className="font-medium text-zinc-700">Fertirriego</span>
-                                        </div>
-                                        <div className="flex items-center gap-4">
-                                            <span className="text-sm text-zinc-500">
-                                                {((filteredData.totals.fertirriego / filteredData.grand_total) * 100).toFixed(1)}%
-                                            </span>
-                                            <span className="font-medium text-zinc-700">
-                                                ${filteredData.totals.fertirriego.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-                                            </span>
-                                        </div>
-                                    </div>
-                                    {expandedSections.fertirriego && (
-                                        <div className="pl-8 mt-2 space-y-2">
-                                            <div className="flex items-center justify-between py-1">
-                                                <div className="flex items-center">
-                                                    <i className="fas fa-box text-zinc-400 mr-2"></i>
-                                                    <span className="text-zinc-600">Productos</span>
-                                                </div>
-                                                <div className="flex items-center gap-4">
-                                                    <span className="text-zinc-500">
-                                                        {((filteredData.expenses.fertirriego.reduce((sum, fert) => sum + fert.products.reduce((pSum, product) => pSum + parseFloat(product.total_price), 0), 0) / filteredData.totals.fertirriego) * 100).toFixed(1)}%
-                                                    </span>
-                                                    <span className="text-zinc-600">
-                                                        ${filteredData.expenses.fertirriego.reduce((sum, fert) => sum + fert.products.reduce((pSum, product) => pSum + parseFloat(product.total_price), 0), 0).toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <CostBreakdown data={filteredData} />
                 </>
             )}
 

@@ -64,3 +64,18 @@ export interface MachineryLight {
     brand: string;
     model: string;  
 }
+
+
+
+export interface MaintenanceFormData {
+    machinery_id: string;
+    date: string;
+    products?: {
+        product_id: string;
+        quantity: number;
+        warehouse_id: string;
+    }[];
+    other_expenses?: number;
+    expenses_description?: string;
+    general_description?: string;
+}

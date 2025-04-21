@@ -1,8 +1,8 @@
-import { SelectedProducts, Warehouse } from "../../../interfaces";
+import { SelectedProducts, WarehouseProduct } from "../../../interfaces";
 
 interface EditProductModalProps {
   editingProduct: SelectedProducts;
-  warehouses: Warehouse[];
+  warehouses: WarehouseProduct[];
   onClose: () => void;
   onConfirm: (product: SelectedProducts) => void;
   onChangeQuantity: (e: React.ChangeEvent<HTMLInputElement>) => void;
