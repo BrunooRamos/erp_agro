@@ -37,6 +37,7 @@ export const ListCrop = () => {
     }
   };
 
+
   const columns = [
     columnHelper.accessor("code", {
       header: "Código",

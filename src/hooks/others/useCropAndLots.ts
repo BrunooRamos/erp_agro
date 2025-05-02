@@ -30,8 +30,10 @@ export const useCropAndLots = <T extends RAFSendData | SeedMapRegisterInterface 
     const selectedCrop = crops?.find(crop => crop.rowid === selectedCropCode);
 
     // Get lots by crop
-    const { getLotsByCropId } = useCrop(undefined, selectedCrop?.rowid);
+    const { getLotsByCropId } = useCrop(selectedCrop?.rowid );
     const { data: lots, isLoading: isLoadingLots } = getLotsByCropId;
+
+    console.log(selectedCrop?.rowid);
     
     // Sort crops by code
     const sortedCrops = crops?.sort((a, b) => a.code.localeCompare(b.code));
