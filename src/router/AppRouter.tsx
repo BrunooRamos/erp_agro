@@ -63,7 +63,8 @@ import {
   DepreciationList,
   OtherExpensesHome,
   OtherExpensesForm,
-  OtherExpensesList
+  OtherExpensesList,
+  SupplierInvoiceList
 } from "../features/index";
 import { MenuRoute } from "../interfaces";
 
@@ -428,6 +429,15 @@ export const menuRoutes: MenuRoute[] = [
         visible: false,
       }
     ],
+  },
+
+  {
+    to: "/supplier",
+    icon: "fa-solid fa-truck",
+    title: "Ordenes de pago",
+    description: "Ordenes de pago",
+    component: <SupplierInvoiceList />,
+    visible: true,
   },
   //!Sub menus de post cosecha
   // TONG  

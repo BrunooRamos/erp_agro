@@ -37,3 +37,6 @@ export * from './cost-center/TongProcessCC';
 export * from './cost-center/CostBreakdown';
 export * from './cost-center/MaintenanceCC';
 export * from './cost-center/OtherExpensesCC';
+
+
+export * from './core/supplier/SupplierInvoiceTable';

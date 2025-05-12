@@ -32,6 +32,9 @@ export * from "./post-harvest/usePostHarvest"
 export * from "./cost-center/useCostCenter"
 export * from "./cost-center/useExpenses"
 
+// Supplier
+export * from "./supplier/useSupplier"
+
 // Config
 export * from "./config/useBaseMutation"
 export * from "./config/useBaseQuery"

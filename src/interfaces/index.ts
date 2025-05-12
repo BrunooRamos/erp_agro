@@ -10,3 +10,4 @@ export * from './cost-center.interface';
 export * from './irrigation.interface';
 export * from './movements.interface';
 export * from './post-harvest.interface';
+export * from './supplier.interface';
