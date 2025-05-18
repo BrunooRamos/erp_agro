@@ -36,8 +36,6 @@ export const CreateMovement = () => {
   const selectedCrop = watch("crop");
   const selectedLot = watch("lot");
 
-  console.log(selectedCrop, selectedLot);
-
   const { listCrop, getCrop, getVarieties, getSublots } = useCrop( selectedCrop, selectedLot );
 
   const { data: crops } = listCrop;
@@ -47,7 +45,6 @@ export const CreateMovement = () => {
   const lots = crop?.lots;
 
   const { data: sublots, isLoading: isLoadingSublots } = getSublots;
-  console.log(sublots);
 
   const { data: varieties, isLoading: isLoadingVarieties } = getVarieties;
 
@@ -178,12 +175,10 @@ export const CreateMovement = () => {
             </select>
           </FormField>
 
-          <FormField label="Sublote" error={errors.lot?.message || ""} required>
+          <FormField label="Sublote" error={errors.lot?.message || ""}>
             <select
               className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
-              {...register("sublot", {
-                required: "Este campo es requerido",
-              })}
+              {...register("sublot")}
               disabled={!selectedCrop || isLoadingCrop || isLoadingSublots}
             >
               <option value="">Seleccione un sublote</option>

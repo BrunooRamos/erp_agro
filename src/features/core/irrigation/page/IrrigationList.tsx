@@ -6,6 +6,8 @@ export const IrrigationList = () => {
     const { irrigationList } = useIrrigation();
     const [selectedCropCode, setSelectedCropCode] = useState<string>('all');
 
+    console.log(JSON.stringify(irrigationList.data, null, 2));
+
     // Obtener códigos de cultivo únicos
     const uniqueCropCodes = useMemo(() => {
         if (!irrigationList.data) return [];

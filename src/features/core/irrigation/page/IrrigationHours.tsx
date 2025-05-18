@@ -19,6 +19,8 @@ export const IrrigationHours = () => {
   const { createIrrigationHours, irrigationCosts } = useIrrigation();
   const { data: irrigationCostsData } = irrigationCosts;
 
+  console.log(JSON.stringify(irrigationData, null, 2));
+
   const {
     register,
     handleSubmit,
@@ -40,7 +42,9 @@ export const IrrigationHours = () => {
     handleLotSelection,
     handleSublotSelection,
     handleSublotAreaChange,
-  } = useCropAndLots(control, irrigationData.crop_id.toString());
+    getMaxAreaForLot,
+    getMaxAreaForSublot
+  } = useCropAndLots(control, irrigationData.crop_id.toString(), irrigationData);
 
   // Redirect if no irrigation data is present
   if (!irrigationData) {
@@ -141,6 +145,8 @@ export const IrrigationHours = () => {
               onSublotSelect={handleSublotSelection}
               selectedSublots={selectedSublots}
               onSublotAreaChange={handleSublotAreaChange}
+              getMaxAreaForLot={getMaxAreaForLot}
+              getMaxAreaForSublot={getMaxAreaForSublot}
             />
           </div>
 

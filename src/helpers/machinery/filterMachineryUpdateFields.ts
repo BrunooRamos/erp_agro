@@ -3,12 +3,9 @@ import { MachineryForm } from "../../interfaces";
 export const filterMachineryUpdateFields = (data: MachineryForm, originalData?: MachineryForm) => {
     const allowedFields = {
       brand: data.brand,
-      cusa_cost: data.cusa_cost?.toString(),
       description: data.description,
       id_padron: data.id_padron,
       insurance: data.insurance,
-      labor: data.labor,
-      lts: data.lts?.toString(),
       maintenance_hours: data.maintenance_hours?.toString(),
       model: data.model,
       name: data.name,

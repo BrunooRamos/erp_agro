@@ -84,9 +84,7 @@ export const OtherExpensesForm = () => {
 
           <FormField label="Descripción" error={errors.description?.message}>
             <textarea
-              {...register("description", {
-                required: "Este campo es requerido",
-              })}
+              {...register("description")}
               className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
             />
           </FormField>

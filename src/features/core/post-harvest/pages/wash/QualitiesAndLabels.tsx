@@ -31,7 +31,6 @@ export const QualitiesAndLabels = () => {
   const { data: washQualities } = listWashQualities;
 
   const onSubmit = handleSubmit((data) => {
-    console.log(JSON.stringify(data, null, 2));
     // Si no se incluye etiqueta, eliminar la propiedad label
     const dataToSubmit = includeLabel ? data : { name: data.name, description: data.description };
     

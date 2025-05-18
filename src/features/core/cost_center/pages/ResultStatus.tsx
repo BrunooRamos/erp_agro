@@ -43,6 +43,8 @@ export const ResultStatus = () => {
             return;
         }
 
+        console.log(JSON.stringify(costData.expenses.fertirriego, null, 2));
+
         const filtered = {
             ...costData,
             expenses: {
@@ -55,7 +57,8 @@ export const ResultStatus = () => {
                 wash_processes: costData.expenses.wash_processes.filter(wash_process => wash_process.crop_code === selectedCrop),
                 tong_processes: costData.expenses.tong_processes.filter(tong_process => tong_process.crop_code === selectedCrop),
                 logistic_costs: costData.expenses.logistic_costs.filter(logistic_cost => logistic_cost.crop_code === selectedCrop),
-                other_expenses: costData.expenses.other_expenses.filter(other_expense => other_expense.crop_code === selectedCrop)
+                other_expenses: costData.expenses.other_expenses.filter(other_expense => other_expense.crop_code === selectedCrop),
+                maintenance_costs: costData.expenses.maintenance_costs
             },
             totals: {
                 labors: costData.expenses.labors
@@ -85,6 +88,8 @@ export const ResultStatus = () => {
                 other_expenses: costData.expenses.other_expenses
                     .filter(other_expense => other_expense.crop_code === selectedCrop)
                     .reduce((sum, other_expense) => sum + other_expense.total_cost, 0),
+                maintenance_costs: costData.expenses.maintenance_costs
+                    .reduce((sum, maintenance) => sum + maintenance.total_cost, 0),
             },
             grand_total: costData.expenses.labors
                 .filter(labor => labor.crop_code === selectedCrop)
@@ -112,7 +117,9 @@ export const ResultStatus = () => {
                     .reduce((sum, logistic_cost) => sum + logistic_cost.logistic_cost, 0) +
                 costData.expenses.other_expenses
                     .filter(other_expense => other_expense.crop_code === selectedCrop)
-                    .reduce((sum, other_expense) => sum + other_expense.total_cost, 0),
+                    .reduce((sum, other_expense) => sum + other_expense.total_cost, 0) +
+                costData.expenses.maintenance_costs
+                    .reduce((sum, maintenance) => sum + maintenance.total_cost, 0),
             period: costData.period
         };
 

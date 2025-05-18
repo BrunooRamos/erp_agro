@@ -29,8 +29,8 @@ export const DepreciationList = () => {
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold text-gray-800">Depreciación de Activos</h1>
                 <ActionButtons
-                    onCancel={() => navigate("/registers")}
-                    onSubmit={() => navigate("/depreciation/create")}
+                    onCancel={() => navigate("/cost-center/home")}
+                    onSubmit={() => navigate("/cost-center/depreciation/create")}
                     submitLabel="Nueva Depreciación"
                 />
             </div>

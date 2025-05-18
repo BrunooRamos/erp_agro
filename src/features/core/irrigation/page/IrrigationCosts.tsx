@@ -32,6 +32,8 @@ export const IrrigationCosts = () => {
         proceso de riego y están directamente relacionados.
       </p>
 
+      <p className="text-sm font-bold text-red-600 mb-4">LOS COSTOS DEBEN AGREGARSE EN DÓLARES</p>
+
       <form onSubmit={onSubmit}>
         <div className="grid grid-cols-1  gap-4">
           <div className="flex flex-col gap-2">

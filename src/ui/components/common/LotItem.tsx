@@ -12,6 +12,10 @@ const LotItem = ({
   onSublotSelect,
   selectedSublots,
   onSublotAreaChange,
+  
+  // Funciones para obtener el área máxima
+  getMaxAreaForLot,
+  getMaxAreaForSublot
 }: {
   lot: LotEntity;
   isLotSelected: boolean;
@@ -24,86 +28,101 @@ const LotItem = ({
   onSublotSelect: (sublotId: string, checked: boolean) => void;
   selectedSublots: SelectedSubLot[];
   onSublotAreaChange: (sublotId: string, area: number) => void;
-}) => (
-  <div className="space-y-2">
-    <div className="flex items-center gap-4 p-4 border border-gray-200 rounded-md bg-white shadow-sm hover:border-gray-300 transition-all">
-      <input
-        type="checkbox"
-        checked={isLotSelected}
-        onChange={(e) => onLotSelect(lot.rowid, e.target.checked)}
-        className="w-4 h-4 rounded border-gray-300 text-zinc-800 focus:ring-zinc-800"
-        aria-label={`Select lot ${lot.name}`}
-      />
-      <span className="flex-1 font-medium text-gray-700">{lot.name}</span>
-      {isLotSelected && lot.sublots.length === 0 && (
-        <div className="flex items-center gap-4">
-          <div className="relative">
-            <input
-              type="number"
-              value={selectedLots.find((l) => l.id_lote === lot.rowid)?.area_utilizada || ''}
-              onChange={(e) =>
-                onAreaChange(lot.rowid, Number(e.target.value))
-              }
-              placeholder="0"
-              className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-zinc-800 focus:border-zinc-800"
-              min="0"
-              max={lot.area_utilizada ? lot.area_utilizada : lot.area_real}
-              step="0.01"
-            />
-          </div>
+  
+  // Funciones para obtener el área máxima
+  getMaxAreaForLot?: (lotId: string) => number;
+  getMaxAreaForSublot?: (sublotId: string) => number;
+}) => {
+  // Calcular el área máxima para el lote actual
+  const maxLotArea = getMaxAreaForLot ? getMaxAreaForLot(lot.rowid) : 
+    Number(lot.area_utilizada ? lot.area_utilizada : lot.area_real);
+    
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-4 p-4 border border-gray-200 rounded-md bg-white shadow-sm hover:border-gray-300 transition-all">
+        <input
+          type="checkbox"
+          checked={isLotSelected}
+          onChange={(e) => onLotSelect(lot.rowid, e.target.checked)}
+          className="w-4 h-4 rounded border-gray-300 text-zinc-800 focus:ring-zinc-800"
+          aria-label={`Select lot ${lot.name}`}
+        />
+        <span className="flex-1 font-medium text-gray-700">{lot.name}</span>
+        {isLotSelected && lot.sublots.length === 0 && (
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <input
+                type="number"
+                value={selectedLots.find((l) => l.id_lote === lot.rowid)?.area_utilizada || ''}
+                onChange={(e) =>
+                  onAreaChange(lot.rowid, Number(e.target.value))
+                }
+                placeholder="0"
+                className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-zinc-800 focus:border-zinc-800"
+                min="0"
+                max={maxLotArea}
+                step="0.01"
+              />
+            </div>
 
-          <span className="text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-md">
-            Max: {lot.area_utilizada ? lot.area_utilizada : lot.area_real}
-          </span>
-        </div>
-      )}
-    </div>
-
-
-
-    {/* Sublots section */}
-    {lot.sublots && lot.sublots.length > 0 && isLotSelected && (
-      <div className="ml-8 space-y-2">
-        {lot.sublots.map((sublot) => (
-          <div
-            key={sublot.rowid}
-            className="flex items-center gap-4 p-3 border border-gray-100 rounded-md bg-gray-50"
-          >
-            <input
-              type="checkbox"
-              checked={isSublotSelected(sublot.rowid)}
-              onChange={(e) => onSublotSelect(sublot.rowid, e.target.checked)}
-              className="w-4 h-4 rounded border-gray-300 text-zinc-800 focus:ring-zinc-800"
-              aria-label={`Select sublot ${sublot.name}`}
-            />
-            <span className="flex-1 text-sm text-gray-600">
-              {sublot.name}
+            <span className="text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-md">
+              Max: {maxLotArea}
             </span>
-              <div className="flex items-center gap-4">
-                <div className="relative">
-                  <input
-                    type="number"
-                    value={selectedSublots.find((s) => s.id_sub_lote === sublot.rowid)?.area_utilizada || ''}
-                    onChange={(e) =>
-                      onSublotAreaChange(sublot.rowid, Number(e.target.value))
-                    }
-                    placeholder="0"
-                    className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-zinc-800 focus:border-zinc-800"
-                    min="0"
-                    max={sublot.area_utilizada}
-                    step="0.01"
-                  />
-                </div>
-                <span className="text-sm text-gray-500 bg-white px-3 py-1 rounded-md">
-                  Max: {sublot.area_utilizada}
-                </span>
-              </div>
           </div>
-        ))}
+        )}
       </div>
-    )}    
-  </div>
-);
+
+      {/* Sublots section */}
+      {lot.sublots && lot.sublots.length > 0 && isLotSelected && (
+        <div className="ml-8 space-y-2">
+          {lot.sublots.map((sublot) => {
+            // Calcular el área máxima para el sublote actual
+            const maxSublotArea = getMaxAreaForSublot ? getMaxAreaForSublot(sublot.rowid) : 
+              Number(sublot.area_utilizada);
+              
+            return (
+              <div
+                key={sublot.rowid}
+                className="flex items-center gap-4 p-3 border border-gray-100 rounded-md bg-gray-50"
+              >
+                <input
+                  type="checkbox"
+                  checked={isSublotSelected(sublot.rowid)}
+                  onChange={(e) => onSublotSelect(sublot.rowid, e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300 text-zinc-800 focus:ring-zinc-800"
+                  aria-label={`Select sublot ${sublot.name}`}
+                />
+                <span className="flex-1 text-sm text-gray-600">
+                  {sublot.name}
+                </span>
+                  <div className="flex items-center gap-4">
+                    <div className="relative">
+                      <input
+                        type="number"
+                        value={selectedSublots.find((s) => s.id_sub_lote === sublot.rowid)?.area_utilizada || ''}
+                        onChange={(e) =>
+                          onSublotAreaChange(sublot.rowid, Number(e.target.value))
+                        }
+                        placeholder="0"
+                        className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-zinc-800 focus:border-zinc-800"
+                        min="0"
+                        max={maxSublotArea}
+                        step="0.01"
+                        disabled={!isSublotSelected(sublot.rowid)}
+                      />
+                    </div>
+                    <span className="text-sm text-gray-500 bg-white px-3 py-1 rounded-md">
+                      Max: {maxSublotArea}
+                    </span>
+                  </div>
+              </div>
+            );
+          })}
+        </div>
+      )}    
+    </div>
+  );
+};
 
 export const LotSelection = ({
   lots,
@@ -113,6 +132,8 @@ export const LotSelection = ({
   onSublotSelect,
   selectedSublots,
   onSublotAreaChange,
+  getMaxAreaForLot,
+  getMaxAreaForSublot
 }: {
   lots: LotEntity[] | undefined;
   selectedLots: SelectedLot[];
@@ -121,6 +142,8 @@ export const LotSelection = ({
   onSublotSelect: (sublotId: string, checked: boolean) => void;
   selectedSublots: SelectedSubLot[];
   onSublotAreaChange: (sublotId: string, area: number) => void;
+  getMaxAreaForLot?: (lotId: string) => number;
+  getMaxAreaForSublot?: (sublotId: string) => number;
 }) => {
   if (!lots || lots.length === 0) {
     return (
@@ -157,6 +180,8 @@ export const LotSelection = ({
             onSublotSelect={onSublotSelect}
             selectedSublots={selectedSublots}
             onSublotAreaChange={onSublotAreaChange}
+            getMaxAreaForLot={getMaxAreaForLot}
+            getMaxAreaForSublot={getMaxAreaForSublot}
           />
         );
       })}

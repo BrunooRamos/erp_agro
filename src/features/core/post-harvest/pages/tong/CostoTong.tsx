@@ -68,6 +68,8 @@ export const CostoTong = () => {
           Es IMPORTANTE tener en cuenta que se debe poner la cantidad de bines que se procesan en el día como máximo y sus costos. 
       </p>
 
+      <p className="text-sm font-bold text-red-600 mb-4">LOS COSTOS DEBEN AGREGARSE EN DÓLARES</p>
+
       <form onSubmit={onSubmit}>
         <div className="grid grid-cols-1  gap-4">
           <div className="flex flex-col gap-2">

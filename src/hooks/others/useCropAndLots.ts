@@ -1,14 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Control, useWatch, Path } from "react-hook-form";
 import { toast } from "react-toastify";
 import { useCrop } from "./../index"; // Ajusta la ruta según tu estructura
-import { GeneralLabor, IrrigationFertirriegoSendData, IrrigationFormInterface, IrrigationHoursSendData, RAFSendData, SeedMapRegisterInterface, SelectedLot, SelectedSubLot } from "../../interfaces";
+import { GeneralLabor, IrrigationFertirriegoSendData, IrrigationFormInterface, IrrigationHoursSendData, IrrigationResponse, RAFSendData, SeedMapRegisterInterface, SelectedLot, SelectedSubLot } from "../../interfaces";
 
 
 
 export const useCropAndLots = <T extends RAFSendData | SeedMapRegisterInterface | GeneralLabor | IrrigationFormInterface | IrrigationHoursSendData | IrrigationFertirriegoSendData>(
   control: Control<T>,
-  initialCropCode?: string
+  initialCropCode?: string,
+  irrigationData?: IrrigationResponse
 ) => {
     // State for selected lots
     const [selectedLots, setSelectedLots] = useState<SelectedLot[]>([]);
@@ -32,54 +33,80 @@ export const useCropAndLots = <T extends RAFSendData | SeedMapRegisterInterface 
     // Get lots by crop
     const { getLotsByCropId } = useCrop(selectedCrop?.rowid );
     const { data: lots, isLoading: isLoadingLots } = getLotsByCropId;
-
-    console.log(selectedCrop?.rowid);
     
     // Sort crops by code
     const sortedCrops = crops?.sort((a, b) => a.code.localeCompare(b.code));
 
+    // Initialize selectedLots and selectedSublots with irrigationData if available
+    useEffect(() => {
+        if (irrigationData && lots) {
+            // Pre-select lots from irrigationData
+            const preSelectedLots = irrigationData.selectedLots.map(lot => ({
+                id_lote: lot.rowid,
+                area_utilizada: 0 // Start with 0 and let user specify the area
+            }));
+            setSelectedLots(preSelectedLots);
+
+            // Pre-select sublots from irrigationData
+            const preSelectedSublots = irrigationData.selectedSublots.map(sublot => ({
+                id_sub_lote: sublot.id_sub_lote,
+                id_parent_lote: sublot.id_parent_lote,
+                name: sublot.name,
+                area_utilizada: 0 // Start with 0 and let user specify the area
+            }));
+            setSelectedSublots(preSelectedSublots);
+        }
+    }, [irrigationData, lots]);
+
+    // Helper function to get maximum area for a lot
+    const getMaxAreaForLot = (lotId: string) => {
+        // First check if we have irrigationData with this lot
+        if (irrigationData?.selectedLots) {
+            const irrigationLot = irrigationData.selectedLots.find(l => l.rowid === lotId);
+            if (irrigationLot) {
+                return Number(irrigationLot.area_utilizada);
+            }
+        }
+
+        // Fallback to lot data from lots
+        const lot = lots?.find(l => l.rowid === lotId);
+        return lot ? Number(lot.area_utilizada ? lot.area_utilizada : lot.area_real) : 0;
+    };
+
+    // Helper function to get maximum area for a sublot
+    const getMaxAreaForSublot = (sublotId: string) => {
+        // First check if we have irrigationData with this sublot
+        if (irrigationData?.selectedSublots) {
+            const irrigationSublot = irrigationData.selectedSublots.find(s => s.id_sub_lote === sublotId);
+            if (irrigationSublot) {
+                return Number(irrigationSublot.area_utilizada);
+            }
+        }
+
+        // Fallback to sublot data from lots
+        const sublot = lots?.flatMap(l => l.sublots).find(s => s?.rowid === sublotId);
+        return sublot ? Number(sublot.area_utilizada) : 0;
+    };
+
     // Lot and sublot handling functions
     const handleLotAreaChange = (lotId: string, area: number) => {
-        const lot = lots?.find(l => l.rowid === lotId);
-        const sublot = lots?.flatMap(l => l.sublots).find(s => s?.rowid === lotId);
+        const maxArea = getMaxAreaForLot(lotId);
 
-        if (lot) {
-            if (+area > +(lot.area_utilizada ? lot.area_utilizada : lot.area_real)) {
-                toast.error(`El área no puede ser mayor a ${lot.area_utilizada ? lot.area_utilizada : lot.area_real}`);
-                return;
-            }
-
-            setSelectedLots(prev => {
-                const existing = prev.find(l => l.id_lote === lotId);
-                if (existing) {
-                    return prev.map(l => l.id_lote === lotId ? { ...l, area_utilizada: area } : l);
-                }
-                return [...prev, { id_lote: lotId, area_utilizada: area }];
-            });
-        } else if (sublot) {
-            if (+area > +sublot.area_utilizada) {
-                toast.error(`El área no puede ser mayor a ${sublot.area_utilizada}`);
-                return;
-            }
-
-            setSelectedSublots(prev => {
-                const existing = prev.find(s => s.id_sub_lote === lotId);
-                if (existing) {
-                    return prev.map(s => s.id_sub_lote === lotId ? { ...s, area_utilizada: area } : s);
-                }
-                const parentLot = lots?.find(l => l.sublots?.some(s => s.rowid === lotId));
-                return [...prev, {
-                    id_sub_lote: lotId,
-                    id_parent_lote: parentLot?.rowid || '',
-                    name: sublot.name,
-                    area_utilizada: area
-                }];
-            });
+        if (area > maxArea) {
+            toast.error(`El área no puede ser mayor a ${maxArea}`);
+            return;
         }
+
+        setSelectedLots(prev => {
+            const existing = prev.find(l => l.id_lote === lotId);
+            if (existing) {
+                return prev.map(l => l.id_lote === lotId ? { ...l, area_utilizada: area } : l);
+            }
+            return [...prev, { id_lote: lotId, area_utilizada: area }];
+        });
     };
 
     const handleLotSelection = (lotId: string, checked: boolean) => {
-
         if (checked) {
             setSelectedLots(prev => [...prev, { id_lote: lotId, area_utilizada: 0}]);
         } else {
@@ -89,28 +116,32 @@ export const useCropAndLots = <T extends RAFSendData | SeedMapRegisterInterface 
         }
     };
 
-
     const handleSublotSelection = (sublotId: string, checked: boolean) => {
         const sublot = lots?.flatMap(l => l.sublots).find(s => s?.rowid === sublotId);
 
         if (checked) {
-            setSelectedSublots(prev => [...prev, { id_sub_lote: sublotId, area_utilizada: 0, id_parent_lote: sublot?.lot_id || '', name: sublot?.name || '' }]);
+            setSelectedSublots(prev => [...prev, { 
+                id_sub_lote: sublotId, 
+                area_utilizada: 0, 
+                id_parent_lote: sublot?.lot_id || '', 
+                name: sublot?.name || '' 
+            }]);
         } else {
             setSelectedSublots(prev => prev.filter(s => s.id_sub_lote !== sublotId));
         }
     }
 
     const handleSublotAreaChange = (sublotId: string, area: number) => {
-        const sublot = lots?.flatMap(l => l.sublots).find(s => s?.rowid === sublotId);
+        const maxArea = getMaxAreaForSublot(sublotId);
 
-        if (sublot) {
-            if (+area > +sublot.area_utilizada) {
-                toast.error(`El área no puede ser mayor a ${sublot.area_utilizada}`);
-                return;
-            }
-
-            setSelectedSublots(prev => prev.map(s => s.id_sub_lote === sublotId ? { ...s, area_utilizada: area } : s));
+        if (area > maxArea) {
+            toast.error(`El área no puede ser mayor a ${maxArea}`);
+            return;
         }
+
+        setSelectedSublots(prev => prev.map(s => 
+            s.id_sub_lote === sublotId ? { ...s, area_utilizada: area } : s
+        ));
     }
 
     return {
@@ -129,5 +160,9 @@ export const useCropAndLots = <T extends RAFSendData | SeedMapRegisterInterface 
         selectedSublots,
         setSelectedSublots,
         handleSublotAreaChange,
+        
+        // Exponer las funciones para obtener el área máxima
+        getMaxAreaForLot,
+        getMaxAreaForSublot,
     };
 }; 

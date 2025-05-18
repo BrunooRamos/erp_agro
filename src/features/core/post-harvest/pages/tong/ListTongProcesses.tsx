@@ -24,11 +24,6 @@ export const ListTongProcesses = () => {
         return date.toLocaleDateString();
     };
 
-    // Función para calcular el costo total
-    const calculateTotalCost = (costs: TongProcessResponse["costs"]) => {
-        return costs.reduce((total, cost) => total + cost.total_cost, 0).toFixed(2);
-    };
-
     // Filtrar los procesos según el producto seleccionado
     const filteredProcesses = selectedProduct 
         ? tongProcesses.filter(process => process.parent_potato_name === selectedProduct)
@@ -73,7 +68,6 @@ export const ListTongProcesses = () => {
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Variante</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Variedad</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bines Entrada</th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Costo Total</th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
                         </tr>
                     </thead>
@@ -94,9 +88,6 @@ export const ListTongProcesses = () => {
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                     {process.input_bins}
-                                </td>
-                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                    ${calculateTotalCost(process.costs)}
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                     <button 
@@ -159,7 +150,7 @@ export const ListTongProcesses = () => {
                                 <p className="text-sm">{selectedProcess.user_created}</p>
                             </div>
                         </div>
-                        
+
                         <div>
                             <h3 className="font-semibold mb-2">Costos</h3>
                             {selectedProcess.costs.map((cost) => (
@@ -178,11 +169,7 @@ export const ListTongProcesses = () => {
                                         
                                         <p className="text-sm text-gray-600">Gata:</p>
                                         <p className="text-sm">USD {cost.gata_cost}</p>
-                                        
-                                        <p className="text-sm text-gray-600 font-semibold">Total:</p>
-                                        <p className="text-sm font-semibold">
-                                            ${cost.total_cost.toFixed(2)}
-                                        </p>
+
                                     </div>
                                 </div>
                             ))}

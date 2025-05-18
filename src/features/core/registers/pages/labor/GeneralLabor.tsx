@@ -66,6 +66,9 @@ export const GeneralLabor = () => {
     handleSublotAreaChange,
   } = useCropAndLots(control);
 
+
+  console.log(JSON.stringify(lots, null, 2));
+
   //!Machinery
   const { listMachinery } = useMachinery(null)
   const { data: machinery, isLoading: isLoadingMachinery } = listMachinery;

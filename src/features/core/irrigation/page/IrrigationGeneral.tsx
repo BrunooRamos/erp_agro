@@ -16,6 +16,8 @@ export const IrrigationGeneral = () => {
   } = useIrrigation(irrigationData.rowid);
   const { data: irrigationInfoData, isLoading } = irrigationInfo;
 
+  console.log(JSON.stringify(irrigationInfoData, null, 2));
+
   const handleDeleteHours = (id: string) => {
     const loadingElement = document.getElementById("loading-spinner");
     if (loadingElement) {
@@ -29,8 +31,7 @@ export const IrrigationGeneral = () => {
         }
         irrigationInfo.refetch();
       },
-      onError: (error) => {
-        console.log(error);
+      onError: () => {
         if (loadingElement) {
           loadingElement.classList.add("hidden");
         }
@@ -51,14 +52,14 @@ export const IrrigationGeneral = () => {
         }
         irrigationInfo.refetch();
       },
-      onError: (error) => {
-        console.log(error);
+      onError: () => {
         if (loadingElement) {
           loadingElement.classList.add("hidden");
         }
       },
     });
   };
+
 
   if (isLoading) {
     return (
@@ -230,7 +231,6 @@ export const IrrigationGeneral = () => {
               </thead>
               <tbody>
                 {irrigationInfoData.hours.map((hour) => (
-                  console.log(hour),
                   <tr key={hour.rowid} className="border-b">
                     <td className="py-2 px-4">{formatDate(hour.date)}</td>
                     <td className="py-2 px-4 text-right">{hour.hours}</td>
@@ -365,9 +365,6 @@ export const IrrigationGeneral = () => {
                 <tr>
                   <th className="py-2 px-4 text-left">Producto</th>
                   <th className="py-2 px-4 text-right">Cantidad</th>
-                  <th className="py-2 px-4 text-left">Unidad</th>
-                  <th className="py-2 px-4 text-left">Tipo</th>
-                  <th className="py-2 px-4 text-left">Almacén</th>
                 </tr>
               </thead>
               <tbody>
@@ -375,9 +372,6 @@ export const IrrigationGeneral = () => {
                   <tr key={material.id} className="border-b">
                     <td className="py-2 px-4">{material.label}</td>
                     <td className="py-2 px-4 text-right">{material.quantity}</td>
-                    <td className="py-2 px-4">{material.unit}</td>
-                    <td className="py-2 px-4">{material.type}</td>
-                    <td className="py-2 px-4">{material.warehouse_id}</td>
                   </tr>
                 ))}
               </tbody>

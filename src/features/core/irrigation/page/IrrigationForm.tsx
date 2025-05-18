@@ -147,11 +147,25 @@ export const IrrigationForm = () => {
   const { data: irrigationCostsData } = irrigationCosts;
 
   const onSubmit = handleSubmit((data) => {
-    data.selectedLots = selectedLots;
-    data.selectedMaterials = selectedMaterials;
+    data.selectedLots = selectedLots.map(lot => ({
+      rowid: lot.id_lote,
+      area_utilizada: lot.area_utilizada,
+      name: '',
+      campo_name: '',
+    }));
+    data.selectedMaterials = selectedMaterials.map(material => ({
+      id: material.id,
+      quantity: material.quantity,
+      warehouse_id: material.warehouse_id,
+      presentation: material.presentation,
+      label: material.label,
+      unit: material.unit,
+      type: material.type || "",
+    }));
     data.selectedSublots = selectedSublots;
 
     console.log(JSON.stringify(data, null, 2));
+
 
     createIrrigationMutation(data, {
       onSuccess: () => {

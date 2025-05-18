@@ -4,8 +4,7 @@ import { AppDispatch } from "../store";
 import { postLoginAction } from "../../actions";
 import { AxiosError } from "axios";
 import { generateCustomToken } from "../../helpers";
-
-
+import { encryptData } from "../../helpers/crypto";
 
 export const startLoginWithEmailPassword = ({ user, password }: LoginUserProps) => {
     return async ( dispatch: AppDispatch ) => {
@@ -13,16 +12,15 @@ export const startLoginWithEmailPassword = ({ user, password }: LoginUserProps) 
 
         try {
             const response = await postLoginAction({ user, password });
-            const data = response.data.success as SuccessLoginResponse ;
+            const data = response.data.success as SuccessLoginResponse;
 
             const { expiresAt } = generateCustomToken();
 
-            localStorage.setItem("dolibarrToken", data.token);
+            // Encriptar el token antes de guardarlo
+            localStorage.setItem("secureDolibarrToken", encryptData(data.token));
             localStorage.setItem("dataExpiration", expiresAt.toString());
             localStorage.setItem("displayName", data.message.split(' ')[1]);
             localStorage.setItem("entity", data.entity);
-
-            
 
             dispatch( onLogin( data ) );
         } catch (error: unknown) {

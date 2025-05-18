@@ -40,6 +40,7 @@ export const ProcessWash = () => {
       variation.warehouses?.some((w) => w.id === 7)
     ) || [];
   
+  console.log(JSON.stringify(products, null, 2));
 
   // Estado para el stock máximo disponible
   const [maxStock, setMaxStock] = useState<number>(0);

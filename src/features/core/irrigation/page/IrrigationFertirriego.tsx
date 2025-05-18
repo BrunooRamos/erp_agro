@@ -28,7 +28,9 @@ export const IrrigationFertirriego = () => {
         handleLotSelection,
         handleSublotSelection,
         handleSublotAreaChange,
-      } = useCropAndLots(control, irrigationData.crop_id.toString());
+        getMaxAreaForLot,
+        getMaxAreaForSublot
+      } = useCropAndLots(control, irrigationData.crop_id.toString(), irrigationData);
 
     // Add new states for product handling
     const [searchQuery, setSearchQuery] = useState("");
@@ -180,6 +182,8 @@ export const IrrigationFertirriego = () => {
               onSublotSelect={handleSublotSelection}
               selectedSublots={selectedSublots}
               onSublotAreaChange={handleSublotAreaChange}
+              getMaxAreaForLot={getMaxAreaForLot}
+              getMaxAreaForSublot={getMaxAreaForSublot}
             />
           </div>
 

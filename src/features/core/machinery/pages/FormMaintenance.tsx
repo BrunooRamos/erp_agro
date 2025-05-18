@@ -87,7 +87,11 @@ export const FormMaintenance = () => {
       })),
     };
     reset();
-    createMaintenanceMutation(formData);
+    createMaintenanceMutation(formData, {
+      onSuccess: () => {
+        navigate("/machinery");
+      },
+    });
   };
 
   if (isLoadingProducts || isLoadingMachinery) {

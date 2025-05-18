@@ -1,5 +1,5 @@
 import { UseFormRegister } from "react-hook-form";
-import { WashProcessForm } from "../../../interfaces";
+import { CostWashForm } from "../../../interfaces";
 interface WashCostsProps {
   selectedWashCost: number;
   totalBags: number;
@@ -15,7 +15,7 @@ interface WashCostsProps {
     otherCost?: string;
     totalCost?: string;
   } | null;
-  register: UseFormRegister<WashProcessForm>;
+  register: UseFormRegister<CostWashForm>;
 }
 
 export const WashCosts = ({ selectedWashCost, totalBags, washCost, register }: WashCostsProps) => {

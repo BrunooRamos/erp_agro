@@ -94,14 +94,11 @@ import {
   export interface SelectedMaterialIrrigation {
     id: string;
     label: string;
-    ref: string;
     quantity: number;
-    warehouse_id: string;
-    type: string;
-    presentation: number;
     unit: string;
-    total_price: number;
-    total_price_usd: number;
+    presentation: number;
+    type: string;
+    warehouse_id: string;
   }
   
   export interface SelectedSublotIrrigation {
@@ -118,7 +115,7 @@ import {
     selectedSublots:   SelectedSublotInfoResponse[];
     selectedMaterials: SelectedMaterialInfoResponse[];
     hours:             HourInfoResponse[];
-    fertirriego:       FertirriegoInfoResponse;
+    fertirriego:       FertirriegoInfoResponse[];
 }
 
 export interface FertirriegoInfoResponse {

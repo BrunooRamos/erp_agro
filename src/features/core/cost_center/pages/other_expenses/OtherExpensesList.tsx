@@ -107,7 +107,7 @@ export const OtherExpensesList = () => {
                                 </td>
                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                     {expense.amounts.pesos > 0 ? (
-                                        <span>${expense.amounts.pesos.toFixed(2)} ARS</span>
+                                        <span>${expense.amounts.pesos.toFixed(2)} UYU</span>
                                     ) : (
                                         <span>${expense.amounts.usd.toFixed(2)} USD</span>
                                     )}
