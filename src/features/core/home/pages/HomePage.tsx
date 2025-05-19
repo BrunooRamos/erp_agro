@@ -1,28 +1,6 @@
-import { usePrices } from "../../../../hooks";
 import { OptionCard } from "../../../../ui/components/core/OptionCard";
-import { useEffect } from "react";
 
 export const HomePage = () => {
-  const { getAllPrices, saveAllPrices } = usePrices();
-  const { data: prices, isLoading: isLoadingPrices } = getAllPrices;
-  const { mutate: savePrices } = saveAllPrices;
-
-  useEffect(() => {
-    if (!isLoadingPrices && prices) {
-      if (prices) {
-        savePrices(prices);
-      }
-    }
-  }, [isLoadingPrices, prices]);
-
-  if (isLoadingPrices) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center bg-white bg-opacity-75 z-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-zinc-800"></div>
-      </div>
-    );
-  }
-
   return (
     <div>
       <h1 className="text-2xl font-bold mb-8">Bienvenido a Vicentina - Agro</h1>

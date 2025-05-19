@@ -22,22 +22,6 @@ export interface Warehouse {
 }
 
 
-export interface PriceResponse {
-    dolar: Dolar;
-    fuels: Fuel[];
-}
-
-export interface Dolar {
-    compra: number;
-    moneda: string;
-    venta:  number;
-}
-
-export interface Fuel {
-    fuel:  string;
-    price: number;
-}
-
 export interface PriceHistoricData {
     dollar: DollarHistoricData[];
     fuels:  FuelHistoricData[];
