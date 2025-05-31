@@ -19,7 +19,7 @@ export const useCrop = ( crop_id?: string, lot?: string) => {
 
   const createCrop = useBaseMutation((crop: CropForm) => postCreateCrop(crop), {
     onSuccess: () => {
-      toast.success("Lote de campo creado correctamente");
+      toast.success("Cultivo creado correctamente");
     },
   });
 
@@ -29,7 +29,7 @@ export const useCrop = ( crop_id?: string, lot?: string) => {
 
   const deleteCrop = useBaseMutation(deleteCropAction, {
     onSuccess: () => {
-      toast.success("Lote de campo eliminado correctamente");
+      toast.success("Cultivo eliminado correctamente");
     },
   });
 
@@ -40,7 +40,7 @@ export const useCrop = ( crop_id?: string, lot?: string) => {
       onSuccess: () => {
         // Invalidate and refetch the machinery list
         queryClient.invalidateQueries({ queryKey: ["field-lot-list"] });
-        toast.success("Lote de campo actualizado exitosamente");
+        toast.success("Cultivo actualizado exitosamente");
       },
     }
   );

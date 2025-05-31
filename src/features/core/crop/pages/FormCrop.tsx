@@ -145,7 +145,7 @@ export const FormCrop = () => {
         reset();
       },
       onError: (error) => {
-        toast.error("Error creating crop: " + error);
+        toast.error("Error al crear el cultivo: " + error);
       },
     });
   });
@@ -367,7 +367,7 @@ export const FormCrop = () => {
                         </div>
                         {addedSubLots[lot.rowid]?.length > 0 && (
                           <div className="ml-4">
-                            <h4 className="font-medium mb-2">Added Sublots:</h4>
+                            <h4 className="font-medium mb-2">Sublotes agregados:</h4>
                             <ul className="space-y-2">
                               {addedSubLots[lot.rowid].map((sublot, index) => (
                                 <li key={index} className="text-sm text-gray-600">
@@ -417,13 +417,13 @@ export const FormCrop = () => {
                 onClick={() => navigate("/crop/list")}
                 className="w-full px-4 py-2 bg-gray-200 text-gray-800 rounded-sm hover:bg-gray-300 focus:outline-none transition-colors"
               >
-                Cancel
+                Cancelar
               </button>
               <button
                 type="submit"
                 className="w-full px-4 py-2 bg-zinc-800 text-white rounded-sm hover:bg-zinc-900 focus:outline-none transition-colors"
               >
-                Create Crop
+                Crear Cultivo
               </button>
             </div>
           </div>

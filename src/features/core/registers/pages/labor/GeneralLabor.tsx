@@ -66,9 +66,6 @@ export const GeneralLabor = () => {
     handleSublotAreaChange,
   } = useCropAndLots(control);
 
-
-  console.log(JSON.stringify(lots, null, 2));
-
   //!Machinery
   const { listMachinery } = useMachinery(null)
   const { data: machinery, isLoading: isLoadingMachinery } = listMachinery;
@@ -83,6 +80,8 @@ export const GeneralLabor = () => {
   const onSubmit = handleSubmit((data) => {
     data.selectedLots = selectedLots;
     data.selectedSublots = selectedSublots;
+
+    console.log(JSON.stringify(data, null, 2));
 
     createGeneralLaborMutation(data, {
       onSuccess: () => {

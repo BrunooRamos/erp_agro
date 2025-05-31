@@ -9,6 +9,8 @@ interface RafCCProps {
 export const RafCC = ({ data }: RafCCProps) => {
     const [isExpanded, setIsExpanded] = useState(false);
 
+    console.log(JSON.stringify(data, null, 2));
+
     const formatNumber = (value: string | number) => {
         const num = typeof value === 'string' ? parseFloat(value) : value;
         return isNaN(num) ? '0.00' : num.toLocaleString('es-PE', {
