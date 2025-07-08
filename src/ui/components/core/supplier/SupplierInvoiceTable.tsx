@@ -1,4 +1,4 @@
-import { Table, Checkbox, Tag, Tooltip, Select, Typography } from 'antd';
+import { Table, Checkbox, Tooltip, Select, Typography } from 'antd';
 import { InvoiceElement } from '../../../../interfaces';
 
 const { Text } = Typography;
