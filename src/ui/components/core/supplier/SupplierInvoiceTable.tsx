@@ -20,27 +20,6 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
   getSelectedBankAccount,
   availableCurrencies,
 }) => {
-  
-  const getStatusTag = (status: string) => {
-    let color = 'default';
-    
-    switch (status) {
-      case 'PAID':
-        color = 'success';
-        break;
-      case 'UNPAID':
-        color = 'error';
-        break;
-      case 'LATE':
-        color = 'warning';
-        break;
-      default:
-        color = 'default';
-    }
-    
-    return <Tag color={color}>{status}</Tag>;
-  };
-  
   const columns = [
     {
       title: 'Seleccionar',
@@ -165,12 +144,9 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
         
         return selectedBankAccount ? (
           <Tooltip title={`${selectedBankAccount.bank_name} - ${selectedBankAccount.label}`}>
-            <div className="flex flex-col">
-              <Text strong>{selectedBankAccount.label}</Text>
-              <Text type="secondary" className="text-xs">
-                {selectedBankAccount.account_number || selectedBankAccount.iban}
-              </Text>
-            </div>
+            <Text>
+              {selectedBankAccount.account_number || selectedBankAccount.iban}
+            </Text>
           </Tooltip>
         ) : "-";
       },
@@ -185,13 +161,7 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
         
         return selectedBankAccount?.owner || "-";
       },
-    },
-    {
-      title: 'Estado',
-      dataIndex: ['invoice', 'status'],
-      key: 'status',
-      render: (status: string) => getStatusTag(status),
-    },
+    }
   ];
 
   return (
