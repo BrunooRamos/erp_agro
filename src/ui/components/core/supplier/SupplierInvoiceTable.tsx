@@ -1,5 +1,7 @@
-import { Table, Checkbox, Tag, Tooltip, Select, Space } from 'antd';
+import { Table, Checkbox, Tag, Tooltip, Select, Typography } from 'antd';
 import { InvoiceElement } from '../../../../interfaces';
+
+const { Text } = Typography;
 
 interface SupplierInvoiceTableProps {
   invoices: InvoiceElement[];
@@ -44,20 +46,20 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
       title: 'Seleccionar',
       dataIndex: 'selection',
       key: 'selection',
-      width: 400,
+      width: 500,
       render: (_: unknown, record: InvoiceElement) => {
         const isSelected = isInvoiceSelected(record.invoice.id);
         const currentCurrency = getSelectedCurrency(record.invoice.id);
         const currentBankAccount = getSelectedBankAccount(record.invoice.id);
         
         return (
-          <Space>
-            <Checkbox 
-              checked={isSelected}
-              onChange={() => toggleInvoiceSelection(record, currentCurrency, currentBankAccount)}
-            />
-            {isSelected && (
-              <>
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2">
+              <Checkbox 
+                checked={isSelected}
+                onChange={() => toggleInvoiceSelection(record, currentCurrency, currentBankAccount)}
+              />
+              {isSelected && (
                 <Select
                   value={currentCurrency}
                   onChange={(value) => toggleInvoiceSelection(record, value, currentBankAccount)}
@@ -70,22 +72,31 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
                     </Select.Option>
                   ))}
                 </Select>
+              )}
+            </div>
+            {isSelected && (
+              <div className="ml-6">
                 <Select
                   value={currentBankAccount}
                   onChange={(value) => toggleInvoiceSelection(record, currentCurrency, value)}
-                  style={{ width: 200 }}
+                  style={{ width: 350 }}
                   disabled={!isSelected}
                   placeholder="Seleccionar cuenta"
                 >
                   {record.bank_accounts.map(account => (
                     <Select.Option key={account.id} value={account.id}>
-                      {account.label} - {account.bank_name}
+                      <div className="flex flex-col">
+                        <Text strong>{account.label}</Text>
+                        <Text type="secondary" className="text-xs">
+                          {account.bank_name} - {account.account_number || account.iban}
+                        </Text>
+                      </div>
                     </Select.Option>
                   ))}
                 </Select>
-              </>
+              </div>
             )}
-          </Space>
+          </div>
         );
       },
     },
@@ -154,7 +165,12 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
         
         return selectedBankAccount ? (
           <Tooltip title={`${selectedBankAccount.bank_name} - ${selectedBankAccount.label}`}>
-            {selectedBankAccount.account_number || selectedBankAccount.iban || "-"}
+            <div className="flex flex-col">
+              <Text strong>{selectedBankAccount.label}</Text>
+              <Text type="secondary" className="text-xs">
+                {selectedBankAccount.account_number || selectedBankAccount.iban}
+              </Text>
+            </div>
           </Tooltip>
         ) : "-";
       },
