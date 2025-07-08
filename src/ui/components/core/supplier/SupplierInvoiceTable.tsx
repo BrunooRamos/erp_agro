@@ -4,8 +4,9 @@ import { InvoiceElement } from '../../../../interfaces';
 interface SupplierInvoiceTableProps {
   invoices: InvoiceElement[];
   isInvoiceSelected: (id: string) => boolean;
-  toggleInvoiceSelection: (invoice: InvoiceElement, currency: string) => void;
+  toggleInvoiceSelection: (invoice: InvoiceElement, currency: string, bankAccountId?: string) => void;
   getSelectedCurrency: (id: string) => string;
+  getSelectedBankAccount: (id: string) => string;
   availableCurrencies: string[];
 }
 
@@ -14,6 +15,7 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
   isInvoiceSelected,
   toggleInvoiceSelection,
   getSelectedCurrency,
+  getSelectedBankAccount,
   availableCurrencies,
 }) => {
   
@@ -42,30 +44,46 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
       title: 'Seleccionar',
       dataIndex: 'selection',
       key: 'selection',
-      width: 180,
+      width: 400,
       render: (_: unknown, record: InvoiceElement) => {
         const isSelected = isInvoiceSelected(record.invoice.id);
         const currentCurrency = getSelectedCurrency(record.invoice.id);
+        const currentBankAccount = getSelectedBankAccount(record.invoice.id);
         
         return (
           <Space>
             <Checkbox 
               checked={isSelected}
-              onChange={() => toggleInvoiceSelection(record, currentCurrency)}
+              onChange={() => toggleInvoiceSelection(record, currentCurrency, currentBankAccount)}
             />
             {isSelected && (
-              <Select
-                value={currentCurrency}
-                onChange={(value) => toggleInvoiceSelection(record, value)}
-                style={{ width: 90 }}
-                disabled={!isSelected}
-              >
-                {availableCurrencies.map(currency => (
-                  <Select.Option key={currency} value={currency}>
-                    {currency}
-                  </Select.Option>
-                ))}
-              </Select>
+              <>
+                <Select
+                  value={currentCurrency}
+                  onChange={(value) => toggleInvoiceSelection(record, value, currentBankAccount)}
+                  style={{ width: 90 }}
+                  disabled={!isSelected}
+                >
+                  {availableCurrencies.map(currency => (
+                    <Select.Option key={currency} value={currency}>
+                      {currency}
+                    </Select.Option>
+                  ))}
+                </Select>
+                <Select
+                  value={currentBankAccount}
+                  onChange={(value) => toggleInvoiceSelection(record, currentCurrency, value)}
+                  style={{ width: 200 }}
+                  disabled={!isSelected}
+                  placeholder="Seleccionar cuenta"
+                >
+                  {record.bank_accounts.map(account => (
+                    <Select.Option key={account.id} value={account.id}>
+                      {account.label} - {account.bank_name}
+                    </Select.Option>
+                  ))}
+                </Select>
+              </>
             )}
           </Space>
         );
@@ -129,16 +147,28 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
     {
       title: 'Cuenta',
       key: 'account',
-      render: (record: InvoiceElement) => (
-        record.bank_account.account_number || record.bank_account.iban || "-"
-      ),
+      render: (record: InvoiceElement) => {
+        const selectedBankAccount = record.bank_accounts.find(acc => acc.id === getSelectedBankAccount(record.invoice.id)) || 
+                                  record.bank_accounts.find(acc => acc.is_default) ||
+                                  record.bank_accounts[0];
+        
+        return selectedBankAccount ? (
+          <Tooltip title={`${selectedBankAccount.bank_name} - ${selectedBankAccount.label}`}>
+            {selectedBankAccount.account_number || selectedBankAccount.iban || "-"}
+          </Tooltip>
+        ) : "-";
+      },
     },
     {
       title: 'Titular',
       key: 'owner',
-      render: (record: InvoiceElement) => (
-        record.bank_account.owner || "-"
-      ),
+      render: (record: InvoiceElement) => {
+        const selectedBankAccount = record.bank_accounts.find(acc => acc.id === getSelectedBankAccount(record.invoice.id)) || 
+                                  record.bank_accounts.find(acc => acc.is_default) ||
+                                  record.bank_accounts[0];
+        
+        return selectedBankAccount?.owner || "-";
+      },
     },
     {
       title: 'Estado',

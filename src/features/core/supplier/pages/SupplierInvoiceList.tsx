@@ -11,6 +11,7 @@ export const SupplierInvoiceList = () => {
         toggleInvoiceSelection,
         isInvoiceSelected,
         getSelectedCurrency,
+        getSelectedBankAccount,
         clearSelectedInvoices,
         generatePDF,
         availableCurrencies
@@ -25,8 +26,6 @@ export const SupplierInvoiceList = () => {
             </div>
         );
     }
-
-    console.log(JSON.stringify(supplier, null, 2));
 
     if (!supplier || supplier.total_count === 0) {
         return (
@@ -74,7 +73,7 @@ export const SupplierInvoiceList = () => {
                                 ({uyuCount} en pesos, {usdCount} en dólares)
                             </Text>
                             <div className="mt-2 text-sm text-gray-500">
-                                Seleccione las facturas y elija la moneda de pago para cada una
+                                Seleccione las facturas, elija la moneda de pago y la cuenta bancaria para cada una
                             </div>
                         </div>
 
@@ -83,6 +82,7 @@ export const SupplierInvoiceList = () => {
                             isInvoiceSelected={isInvoiceSelected}
                             toggleInvoiceSelection={toggleInvoiceSelection}
                             getSelectedCurrency={getSelectedCurrency}
+                            getSelectedBankAccount={getSelectedBankAccount}
                             availableCurrencies={availableCurrencies}
                         />
                     </Card>

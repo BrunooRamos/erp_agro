@@ -13,9 +13,9 @@ export interface RawDatum {
 }
 
 export interface InvoiceElement {
-    invoice:      InvoiceInvoice;
-    supplier:     Supplier;
-    bank_account: BankAccount;
+    invoice:       InvoiceInvoice;
+    supplier:      Supplier;
+    bank_accounts: BankAccount[];
 }
 
 export interface BankAccount {
@@ -27,6 +27,7 @@ export interface BankAccount {
     bic:            string;
     domiciliation:  string;
     owner:          string;
+    is_default:     boolean;
 }
 
 export interface InvoiceInvoice {

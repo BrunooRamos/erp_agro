@@ -11,6 +11,7 @@ export const getSupplier = async () : Promise<SupplierInvoice> => {
 interface SelectedInvoice {
   invoice: InvoiceElement;
   currency: string;
+  bankAccountId?: string;
 }
 
 interface JsPDFWithAutoTable extends jsPDF {
@@ -53,6 +54,7 @@ export const generateSupplierInvoicePDF = (
             "Referencia", 
             "Fecha Vencimiento", 
             "Monto", 
+            "Banco",
             "Cuenta",
             "Titular"
         ];
@@ -62,13 +64,18 @@ export const generateSupplierInvoicePDF = (
                 ? item.invoice.invoice.currency.total_ttc
                 : item.invoice.invoice.total_ttc;
                 
+            const selectedBankAccount = item.bankAccountId 
+                ? item.invoice.bank_accounts.find(acc => acc.id === item.bankAccountId)
+                : item.invoice.bank_accounts.find(acc => acc.is_default) || item.invoice.bank_accounts[0];
+                
             return [
                 item.invoice.supplier.name,
                 item.invoice.invoice.ref,
                 new Date(item.invoice.invoice.due_date).toLocaleDateString(),
                 `${amount.toFixed(2)} UYU`,
-                item.invoice.bank_account.account_number || item.invoice.bank_account.iban || "-",
-                item.invoice.bank_account.owner || "-"
+                selectedBankAccount?.bank_name || "-",
+                selectedBankAccount?.account_number || selectedBankAccount?.iban || "-",
+                selectedBankAccount?.owner || "-"
             ];
         });
         
@@ -95,23 +102,28 @@ export const generateSupplierInvoicePDF = (
             "Referencia", 
             "Fecha Vencimiento", 
             "Monto", 
+            "Banco",
             "Cuenta",
             "Titular"
         ];
         
         const tableRows = usdInvoices.map(item => {
-            // Corregido: Si la moneda principal es UYU, entonces los montos en USD están en currency
             const amount = item.invoice.invoice.currency.code === "USD" 
                 ? item.invoice.invoice.currency.total_ttc
                 : item.invoice.invoice.total_ttc;
+                
+            const selectedBankAccount = item.bankAccountId 
+                ? item.invoice.bank_accounts.find(acc => acc.id === item.bankAccountId)
+                : item.invoice.bank_accounts.find(acc => acc.is_default) || item.invoice.bank_accounts[0];
                 
             return [
                 item.invoice.supplier.name,
                 item.invoice.invoice.ref,
                 new Date(item.invoice.invoice.due_date).toLocaleDateString(),
                 `${amount.toFixed(2)} USD`,
-                item.invoice.bank_account.account_number || item.invoice.bank_account.iban || "-",
-                item.invoice.bank_account.owner || "-"
+                selectedBankAccount?.bank_name || "-",
+                selectedBankAccount?.account_number || selectedBankAccount?.iban || "-",
+                selectedBankAccount?.owner || "-"
             ];
         });
         

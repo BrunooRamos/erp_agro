@@ -6,6 +6,7 @@ import { InvoiceElement } from "../../interfaces";
 interface SelectedInvoice {
   invoice: InvoiceElement;
   currency: string;
+  bankAccountId?: string;
 }
 
 export const useSupplier = () => {
@@ -16,21 +17,27 @@ export const useSupplier = () => {
         getSupplier
     );
 
-    const toggleInvoiceSelection = (invoice: InvoiceElement, currency: string) => {
+    const toggleInvoiceSelection = (invoice: InvoiceElement, currency: string, bankAccountId?: string) => {
         setSelectedInvoices(prev => {
             const existingIndex = prev.findIndex(item => item.invoice.invoice.id === invoice.invoice.id);
             if (existingIndex >= 0) {
-                // Si ya existe pero cambia la moneda, actualiza la moneda
-                if (prev[existingIndex].currency !== currency) {
+                // Si ya existe pero cambia la moneda o la cuenta bancaria, actualiza
+                if (prev[existingIndex].currency !== currency || prev[existingIndex].bankAccountId !== bankAccountId) {
                     const newItems = [...prev];
-                    newItems[existingIndex] = { invoice, currency };
+                    newItems[existingIndex] = { invoice, currency, bankAccountId };
                     return newItems;
                 }
-                // Si ya existe con la misma moneda, lo elimina (toggle)
+                // Si ya existe con la misma moneda y cuenta, lo elimina (toggle)
                 return prev.filter(item => item.invoice.invoice.id !== invoice.invoice.id);
             } else {
                 // Si no existe, lo agrega
-                return [...prev, { invoice, currency }];
+                // Si no se proporciona una cuenta bancaria, usa la cuenta por defecto o la primera
+                const defaultBankAccount = invoice.bank_accounts.find(acc => acc.is_default) || invoice.bank_accounts[0];
+                return [...prev, { 
+                    invoice, 
+                    currency, 
+                    bankAccountId: bankAccountId || defaultBankAccount?.id 
+                }];
             }
         });
     };
@@ -42,6 +49,19 @@ export const useSupplier = () => {
     const getSelectedCurrency = (invoiceId: string) => {
         const item = selectedInvoices.find(item => item.invoice.invoice.id === invoiceId);
         return item ? item.currency : "UYU";
+    };
+
+    const getSelectedBankAccount = (invoiceId: string) => {
+        const item = selectedInvoices.find(item => item.invoice.invoice.id === invoiceId);
+        if (!item) return "";
+        
+        // Si no hay una cuenta bancaria seleccionada, usa la cuenta por defecto o la primera
+        if (!item.bankAccountId) {
+            const defaultBankAccount = item.invoice.bank_accounts.find(acc => acc.is_default) || item.invoice.bank_accounts[0];
+            return defaultBankAccount?.id || "";
+        }
+        
+        return item.bankAccountId;
     };
 
     const clearSelectedInvoices = () => {
@@ -70,6 +90,7 @@ export const useSupplier = () => {
         toggleInvoiceSelection,
         isInvoiceSelected,
         getSelectedCurrency,
+        getSelectedBankAccount,
         clearSelectedInvoices,
         generatePDF,
         availableCurrencies,
