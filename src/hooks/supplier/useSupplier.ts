@@ -32,7 +32,9 @@ export const useSupplier = () => {
             } else {
                 // Si no existe, lo agrega
                 // Si no se proporciona una cuenta bancaria, usa la cuenta por defecto o la primera
-                const defaultBankAccount = invoice.bank_accounts.find(acc => acc.is_default) || invoice.bank_accounts[0];
+                const defaultBankAccount = invoice.bank_accounts && invoice.bank_accounts.length > 0 
+                    ? (invoice.bank_accounts.find(acc => acc.is_default) || invoice.bank_accounts[0])
+                    : null;
                 return [...prev, { 
                     invoice, 
                     currency, 
@@ -57,7 +59,9 @@ export const useSupplier = () => {
         
         // Si no hay una cuenta bancaria seleccionada, usa la cuenta por defecto o la primera
         if (!item.bankAccountId) {
-            const defaultBankAccount = item.invoice.bank_accounts.find(acc => acc.is_default) || item.invoice.bank_accounts[0];
+            const defaultBankAccount = item.invoice.bank_accounts && item.invoice.bank_accounts.length > 0
+                ? (item.invoice.bank_accounts.find(acc => acc.is_default) || item.invoice.bank_accounts[0])
+                : null;
             return defaultBankAccount?.id || "";
         }
         

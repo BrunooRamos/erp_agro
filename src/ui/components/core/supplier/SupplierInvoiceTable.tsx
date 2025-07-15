@@ -1,4 +1,4 @@
-import { Table, Checkbox, Tooltip, Select, Typography } from 'antd';
+import { Table, Checkbox, Tooltip, Select, Typography, Tag } from 'antd';
 import { InvoiceElement } from '../../../../interfaces';
 
 const { Text } = Typography;
@@ -53,7 +53,7 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
                 </Select>
               )}
             </div>
-            {isSelected && (
+            {isSelected && record.bank_accounts && record.bank_accounts.length > 0 && (
               <div className="ml-6">
                 <Select
                   value={currentBankAccount}
@@ -73,6 +73,11 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
                     </Select.Option>
                   ))}
                 </Select>
+              </div>
+            )}
+            {isSelected && (!record.bank_accounts || record.bank_accounts.length === 0) && (
+              <div className="ml-6">
+                <Tag color="warning">Sin cuenta bancaria</Tag>
               </div>
             )}
           </div>
@@ -138,6 +143,10 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
       title: 'Cuenta',
       key: 'account',
       render: (record: InvoiceElement) => {
+        if (!record.bank_accounts || record.bank_accounts.length === 0) {
+          return <Tag color="warning">Sin cuenta bancaria</Tag>;
+        }
+        
         const selectedBankAccount = record.bank_accounts.find(acc => acc.id === getSelectedBankAccount(record.invoice.id)) || 
                                   record.bank_accounts.find(acc => acc.is_default) ||
                                   record.bank_accounts[0];
@@ -155,6 +164,10 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
       title: 'Titular',
       key: 'owner',
       render: (record: InvoiceElement) => {
+        if (!record.bank_accounts || record.bank_accounts.length === 0) {
+          return "-";
+        }
+        
         const selectedBankAccount = record.bank_accounts.find(acc => acc.id === getSelectedBankAccount(record.invoice.id)) || 
                                   record.bank_accounts.find(acc => acc.is_default) ||
                                   record.bank_accounts[0];

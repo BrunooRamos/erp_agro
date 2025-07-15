@@ -64,9 +64,12 @@ export const generateSupplierInvoicePDF = (
                 ? item.invoice.invoice.currency.total_ttc
                 : item.invoice.invoice.total_ttc;
                 
-            const selectedBankAccount = item.bankAccountId 
-                ? item.invoice.bank_accounts.find(acc => acc.id === item.bankAccountId)
-                : item.invoice.bank_accounts.find(acc => acc.is_default) || item.invoice.bank_accounts[0];
+            let selectedBankAccount = null;
+            if (item.invoice.bank_accounts && item.invoice.bank_accounts.length > 0) {
+                selectedBankAccount = item.bankAccountId 
+                    ? item.invoice.bank_accounts.find(acc => acc.id === item.bankAccountId)
+                    : item.invoice.bank_accounts.find(acc => acc.is_default) || item.invoice.bank_accounts[0];
+            }
                 
             return [
                 item.invoice.supplier.name,
@@ -112,9 +115,12 @@ export const generateSupplierInvoicePDF = (
                 ? item.invoice.invoice.currency.total_ttc
                 : item.invoice.invoice.total_ttc;
                 
-            const selectedBankAccount = item.bankAccountId 
-                ? item.invoice.bank_accounts.find(acc => acc.id === item.bankAccountId)
-                : item.invoice.bank_accounts.find(acc => acc.is_default) || item.invoice.bank_accounts[0];
+            let selectedBankAccount = null;
+            if (item.invoice.bank_accounts && item.invoice.bank_accounts.length > 0) {
+                selectedBankAccount = item.bankAccountId 
+                    ? item.invoice.bank_accounts.find(acc => acc.id === item.bankAccountId)
+                    : item.invoice.bank_accounts.find(acc => acc.is_default) || item.invoice.bank_accounts[0];
+            }
                 
             return [
                 item.invoice.supplier.name,
