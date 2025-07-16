@@ -17,6 +17,31 @@ export const useSupplier = () => {
         getSupplier
     );
 
+    // Función helper para verificar si una cuenta bancaria es válida
+    const hasValidBankAccount = (invoice: InvoiceElement) => {
+        if (!invoice.bank_accounts || invoice.bank_accounts.length === 0) {
+            return false;
+        }
+        
+        // Verificar si al menos una cuenta tiene account_number o iban
+        return invoice.bank_accounts.some(account => 
+            (account.account_number && account.account_number.trim() !== '') || 
+            (account.iban && account.iban.trim() !== '')
+        );
+    };
+
+    // Función helper para obtener cuentas bancarias válidas
+    const getValidBankAccounts = (invoice: InvoiceElement) => {
+        if (!invoice.bank_accounts || invoice.bank_accounts.length === 0) {
+            return [];
+        }
+        
+        return invoice.bank_accounts.filter(account => 
+            (account.account_number && account.account_number.trim() !== '') || 
+            (account.iban && account.iban.trim() !== '')
+        );
+    };
+
     const toggleInvoiceSelection = (invoice: InvoiceElement, currency: string, bankAccountId?: string) => {
         setSelectedInvoices(prev => {
             const existingIndex = prev.findIndex(item => item.invoice.invoice.id === invoice.invoice.id);
@@ -31,9 +56,10 @@ export const useSupplier = () => {
                 return prev.filter(item => item.invoice.invoice.id !== invoice.invoice.id);
             } else {
                 // Si no existe, lo agrega
-                // Si no se proporciona una cuenta bancaria, usa la cuenta por defecto o la primera
-                const defaultBankAccount = invoice.bank_accounts && invoice.bank_accounts.length > 0 
-                    ? (invoice.bank_accounts.find(acc => acc.is_default) || invoice.bank_accounts[0])
+                // Si no se proporciona una cuenta bancaria, usa la cuenta por defecto o la primera válida
+                const validBankAccounts = getValidBankAccounts(invoice);
+                const defaultBankAccount = validBankAccounts.length > 0 
+                    ? (validBankAccounts.find(acc => acc.is_default) || validBankAccounts[0])
                     : null;
                 return [...prev, { 
                     invoice, 
@@ -57,10 +83,11 @@ export const useSupplier = () => {
         const item = selectedInvoices.find(item => item.invoice.invoice.id === invoiceId);
         if (!item) return "";
         
-        // Si no hay una cuenta bancaria seleccionada, usa la cuenta por defecto o la primera
+        // Si no hay una cuenta bancaria seleccionada, usa la cuenta por defecto o la primera válida
         if (!item.bankAccountId) {
-            const defaultBankAccount = item.invoice.bank_accounts && item.invoice.bank_accounts.length > 0
-                ? (item.invoice.bank_accounts.find(acc => acc.is_default) || item.invoice.bank_accounts[0])
+            const validBankAccounts = getValidBankAccounts(item.invoice);
+            const defaultBankAccount = validBankAccounts.length > 0
+                ? (validBankAccounts.find(acc => acc.is_default) || validBankAccounts[0])
                 : null;
             return defaultBankAccount?.id || "";
         }

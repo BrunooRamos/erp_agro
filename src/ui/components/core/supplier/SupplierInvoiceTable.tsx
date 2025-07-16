@@ -20,6 +20,19 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
   getSelectedBankAccount,
   availableCurrencies,
 }) => {
+  // Función helper para verificar si una cuenta bancaria es válida
+  const hasValidBankAccount = (record: InvoiceElement) => {
+    if (!record.bank_accounts || record.bank_accounts.length === 0) {
+      return false;
+    }
+    
+    // Verificar si al menos una cuenta tiene account_number o iban
+    return record.bank_accounts.some(account => 
+      (account.account_number && account.account_number.trim() !== '') || 
+      (account.iban && account.iban.trim() !== '')
+    );
+  };
+
   const columns = [
     {
       title: 'Seleccionar',
@@ -30,6 +43,7 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
         const isSelected = isInvoiceSelected(record.invoice.id);
         const currentCurrency = getSelectedCurrency(record.invoice.id);
         const currentBankAccount = getSelectedBankAccount(record.invoice.id);
+        const hasValidAccount = hasValidBankAccount(record);
         
         return (
           <div className="flex flex-col gap-2">
@@ -53,7 +67,7 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
                 </Select>
               )}
             </div>
-            {isSelected && record.bank_accounts && record.bank_accounts.length > 0 && (
+            {isSelected && hasValidAccount && (
               <div className="ml-6">
                 <Select
                   value={currentBankAccount}
@@ -62,7 +76,12 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
                   disabled={!isSelected}
                   placeholder="Seleccionar cuenta"
                 >
-                  {record.bank_accounts.map(account => (
+                  {record.bank_accounts
+                    .filter(account => 
+                      (account.account_number && account.account_number.trim() !== '') || 
+                      (account.iban && account.iban.trim() !== '')
+                    )
+                    .map(account => (
                     <Select.Option key={account.id} value={account.id}>
                       <div className="flex flex-col">
                         <Text strong>{account.label}</Text>
@@ -75,7 +94,7 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
                 </Select>
               </div>
             )}
-            {isSelected && (!record.bank_accounts || record.bank_accounts.length === 0) && (
+            {isSelected && !hasValidAccount && (
               <div className="ml-6">
                 <Tag color="warning">Sin cuenta bancaria</Tag>
               </div>
@@ -143,13 +162,18 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
       title: 'Cuenta',
       key: 'account',
       render: (record: InvoiceElement) => {
-        if (!record.bank_accounts || record.bank_accounts.length === 0) {
+        if (!hasValidBankAccount(record)) {
           return <Tag color="warning">Sin cuenta bancaria</Tag>;
         }
         
-        const selectedBankAccount = record.bank_accounts.find(acc => acc.id === getSelectedBankAccount(record.invoice.id)) || 
-                                  record.bank_accounts.find(acc => acc.is_default) ||
-                                  record.bank_accounts[0];
+        const validAccounts = record.bank_accounts.filter(account => 
+          (account.account_number && account.account_number.trim() !== '') || 
+          (account.iban && account.iban.trim() !== '')
+        );
+        
+        const selectedBankAccount = validAccounts.find(acc => acc.id === getSelectedBankAccount(record.invoice.id)) || 
+                                  validAccounts.find(acc => acc.is_default) ||
+                                  validAccounts[0];
         
         return selectedBankAccount ? (
           <Tooltip title={`${selectedBankAccount.bank_name} - ${selectedBankAccount.label}`}>
@@ -164,13 +188,18 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
       title: 'Titular',
       key: 'owner',
       render: (record: InvoiceElement) => {
-        if (!record.bank_accounts || record.bank_accounts.length === 0) {
+        if (!hasValidBankAccount(record)) {
           return "-";
         }
         
-        const selectedBankAccount = record.bank_accounts.find(acc => acc.id === getSelectedBankAccount(record.invoice.id)) || 
-                                  record.bank_accounts.find(acc => acc.is_default) ||
-                                  record.bank_accounts[0];
+        const validAccounts = record.bank_accounts.filter(account => 
+          (account.account_number && account.account_number.trim() !== '') || 
+          (account.iban && account.iban.trim() !== '')
+        );
+        
+        const selectedBankAccount = validAccounts.find(acc => acc.id === getSelectedBankAccount(record.invoice.id)) || 
+                                  validAccounts.find(acc => acc.is_default) ||
+                                  validAccounts[0];
         
         return selectedBankAccount?.owner || "-";
       },

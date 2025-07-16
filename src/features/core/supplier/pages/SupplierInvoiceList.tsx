@@ -19,6 +19,8 @@ export const SupplierInvoiceList = () => {
     
     const { data: supplier, isLoading } = listSupplier;
 
+    console.log(JSON.stringify(supplier, null, 2));
+
     if (isLoading) {
         return (
             <div className="flex justify-center items-center h-full">

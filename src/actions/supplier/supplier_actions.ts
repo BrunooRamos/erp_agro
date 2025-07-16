@@ -20,6 +20,18 @@ interface JsPDFWithAutoTable extends jsPDF {
     };
 }
 
+// Función helper para obtener cuentas bancarias válidas
+const getValidBankAccounts = (invoice: InvoiceElement) => {
+    if (!invoice.bank_accounts || invoice.bank_accounts.length === 0) {
+        return [];
+    }
+    
+    return invoice.bank_accounts.filter(account => 
+        (account.account_number && account.account_number.trim() !== '') || 
+        (account.iban && account.iban.trim() !== '')
+    );
+};
+
 export const generateSupplierInvoicePDF = (
     selectedInvoices: SelectedInvoice[]
 ): void => {
@@ -64,11 +76,12 @@ export const generateSupplierInvoicePDF = (
                 ? item.invoice.invoice.currency.total_ttc
                 : item.invoice.invoice.total_ttc;
                 
+            const validBankAccounts = getValidBankAccounts(item.invoice);
             let selectedBankAccount = null;
-            if (item.invoice.bank_accounts && item.invoice.bank_accounts.length > 0) {
+            if (validBankAccounts.length > 0) {
                 selectedBankAccount = item.bankAccountId 
-                    ? item.invoice.bank_accounts.find(acc => acc.id === item.bankAccountId)
-                    : item.invoice.bank_accounts.find(acc => acc.is_default) || item.invoice.bank_accounts[0];
+                    ? validBankAccounts.find(acc => acc.id === item.bankAccountId)
+                    : validBankAccounts.find(acc => acc.is_default) || validBankAccounts[0];
             }
                 
             return [
@@ -115,11 +128,12 @@ export const generateSupplierInvoicePDF = (
                 ? item.invoice.invoice.currency.total_ttc
                 : item.invoice.invoice.total_ttc;
                 
+            const validBankAccounts = getValidBankAccounts(item.invoice);
             let selectedBankAccount = null;
-            if (item.invoice.bank_accounts && item.invoice.bank_accounts.length > 0) {
+            if (validBankAccounts.length > 0) {
                 selectedBankAccount = item.bankAccountId 
-                    ? item.invoice.bank_accounts.find(acc => acc.id === item.bankAccountId)
-                    : item.invoice.bank_accounts.find(acc => acc.is_default) || item.invoice.bank_accounts[0];
+                    ? validBankAccounts.find(acc => acc.id === item.bankAccountId)
+                    : validBankAccounts.find(acc => acc.is_default) || validBankAccounts[0];
             }
                 
             return [
