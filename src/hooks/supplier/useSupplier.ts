@@ -17,19 +17,6 @@ export const useSupplier = () => {
         getSupplier
     );
 
-    // Función helper para verificar si una cuenta bancaria es válida
-    const hasValidBankAccount = (invoice: InvoiceElement) => {
-        if (!invoice.bank_accounts || invoice.bank_accounts.length === 0) {
-            return false;
-        }
-        
-        // Verificar si al menos una cuenta tiene account_number o iban
-        return invoice.bank_accounts.some(account => 
-            (account.account_number && account.account_number.trim() !== '') || 
-            (account.iban && account.iban.trim() !== '')
-        );
-    };
-
     // Función helper para obtener cuentas bancarias válidas
     const getValidBankAccounts = (invoice: InvoiceElement) => {
         if (!invoice.bank_accounts || invoice.bank_accounts.length === 0) {
