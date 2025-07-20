@@ -1,6 +1,6 @@
 import { Table, Checkbox, Tooltip, Select, Typography, Tag, Input, Space, Button } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
-import { useState, useRef } from 'react';
+import { useRef } from 'react';
 import { InvoiceElement } from '../../../../interfaces';
 import type { InputRef, TableColumnType } from 'antd';
 import type { FilterDropdownProps } from 'antd/es/table/interface';
@@ -16,7 +16,7 @@ interface SupplierInvoiceTableProps {
   availableCurrencies: string[];
 }
 
-type DataIndex = keyof InvoiceElement | ['invoice', 'cuenta'] | ['supplier', 'name'];
+type DataIndex = ['invoice', 'cuenta'] | ['supplier', 'name'];
 
 export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
   invoices,
@@ -26,8 +26,6 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
   getSelectedBankAccount,
   availableCurrencies,
 }) => {
-  const [searchText, setSearchText] = useState('');
-  const [searchedColumn, setSearchedColumn] = useState('');
   const searchInput = useRef<InputRef>(null);
 
   // Función helper para verificar si una cuenta bancaria es válida
@@ -46,16 +44,12 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
   const handleSearch = (
     selectedKeys: string[],
     confirm: FilterDropdownProps['confirm'],
-    dataIndex: DataIndex,
   ) => {
     confirm();
-    setSearchText(selectedKeys[0]);
-    setSearchedColumn(dataIndex as string);
   };
 
   const handleReset = (clearFilters: () => void) => {
     clearFilters();
-    setSearchText('');
   };
 
   const getColumnSearchProps = (dataIndex: DataIndex): TableColumnType<InvoiceElement> => ({
@@ -63,16 +57,16 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
       <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
         <Input
           ref={searchInput}
-          placeholder={`Buscar ${dataIndex}`}
+          placeholder={`Buscar ${Array.isArray(dataIndex) ? dataIndex[1] : dataIndex}`}
           value={selectedKeys[0]}
           onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
-          onPressEnter={() => handleSearch(selectedKeys as string[], confirm, dataIndex)}
+          onPressEnter={() => handleSearch(selectedKeys as string[], confirm)}
           style={{ marginBottom: 8, display: 'block' }}
         />
         <Space>
           <Button
             type="primary"
-            onClick={() => handleSearch(selectedKeys as string[], confirm, dataIndex)}
+            onClick={() => handleSearch(selectedKeys as string[], confirm)}
             icon={<SearchOutlined />}
             size="small"
             style={{ width: 90 }}
@@ -102,17 +96,14 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
       <SearchOutlined style={{ color: filtered ? '#1677ff' : undefined }} />
     ),
     onFilter: (value, record) => {
-      if (Array.isArray(dataIndex)) {
-        const [key1, key2] = dataIndex;
-        return (record as any)[key1][key2]
-          .toString()
-          .toLowerCase()
-          .includes((value as string).toLowerCase());
-      }
-      return (record as any)[dataIndex as string]
-        .toString()
+      const [key1, key2] = dataIndex;
+      // Acceso seguro a propiedades anidadas
+      const nestedObject = (record as unknown as Record<string, unknown>)[key1];
+      const fieldValue = (nestedObject as Record<string, string>)[key2];
+      return fieldValue
+        ?.toString()
         .toLowerCase()
-        .includes((value as string).toLowerCase());
+        .includes((value as string).toLowerCase()) || false;
     },
     onFilterDropdownOpenChange: (visible) => {
       if (visible) {
@@ -311,4 +302,4 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
       scroll={{ x: 1500 }}
     />
   );
-}; 
+};
