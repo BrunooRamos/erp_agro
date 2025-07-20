@@ -64,10 +64,11 @@ export const generateSupplierInvoicePDF = (
         const tableColumns = [
             "Proveedor",
             "Referencia", 
+            "Cuenta",
             "Fecha Vencimiento", 
             "Monto", 
             "Banco",
-            "Cuenta",
+            "Cuenta Bancaria",
             "Titular"
         ];
         
@@ -87,6 +88,7 @@ export const generateSupplierInvoicePDF = (
             return [
                 item.invoice.supplier.name,
                 item.invoice.invoice.ref,
+                item.invoice.invoice.cuenta || '-',
                 new Date(item.invoice.invoice.due_date).toLocaleDateString(),
                 `${amount.toFixed(2)} UYU`,
                 selectedBankAccount?.bank_name || "-",
@@ -116,10 +118,11 @@ export const generateSupplierInvoicePDF = (
         const tableColumns = [
             "Proveedor",
             "Referencia", 
+            "Cuenta",
             "Fecha Vencimiento", 
             "Monto", 
             "Banco",
-            "Cuenta",
+            "Cuenta Bancaria",
             "Titular"
         ];
         
@@ -139,6 +142,7 @@ export const generateSupplierInvoicePDF = (
             return [
                 item.invoice.supplier.name,
                 item.invoice.invoice.ref,
+                item.invoice.invoice.cuenta || '-',
                 new Date(item.invoice.invoice.due_date).toLocaleDateString(),
                 `${amount.toFixed(2)} USD`,
                 selectedBankAccount?.bank_name || "-",

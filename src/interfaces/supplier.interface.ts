@@ -42,6 +42,7 @@ export interface InvoiceInvoice {
     total_ttc:      number;
     status:         string;
     paye:           string;
+    cuenta:         string;
     currency:       Currency;
 }
 

@@ -1,5 +1,9 @@
-import { Table, Checkbox, Tooltip, Select, Typography, Tag } from 'antd';
+import { Table, Checkbox, Tooltip, Select, Typography, Tag, Input, Space, Button } from 'antd';
+import { SearchOutlined } from '@ant-design/icons';
+import { useState, useRef } from 'react';
 import { InvoiceElement } from '../../../../interfaces';
+import type { InputRef, TableColumnType } from 'antd';
+import type { FilterDropdownProps } from 'antd/es/table/interface';
 
 const { Text } = Typography;
 
@@ -12,6 +16,8 @@ interface SupplierInvoiceTableProps {
   availableCurrencies: string[];
 }
 
+type DataIndex = keyof InvoiceElement | ['invoice', 'cuenta'] | ['supplier', 'name'];
+
 export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
   invoices,
   isInvoiceSelected,
@@ -20,6 +26,10 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
   getSelectedBankAccount,
   availableCurrencies,
 }) => {
+  const [searchText, setSearchText] = useState('');
+  const [searchedColumn, setSearchedColumn] = useState('');
+  const searchInput = useRef<InputRef>(null);
+
   // Función helper para verificar si una cuenta bancaria es válida
   const hasValidBankAccount = (record: InvoiceElement) => {
     if (!record.bank_accounts || record.bank_accounts.length === 0) {
@@ -32,6 +42,84 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
       (account.iban && account.iban.trim() !== '')
     );
   };
+
+  const handleSearch = (
+    selectedKeys: string[],
+    confirm: FilterDropdownProps['confirm'],
+    dataIndex: DataIndex,
+  ) => {
+    confirm();
+    setSearchText(selectedKeys[0]);
+    setSearchedColumn(dataIndex as string);
+  };
+
+  const handleReset = (clearFilters: () => void) => {
+    clearFilters();
+    setSearchText('');
+  };
+
+  const getColumnSearchProps = (dataIndex: DataIndex): TableColumnType<InvoiceElement> => ({
+    filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters, close }) => (
+      <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
+        <Input
+          ref={searchInput}
+          placeholder={`Buscar ${dataIndex}`}
+          value={selectedKeys[0]}
+          onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
+          onPressEnter={() => handleSearch(selectedKeys as string[], confirm, dataIndex)}
+          style={{ marginBottom: 8, display: 'block' }}
+        />
+        <Space>
+          <Button
+            type="primary"
+            onClick={() => handleSearch(selectedKeys as string[], confirm, dataIndex)}
+            icon={<SearchOutlined />}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Buscar
+          </Button>
+          <Button
+            onClick={() => clearFilters && handleReset(clearFilters)}
+            size="small"
+            style={{ width: 90 }}
+          >
+            Limpiar
+          </Button>
+          <Button
+            type="link"
+            size="small"
+            onClick={() => {
+              close();
+            }}
+          >
+            Cerrar
+          </Button>
+        </Space>
+      </div>
+    ),
+    filterIcon: (filtered: boolean) => (
+      <SearchOutlined style={{ color: filtered ? '#1677ff' : undefined }} />
+    ),
+    onFilter: (value, record) => {
+      if (Array.isArray(dataIndex)) {
+        const [key1, key2] = dataIndex;
+        return (record as any)[key1][key2]
+          .toString()
+          .toLowerCase()
+          .includes((value as string).toLowerCase());
+      }
+      return (record as any)[dataIndex as string]
+        .toString()
+        .toLowerCase()
+        .includes((value as string).toLowerCase());
+    },
+    onFilterDropdownOpenChange: (visible) => {
+      if (visible) {
+        setTimeout(() => searchInput.current?.select(), 100);
+      }
+    },
+  });
 
   const columns = [
     {
@@ -118,6 +206,14 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
       dataIndex: ['supplier', 'name'],
       key: 'supplierName',
       sorter: (a: InvoiceElement, b: InvoiceElement) => a.supplier.name.localeCompare(b.supplier.name),
+      ...getColumnSearchProps(['supplier', 'name']),
+    },
+    {
+      title: 'Cuenta',
+      dataIndex: ['invoice', 'cuenta'],
+      key: 'cuenta',
+      render: (cuenta: string) => cuenta || '-',
+      ...getColumnSearchProps(['invoice', 'cuenta']),
     },
     {
       title: 'Fecha',
@@ -159,7 +255,7 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
       },
     },
     {
-      title: 'Cuenta',
+      title: 'Cuenta Bancaria',
       key: 'account',
       render: (record: InvoiceElement) => {
         if (!hasValidBankAccount(record)) {
