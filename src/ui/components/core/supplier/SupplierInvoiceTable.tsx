@@ -42,7 +42,7 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
   };
 
   const handleSearch = (
-    selectedKeys: string[],
+    _: string[],
     confirm: FilterDropdownProps['confirm'],
   ) => {
     confirm();
