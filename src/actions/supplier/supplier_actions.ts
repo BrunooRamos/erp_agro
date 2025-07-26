@@ -1,5 +1,5 @@
 import { dolibarrApi } from "../../api";
-import { InvoiceElement, SupplierInvoice } from "../../interfaces";
+import { AccountStatementFilters, InvoiceElement, SupplierAccountStatement, SupplierInvoice } from "../../interfaces";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -162,4 +162,16 @@ export const generateSupplierInvoicePDF = (
     
     // Generate PDF file
     doc.save(`facturas_proveedores_${new Date().toISOString().slice(0, 10)}.pdf`);
+};
+
+export const getSupplierAccountStatement = async (filters: AccountStatementFilters): Promise<SupplierAccountStatement> => {
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      params.append(key, value.toString());
+    }
+  });
+  
+  const response = await dolibarrApi.get(`/vicentina/supplier-account-statement?${params.toString()}`);
+  return response.data as SupplierAccountStatement;
 };

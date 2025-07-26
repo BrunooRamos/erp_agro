@@ -64,7 +64,8 @@ import {
   OtherExpensesHome,
   OtherExpensesForm,
   OtherExpensesList,
-  SupplierInvoiceList
+  SupplierInvoiceList,
+  SupplierAccountStatement
 } from "../features/index";
 import { MenuRoute } from "../interfaces";
 
@@ -434,10 +435,26 @@ export const menuRoutes: MenuRoute[] = [
   {
     to: "/supplier",
     icon: "fa-solid fa-truck",
-    title: "Ordenes de pago",
-    description: "Ordenes de pago",
+    title: "Proveedores",
+    description: "Proveedores",
     component: <SupplierInvoiceList />,
     visible: true,
+    subMenu: [
+      {
+        to: "/supplier/invoices",
+        title: "Ordenes de pago",
+        description: "Ordenes de pago",
+        component: <SupplierInvoiceList />,
+        visible: true,
+      },
+      {
+        to: "/supplier/account-statement",
+        title: "Estado de cuenta",
+        description: "Estado de cuenta de proveedores",
+        component: <SupplierAccountStatement />,
+        visible: true,
+      },
+    ],
   },
   //!Sub menus de post cosecha
   // TONG  

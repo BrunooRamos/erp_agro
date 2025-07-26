@@ -40,3 +40,5 @@ export * from './cost-center/OtherExpensesCC';
 
 
 export * from './core/supplier/SupplierInvoiceTable';
+export * from './core/supplier/AccountStatementFilters';
+export * from './core/supplier/AccountStatementTable';

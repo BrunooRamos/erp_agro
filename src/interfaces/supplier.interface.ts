@@ -65,3 +65,37 @@ export interface Currency {
     total_tva: number;
     total_ttc: number;
 }
+
+export interface SupplierAccountStatement {
+  supplier: {
+    id: number;
+    name: string;
+  };
+  currency: string;
+  current_balance: number;
+  total_movements: number;
+  movements: AccountMovement[];
+  filters: AccountStatementFilters;
+}
+
+export interface AccountMovement {
+  document_type: string;
+  document_id: number;
+  document_ref: string;
+  document_ref_supplier: string;
+  document_date: string;
+  debit: number;
+  credit: number;
+  balance: number;
+  currency: string;
+  cuenta: string;
+}
+
+export interface AccountStatementFilters {
+  supplier_id?: number;
+  currency?: string;
+  entity?: number;
+  start_date?: string;
+  end_date?: string;
+  only_pending?: boolean;
+}
