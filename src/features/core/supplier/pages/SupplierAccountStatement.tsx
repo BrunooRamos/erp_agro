@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import { Card, Col, Row, Spin, Typography, Result, Statistic, Empty } from 'antd';
 import { useSupplierAccountStatement } from '../../../../hooks/supplier/useSupplierAccountStatement';
 import { AccountStatementFilters, AccountStatementTable } from '../../../../ui/components';
