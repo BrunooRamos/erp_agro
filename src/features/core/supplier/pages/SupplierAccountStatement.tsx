@@ -2,32 +2,30 @@ import { useMemo } from 'react';
 import { Card, Col, Row, Spin, Typography, Result, Statistic, Empty } from 'antd';
 import { useSupplierAccountStatement } from '../../../../hooks/supplier/useSupplierAccountStatement';
 import { AccountStatementFilters, AccountStatementTable } from '../../../../ui/components';
-import { useSupplier } from '../../../../hooks';
+import { useThirdparties } from '../../../../hooks/supplier/useThirdparties';
 
 const { Title } = Typography;
 
 export const SupplierAccountStatement = () => {
   const { accountStatement, filters, updateFilters, clearFilters } = useSupplierAccountStatement();
-  const { listSupplier } = useSupplier();
+  const { suppliers, isLoadingSuppliers } = useThirdparties();
   const { data, isLoading, error } = accountStatement;
-  const { data: supplierData } = listSupplier;
 
   console.log(JSON.stringify(data, null, 2));
 
-  // Extract suppliers from the existing supplier data
-  const suppliers = useMemo(() => {
-    if (!supplierData?.invoices) return [];
-    
-    const uniqueSuppliers = new Map();
-    supplierData.invoices.forEach(invoice => {
-      const supplier = invoice.supplier;
-      if (!uniqueSuppliers.has(supplier.id)) {
-        uniqueSuppliers.set(supplier.id, supplier);
-      }
-    });
-    
-    return Array.from(uniqueSuppliers.values());
-  }, [supplierData]);
+  // Convert Thirdparty to Supplier format for compatibility
+  const mappedSuppliers = useMemo(() => {
+    return suppliers.map(thirdparty => ({
+      id: thirdparty.id,
+      name: thirdparty.name,
+      address: thirdparty.address || '',
+      zip: thirdparty.zip || '',
+      town: thirdparty.town || '',
+      phone: thirdparty.phone || '',
+      email: thirdparty.email || '',
+      vat_number: thirdparty.vat_number || ''
+    }));
+  }, [suppliers]);
 
   // Calculate summary data
   const summaryData = useMemo(() => {
@@ -64,7 +62,7 @@ export const SupplierAccountStatement = () => {
               filters={filters}
               onFiltersChange={updateFilters}
               onClear={clearFilters}
-              suppliers={suppliers}
+              suppliers={mappedSuppliers}
             />
 
             {isLoading && (
@@ -73,7 +71,7 @@ export const SupplierAccountStatement = () => {
               </div>
             )}
 
-            {!isLoading && !data && filters.supplier_id && (
+            {!isLoading && (!data || !data.supplier?.id) && filters.supplier_id && (
               <Card>
                 <Empty 
                   description="No se encontraron movimientos para los filtros seleccionados" 
@@ -91,7 +89,7 @@ export const SupplierAccountStatement = () => {
               </Card>
             )}
 
-            {data && (
+            {data && data.supplier?.id && (
               <>
                 {/* Summary Cards */}
                 <Row gutter={16} className="mb-6">
@@ -99,7 +97,7 @@ export const SupplierAccountStatement = () => {
                     <Card>
                       <Statistic
                         title="Proveedor"
-                        value={data.supplier.name}
+                        value={data.supplier?.name || 'Sin datos'}
                         valueStyle={{ fontSize: '16px' }}
                       />
                     </Card>

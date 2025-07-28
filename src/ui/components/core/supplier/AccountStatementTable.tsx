@@ -34,6 +34,7 @@ export const AccountStatementTable: React.FC<AccountStatementTableProps> = ({
           'Factura': 'blue',
           'Nota Cr.': 'green',
           'Recibo': 'orange',
+          'Recibo de Pago': 'orange',
           'Ajuste': 'purple'
         };
         return <Tag color={colorMap[type] || 'default'}>{type}</Tag>;
@@ -77,8 +78,8 @@ export const AccountStatementTable: React.FC<AccountStatementTableProps> = ({
       dataIndex: 'credit',
       key: 'credit',
       align: 'right' as const,
-      render: (amount: number) => amount > 0 ? 
-        <Text strong style={{ color: '#3f8600' }}>
+      render: (amount: number) => amount !== 0 ? 
+        <Text strong style={{ color: amount >= 0 ? '#3f8600' : '#cf1322' }}>
           {amount.toLocaleString('es-UY', { 
             minimumFractionDigits: 2,
             maximumFractionDigits: 2

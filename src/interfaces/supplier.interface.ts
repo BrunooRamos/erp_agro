@@ -99,3 +99,29 @@ export interface AccountStatementFilters {
   end_date?: string;
   only_pending?: boolean;
 }
+
+// Interfaces para terceros (thirdparties) de Dolibarr
+export interface Thirdparty {
+  id: string;
+  name: string;
+  name_alias?: string;
+  client: string;  // "0" = no cliente, "1" = cliente
+  fournisseur: string;  // "0" = no proveedor, "1" = proveedor
+  code_fournisseur?: string;
+  code_client?: string;
+  status: string;
+  address?: string;
+  zip?: string;
+  town?: string;
+  phone?: string;
+  email?: string;
+  vat_number?: string;
+}
+
+export interface ThirdpartyFilters {
+  mode?: number;  // 1=clientes, 2=proveedores, 3=prospectos
+  sortfield?: string;
+  sortorder?: 'ASC' | 'DESC';
+  limit?: number;
+  sqlfilters?: string;
+}

@@ -46,7 +46,7 @@ export const AccountStatementFilters: React.FC<AccountStatementFiltersProps> = (
               className="w-full"
             >
               <Select.Option value="USD">USD</Select.Option>
-              <Select.Option value="PESOS">PESOS</Select.Option>
+              <Select.Option value="UYU">UYU</Select.Option>
             </Select>
           </Col>
           <Col xs={24} sm={12} md={8} lg={6}>

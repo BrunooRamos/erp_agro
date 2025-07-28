@@ -1,5 +1,5 @@
 import { dolibarrApi } from "../../api";
-import { AccountStatementFilters, InvoiceElement, SupplierAccountStatement, SupplierInvoice } from "../../interfaces";
+import { AccountStatementFilters, InvoiceElement, SupplierAccountStatement, SupplierInvoice, Thirdparty, ThirdpartyFilters } from "../../interfaces";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -174,4 +174,25 @@ export const getSupplierAccountStatement = async (filters: AccountStatementFilte
   
   const response = await dolibarrApi.get(`/vicentina/supplier-account-statement?${params.toString()}`);
   return response.data as SupplierAccountStatement;
+};
+
+export const getThirdparties = async (filters: ThirdpartyFilters = {}): Promise<Thirdparty[]> => {
+  const params = new URLSearchParams();
+  
+  // Valores por defecto
+  const defaultFilters = {
+    sortfield: 't.nom',
+    sortorder: 'ASC' as const,
+    limit: 100,
+    ...filters
+  };
+  
+  Object.entries(defaultFilters).forEach(([key, value]) => {
+    if (value !== undefined && value !== null) {
+      params.append(key, value.toString());
+    }
+  });
+  
+  const response = await dolibarrApi.get(`/thirdparties`);
+  return response.data as Thirdparty[];
 };
