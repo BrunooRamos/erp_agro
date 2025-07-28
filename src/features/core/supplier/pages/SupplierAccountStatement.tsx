@@ -8,7 +8,7 @@ const { Title } = Typography;
 
 export const SupplierAccountStatement = () => {
   const { accountStatement, filters, updateFilters, clearFilters } = useSupplierAccountStatement();
-  const { suppliers, isLoadingSuppliers } = useThirdparties();
+  const { suppliers } = useThirdparties();
   const { data, isLoading, error } = accountStatement;
 
   console.log(JSON.stringify(data, null, 2));
