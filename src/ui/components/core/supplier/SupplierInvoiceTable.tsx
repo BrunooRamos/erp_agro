@@ -4,6 +4,7 @@ import { useRef } from 'react';
 import { InvoiceElement } from '../../../../interfaces';
 import type { InputRef, TableColumnType } from 'antd';
 import type { FilterDropdownProps } from 'antd/es/table/interface';
+import './SupplierInvoiceTable.css';
 
 const { Text } = Typography;
 
@@ -54,14 +55,14 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
 
   const getColumnSearchProps = (dataIndex: DataIndex): TableColumnType<InvoiceElement> => ({
     filterDropdown: ({ setSelectedKeys, selectedKeys, confirm, clearFilters, close }) => (
-      <div style={{ padding: 8 }} onKeyDown={(e) => e.stopPropagation()}>
+      <div className="filter-dropdown-container" onKeyDown={(e) => e.stopPropagation()}>
         <Input
           ref={searchInput}
           placeholder={`Buscar ${Array.isArray(dataIndex) ? dataIndex[1] : dataIndex}`}
           value={selectedKeys[0]}
           onChange={(e) => setSelectedKeys(e.target.value ? [e.target.value] : [])}
           onPressEnter={() => handleSearch(selectedKeys as string[], confirm)}
-          style={{ marginBottom: 8, display: 'block' }}
+          className="filter-input"
         />
         <Space>
           <Button
@@ -69,14 +70,14 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
             onClick={() => handleSearch(selectedKeys as string[], confirm)}
             icon={<SearchOutlined />}
             size="small"
-            style={{ width: 90 }}
+            className="filter-button"
           >
             Buscar
           </Button>
           <Button
             onClick={() => clearFilters && handleReset(clearFilters)}
             size="small"
-            style={{ width: 90 }}
+            className="filter-button"
           >
             Limpiar
           </Button>
@@ -224,25 +225,52 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
       ),
     },
     {
-      title: 'Monto USD',
-      key: 'totalUSD',
+      title: 'Monto Pendiente',
+      key: 'pendingAmount',
+      sorter: (a: InvoiceElement, b: InvoiceElement) => {
+        const amountA = a.invoice.pending_amount || a.invoice.total_ttc || a.invoice.currency?.total_ttc || 0;
+        const amountB = b.invoice.pending_amount || b.invoice.total_ttc || b.invoice.currency?.total_ttc || 0;
+        return amountA - amountB;
+      },
       render: (record: InvoiceElement) => {
-        const amount = record.invoice.currency.code === "USD" 
-          ? record.invoice.currency.total_ttc
-          : record.invoice.total_ttc;
+        const pendingAmount = record.invoice.pending_amount || record.invoice.total_ttc || record.invoice.currency?.total_ttc || 0;
+        const totalAmount = record.invoice.total_ttc || record.invoice.currency?.total_ttc || 0;
+        const totalPaid = record.invoice.total_paid || 0;
         
-        return `${amount.toFixed(2)} USD`;
+        return (
+          <div>
+            <Text strong style={{ fontSize: '14px' }}>
+              ${pendingAmount.toLocaleString('es-UY', { 
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+              })}
+            </Text>
+            {totalPaid > 0 && (
+              <div>
+                <Text style={{ color: '#666', fontSize: '11px' }}>
+                  Total: ${totalAmount.toFixed(2)} | Pagado: ${totalPaid.toFixed(2)}
+                </Text>
+              </div>
+            )}
+          </div>
+        );
       },
     },
     {
-      title: 'Monto UYU',
-      key: 'totalUYU',
+      title: 'Moneda',
+      key: 'currency',
+      filters: [
+        { text: 'USD', value: 'USD' },
+        { text: 'UYU', value: 'UYU' },
+      ],
+      onFilter: (value: unknown, record: InvoiceElement) => {
+        const currency = record.invoice.currency?.code || 'UYU';
+        return currency === value;
+      },
       render: (record: InvoiceElement) => {
-        const amount = record.invoice.currency.code === "UYU"
-          ? record.invoice.currency.total_ttc
-          : record.invoice.total_ttc;
-        
-        return `${amount.toFixed(2)} UYU`;
+        const currency = record.invoice.currency?.code || 'UYU';
+        const color = currency === 'USD' ? 'blue' : 'green';
+        return <Tag color={color}>{currency}</Tag>;
       },
     },
     {

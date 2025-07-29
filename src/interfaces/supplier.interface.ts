@@ -40,6 +40,10 @@ export interface InvoiceInvoice {
     total_ht:       number;
     total_tva:      number;
     total_ttc:      number;
+    pending_amount?: number;
+    total_paid?:    number;
+    total_credits?: number;
+    original_amount?: number;
     status:         string;
     paye:           string;
     cuenta:         string;
@@ -124,4 +128,12 @@ export interface ThirdpartyFilters {
   sortorder?: 'ASC' | 'DESC';
   limit?: number;
   sqlfilters?: string;
+}
+
+export interface SupplierTotal {
+  supplierId: string;
+  supplierName: string;
+  invoicesCount: number;
+  totalUSD: number;
+  totalUYU: number;
 }

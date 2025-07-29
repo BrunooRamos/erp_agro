@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { generateSupplierInvoicePDF, getSupplier } from "../../actions";
 import { useBaseQuery } from "../config/useBaseQuery";
-import { InvoiceElement } from "../../interfaces";
+import { InvoiceElement, SupplierTotal } from "../../interfaces";
 
 interface SelectedInvoice {
   invoice: InvoiceElement;
@@ -11,6 +11,7 @@ interface SelectedInvoice {
 
 export const useSupplier = () => {
     const [selectedInvoices, setSelectedInvoices] = useState<SelectedInvoice[]>([]);
+    const [showPaymentOrderModal, setShowPaymentOrderModal] = useState(false);
 
     const listSupplier = useBaseQuery(
         ['supplier'],
@@ -86,9 +87,18 @@ export const useSupplier = () => {
         setSelectedInvoices([]);
     };
 
-    const generatePDF = () => {
+    const generatePDF = (orderNumber: string) => {
         if (selectedInvoices.length === 0) return;
-        generateSupplierInvoicePDF(selectedInvoices);
+        generateSupplierInvoicePDF(selectedInvoices, orderNumber);
+        setShowPaymentOrderModal(false);
+    };
+
+    const showPaymentOrderModalHandler = () => {
+        setShowPaymentOrderModal(true);
+    };
+
+    const closePaymentOrderModal = () => {
+        setShowPaymentOrderModal(false);
     };
 
     const availableCurrencies = ["UYU", "USD"];
@@ -102,6 +112,70 @@ export const useSupplier = () => {
         return invoicesByCurrency;
     };
 
+    // Calcular totales para el modal
+    const getTotalsForModal = useCallback(() => {
+        if (selectedInvoices.length === 0) {
+            return { totalUSD: 0, totalUYU: 0, supplierTotals: [] };
+        }
+
+        // Calcular totales por moneda
+        const totalUSD = selectedInvoices
+            .filter(item => item.currency === "USD")
+            .reduce((sum, item) => {
+                const amount = item.invoice.invoice.pending_amount || 
+                    (item.invoice.invoice.currency.code === "USD" 
+                        ? item.invoice.invoice.currency.total_ttc
+                        : item.invoice.invoice.total_ttc);
+                return sum + amount;
+            }, 0);
+
+        const totalUYU = selectedInvoices
+            .filter(item => item.currency === "UYU")
+            .reduce((sum, item) => {
+                const amount = item.invoice.invoice.pending_amount || 
+                    (item.invoice.invoice.currency.code === "UYU" 
+                        ? item.invoice.invoice.currency.total_ttc
+                        : item.invoice.invoice.total_ttc);
+                return sum + amount;
+            }, 0);
+
+        // Calcular totales por proveedor
+        const supplierTotalsMap = new Map<string, SupplierTotal>();
+        
+        selectedInvoices.forEach(item => {
+            const supplierId = item.invoice.supplier.id;
+            const supplierName = item.invoice.supplier.name;
+            const amount = item.invoice.invoice.pending_amount || 
+                (item.invoice.invoice.currency.code === item.currency 
+                    ? item.invoice.invoice.currency.total_ttc
+                    : item.invoice.invoice.total_ttc);
+            
+            if (!supplierTotalsMap.has(supplierId)) {
+                supplierTotalsMap.set(supplierId, {
+                    supplierId,
+                    supplierName,
+                    invoicesCount: 0,
+                    totalUSD: 0,
+                    totalUYU: 0
+                });
+            }
+            
+            const supplier = supplierTotalsMap.get(supplierId)!;
+            supplier.invoicesCount++;
+            
+            if (item.currency === 'USD') {
+                supplier.totalUSD += amount;
+            } else {
+                supplier.totalUYU += amount;
+            }
+        });
+
+        const supplierTotals = Array.from(supplierTotalsMap.values())
+            .sort((a, b) => a.supplierName.localeCompare(b.supplierName));
+
+        return { totalUSD, totalUYU, supplierTotals };
+    }, [selectedInvoices]);
+
     return {
         listSupplier,
         selectedInvoices,
@@ -111,6 +185,10 @@ export const useSupplier = () => {
         getSelectedBankAccount,
         clearSelectedInvoices,
         generatePDF,
+        showPaymentOrderModalHandler,
+        closePaymentOrderModal,
+        showPaymentOrderModal,
+        getTotalsForModal,
         availableCurrencies,
         getInvoicesByCurrency
     };

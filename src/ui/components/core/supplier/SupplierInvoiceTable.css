@@ -1,0 +1,12 @@
+.filter-dropdown-container {
+  padding: 8px;
+}
+
+.filter-input {
+  margin-bottom: 8px;
+  display: block;
+}
+
+.filter-button {
+  width: 90px;
+} 
