@@ -184,14 +184,16 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
       },
     },
     {
-      title: 'Referencia',
+      title: 'Ref. Dolibarr',
       dataIndex: ['invoice', 'ref'],
       key: 'ref',
-      render: (text: string, record: InvoiceElement) => (
-        <Tooltip title={`Ref. proveedor: ${record.invoice.ref_supplier}`}>
-          {text}
-        </Tooltip>
-      ),
+      render: (text: string) => text,
+    },
+    {
+      title: 'Ref. Proveedor',
+      dataIndex: ['invoice', 'ref_supplier'],
+      key: 'ref_supplier',
+      render: (text: string) => text || '-',
     },
     {
       title: 'Proveedor',
@@ -234,7 +236,7 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
       },
       render: (record: InvoiceElement) => {
         const pendingAmount = record.invoice.pending_amount || record.invoice.total_ttc || record.invoice.currency?.total_ttc || 0;
-        const totalAmount = record.invoice.total_ttc || record.invoice.currency?.total_ttc || 0;
+        const totalAmount = record.invoice.original_amount || 0;
         const totalPaid = record.invoice.total_paid || 0;
         
         return (
