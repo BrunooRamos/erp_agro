@@ -42,11 +42,22 @@ export const AccountStatementTable: React.FC<AccountStatementTableProps> = ({
       width: 100,
     },
     {
-      title: 'N° Documento',
+      title: 'Ref. Proveedor',
+      dataIndex: 'document_ref_supplier',
+      key: 'document_ref_supplier',
+      render: (ref: string, record: AccountMovement) => (
+        <Tooltip title={`Ref. proveedor: ${record.document_ref_supplier || 'N/A'}`}>
+          <Text>{ref}</Text>
+        </Tooltip>
+      ),
+      width: 150,
+    },
+    {
+      title: 'Ref. Dolibarr',
       dataIndex: 'document_ref',
       key: 'document_ref',
       render: (ref: string, record: AccountMovement) => (
-        <Tooltip title={`Ref. proveedor: ${record.document_ref_supplier || 'N/A'}`}>
+        <Tooltip title={`Ref. dolibarr: ${record.document_ref || 'N/A'}`}>
           <Text>{ref}</Text>
         </Tooltip>
       ),
