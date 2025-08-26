@@ -37,220 +37,125 @@ export const generateSupplierInvoicePDF = (
     orderNumber: string
 ): void => {
     const doc = new jsPDF() as JsPDFWithAutoTable;
-    
-    // Add title
+
+    // Encabezado estilo "resumen por proveedor"
     doc.setFontSize(20);
     doc.text('ORDEN DE PAGO', 14, 20);
-    
-    // Add order number in top right corner
+
     doc.setFontSize(14);
     const pageWidth = doc.internal.pageSize.width;
     doc.text(`N° ${orderNumber}`, pageWidth - 14, 20, { align: 'right' });
-    
-    // Add date
+
     doc.setFontSize(12);
     doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 14, 30);
-    
-    // Separar las facturas por moneda
-    const uyuInvoices = selectedInvoices.filter(item => item.currency === "UYU");
-    const usdInvoices = selectedInvoices.filter(item => item.currency === "USD");
-    
-    // Calcular totales por moneda
-    const totalUSD = usdInvoices.reduce((sum, item) => {
-        const amount = item.invoice.invoice.pending_amount || 
-            (item.invoice.invoice.currency.code === "USD" 
-                ? item.invoice.invoice.currency.total_ttc
-                : item.invoice.invoice.total_ttc);
-        return sum + amount;
-    }, 0);
-    
-    const totalUYU = uyuInvoices.reduce((sum, item) => {
-        const amount = item.invoice.invoice.pending_amount || 
-            (item.invoice.invoice.currency.code === "UYU" 
-                ? item.invoice.invoice.currency.total_ttc
-                : item.invoice.invoice.total_ttc);
-        return sum + amount;
-    }, 0);
-    
-    // Add totals section
-    let currentY = 45;
-    doc.setFontSize(14);
-    doc.text('TOTALES POR MONEDA:', 14, currentY);
-    currentY += 10;
-    
-    doc.setFontSize(12);
-    if (totalUSD > 0) {
-        doc.text(`Total USD: $${totalUSD.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 14, currentY);
-        currentY += 8;
-    }
-    if (totalUYU > 0) {
-        doc.text(`Total UYU: $${totalUYU.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`, 14, currentY);
-        currentY += 8;
-    }
-    
-    currentY += 10;
-    
-    // Ordenar facturas por nombre de proveedor
-    const sortBySupplierName = (a: SelectedInvoice, b: SelectedInvoice) => {
-        return a.invoice.supplier.name.localeCompare(b.invoice.supplier.name);
+    doc.text('Forma de Pago: BANCO', pageWidth - 14, 30, { align: 'right' });
+
+    // Agrupar por proveedor y calcular totales por moneda
+    type SupplierRow = {
+        supplierName: string;
+        supplierCode?: string;
+        totalUYU: number;
+        totalUSD: number;
+        bankAccount?: InvoiceElement["bank_accounts"][number] | null;
     };
-    
-    uyuInvoices.sort(sortBySupplierName);
-    usdInvoices.sort(sortBySupplierName);
-    
-    // Calcular totales por proveedor
-    const supplierTotals = new Map();
+
+    const supplierMap = new Map<string, SupplierRow>();
+
     selectedInvoices.forEach(item => {
+        const supplierId = item.invoice.supplier.id;
         const supplierName = item.invoice.supplier.name;
-        const amount = item.invoice.invoice.pending_amount || 
-            (item.invoice.invoice.currency.code === item.currency 
+        const amount = item.invoice.invoice.pending_amount ||
+            (item.invoice.invoice.currency.code === item.currency
                 ? item.invoice.invoice.currency.total_ttc
                 : item.invoice.invoice.total_ttc);
-        
-        if (!supplierTotals.has(supplierName)) {
-            supplierTotals.set(supplierName, { totalUSD: 0, totalUYU: 0, count: 0 });
+
+        if (!supplierMap.has(supplierId)) {
+            supplierMap.set(supplierId, {
+                supplierName,
+                supplierCode: undefined, // No disponible en la interfaz actual de Invoice.supplier
+                totalUYU: 0,
+                totalUSD: 0,
+                bankAccount: null,
+            });
         }
-        
-        const supplier = supplierTotals.get(supplierName);
-        supplier.count++;
+
+        const row = supplierMap.get(supplierId)!;
         if (item.currency === 'USD') {
-            supplier.totalUSD += amount;
+            row.totalUSD += amount;
         } else {
-            supplier.totalUYU += amount;
+            row.totalUYU += amount;
+        }
+
+        // Elegir una cuenta bancaria representativa para el proveedor
+        if (!row.bankAccount) {
+            const validBankAccounts = getValidBankAccounts(item.invoice);
+            if (validBankAccounts.length > 0) {
+                const selected = item.bankAccountId
+                    ? validBankAccounts.find(acc => acc.id === item.bankAccountId)
+                    : validBankAccounts.find(acc => acc.is_default) || validBankAccounts[0];
+                row.bankAccount = selected || null;
+            }
         }
     });
-    
-    // Add supplier totals section
-    if (supplierTotals.size > 0) {
-        doc.setFontSize(14);
-        doc.text('TOTALES POR PROVEEDOR:', 14, currentY);
-        currentY += 10;
-        
-        doc.setFontSize(10);
-        Array.from(supplierTotals.entries()).forEach(([supplierName, totals]) => {
-            let line = `${supplierName} (${totals.count} facturas)`;
-            if (totals.totalUSD > 0) {
-                line += ` - USD: $${totals.totalUSD.toFixed(2)}`;
-            }
-            if (totals.totalUYU > 0) {
-                line += ` - UYU: $${totals.totalUYU.toFixed(2)}`;
-            }
-            doc.text(line, 14, currentY);
-            currentY += 6;
-        });
-        
-        currentY += 10;
-    }
-    
-    // Facturas en UYU
-    if (uyuInvoices.length > 0) {
-        doc.setFontSize(16);
-        doc.text('Facturas en Pesos (UYU)', 14, currentY);
-        currentY += 10;
-        
-        const tableColumns = [
-            "Proveedor",
-            "Referencia", 
-            "Cuenta",
-            "Fecha Vencimiento", 
-            "Monto", 
-            "Banco",
-            "Cuenta Bancaria",
-            "Titular"
-        ];
-        
-        const tableRows = uyuInvoices.map(item => {
-            const amount = item.invoice.invoice.pending_amount || 
-                (item.invoice.invoice.currency.code === "UYU" 
-                    ? item.invoice.invoice.currency.total_ttc
-                    : item.invoice.invoice.total_ttc);
-                
-            const validBankAccounts = getValidBankAccounts(item.invoice);
-            let selectedBankAccount = null;
-            if (validBankAccounts.length > 0) {
-                selectedBankAccount = item.bankAccountId 
-                    ? validBankAccounts.find(acc => acc.id === item.bankAccountId)
-                    : validBankAccounts.find(acc => acc.is_default) || validBankAccounts[0];
-            }
-                
+
+    // Totales generales
+    const grandTotalUYU = Array.from(supplierMap.values()).reduce((s, r) => s + r.totalUYU, 0);
+    const grandTotalUSD = Array.from(supplierMap.values()).reduce((s, r) => s + r.totalUSD, 0);
+
+    // Tabla principal similar a Excel
+    const head = [[
+        'Nombre',
+        'Cod.',
+        'UYU',
+        'USD',
+        'Banco',
+        'Tipo',
+        'Mon.',
+        'Nro.',
+        'Titular'
+    ]];
+
+    const body = Array.from(supplierMap.values())
+        .sort((a, b) => a.supplierName.localeCompare(b.supplierName))
+        .map(r => {
+            const bank = r.bankAccount;
+            const inferredBankCurrency = r.totalUSD > 0 && r.totalUYU === 0
+                ? 'USD'
+                : r.totalUYU > 0 && r.totalUSD === 0
+                    ? 'UYU'
+                    : '-';
+
             return [
-                item.invoice.supplier.name,
-                item.invoice.invoice.ref,
-                item.invoice.invoice.cuenta || '-',
-                new Date(item.invoice.invoice.due_date).toLocaleDateString(),
-                `${amount.toFixed(2)} UYU`,
-                selectedBankAccount?.bank_name || "-",
-                selectedBankAccount?.account_number || selectedBankAccount?.iban || "-",
-                selectedBankAccount?.owner || "-"
+                r.supplierName,
+                r.supplierCode || '-',
+                r.totalUYU > 0 ? `$ ${r.totalUYU.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-',
+                r.totalUSD > 0 ? `$ ${r.totalUSD.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-',
+                bank?.bank_name || '-',
+                bank?.label || '-',
+                inferredBankCurrency,
+                bank?.account_number || bank?.iban || '-',
+                bank?.owner || '-',
             ];
         });
-        
-        autoTable(doc, {
-            head: [tableColumns],
-            body: tableRows,
-            startY: currentY,
-            theme: 'striped',
-            headStyles: { fillColor: [41, 128, 185] }
-        });
-        
-        // Actualizar posición Y para la siguiente tabla
-        currentY = doc.lastAutoTable.finalY + 15;
-    }
-    
-    // Facturas en USD
-    if (usdInvoices.length > 0) {
-        doc.setFontSize(16);
-        doc.text('Facturas en Dólares (USD)', 14, currentY);
-        currentY += 10;
-        
-        const tableColumns = [
-            "Proveedor",
-            "Referencia", 
-            "Cuenta",
-            "Fecha Vencimiento", 
-            "Monto", 
-            "Banco",
-            "Cuenta Bancaria",
-            "Titular"
-        ];
-        
-        const tableRows = usdInvoices.map(item => {
-            const amount = item.invoice.invoice.pending_amount || 
-                (item.invoice.invoice.currency.code === "USD" 
-                    ? item.invoice.invoice.currency.total_ttc
-                    : item.invoice.invoice.total_ttc);
-                
-            const validBankAccounts = getValidBankAccounts(item.invoice);
-            let selectedBankAccount = null;
-            if (validBankAccounts.length > 0) {
-                selectedBankAccount = item.bankAccountId 
-                    ? validBankAccounts.find(acc => acc.id === item.bankAccountId)
-                    : validBankAccounts.find(acc => acc.is_default) || validBankAccounts[0];
-            }
-                
-            return [
-                item.invoice.supplier.name,
-                item.invoice.invoice.ref,
-                item.invoice.invoice.cuenta || '-',
-                new Date(item.invoice.invoice.due_date).toLocaleDateString(),
-                `${amount.toFixed(2)} USD`,
-                selectedBankAccount?.bank_name || "-",
-                selectedBankAccount?.account_number || selectedBankAccount?.iban || "-",
-                selectedBankAccount?.owner || "-"
-            ];
-        });
-        
-        autoTable(doc, {
-            head: [tableColumns],
-            body: tableRows,
-            startY: currentY,
-            theme: 'striped',
-            headStyles: { fillColor: [41, 128, 185] }
-        });
-    }
-    
-    // Generate PDF file
-    doc.save(`facturas_proveedores_${new Date().toISOString().slice(0, 10)}.pdf`);
+
+    autoTable(doc, {
+        head,
+        body,
+        startY: 45,
+        theme: 'striped',
+        headStyles: { fillColor: [41, 128, 185] },
+        foot: [[
+            'Total general',
+            '',
+            `$ ${grandTotalUYU.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            `$ ${grandTotalUSD.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+            '', '', '', '', ''
+        ]],
+        footStyles: { fillColor: [46, 204, 113] }
+    });
+
+    // Guardar
+    doc.save(`orden_pago_resumen_${new Date().toISOString().slice(0, 10)}.pdf`);
 };
 
 export const getSupplierAccountStatement = async (filters: AccountStatementFilters): Promise<SupplierAccountStatement> => {

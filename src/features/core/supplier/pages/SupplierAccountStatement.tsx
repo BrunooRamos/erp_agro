@@ -37,6 +37,16 @@ export const SupplierAccountStatement = () => {
     }), { totalDebit: 0, totalCredit: 0 });
   }, [data?.movements]);
 
+  // Extract unique cuentas from movements
+  const availableCuentas = useMemo(() => {
+    if (!data?.movements) return [];
+    
+    const uniqueCuentas = Array.from(
+      new Set(data.movements.map(movement => movement.cuenta).filter(Boolean))
+    );
+    return uniqueCuentas.sort();
+  }, [data?.movements]);
+
   if (error) {
     return (
       <div className="p-6">
@@ -63,6 +73,7 @@ export const SupplierAccountStatement = () => {
               onFiltersChange={updateFilters}
               onClear={clearFilters}
               suppliers={mappedSuppliers}
+              cuentas={availableCuentas}
             />
 
             {isLoading && (

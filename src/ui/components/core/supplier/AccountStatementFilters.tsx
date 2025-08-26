@@ -9,13 +9,15 @@ interface AccountStatementFiltersProps {
     onFiltersChange: (filters: Partial<FilterInterface>) => void;
     onClear: () => void;
     suppliers?: Supplier[];
+    cuentas?: string[];
 }
 
 export const AccountStatementFilters: React.FC<AccountStatementFiltersProps> = ({
     filters,
     onFiltersChange,
     onClear,
-    suppliers = []
+    suppliers = [],
+    cuentas = []
 }) => {
     return (
       <Card title="Filtros" className="mb-4">
@@ -47,6 +49,21 @@ export const AccountStatementFilters: React.FC<AccountStatementFiltersProps> = (
             >
               <Select.Option value="USD">USD</Select.Option>
               <Select.Option value="UYU">UYU</Select.Option>
+            </Select>
+          </Col>
+          <Col xs={24} sm={12} md={8} lg={6}>
+            <Select
+              placeholder="Cuenta"
+              value={filters.cuenta}
+              onChange={(value) => onFiltersChange({ cuenta: value })}
+              className="w-full"
+              allowClear
+            >
+              {cuentas.map(cuenta => (
+                <Select.Option key={cuenta} value={cuenta}>
+                  {cuenta}
+                </Select.Option>
+              ))}
             </Select>
           </Col>
           <Col xs={24} sm={12} md={8} lg={6}>

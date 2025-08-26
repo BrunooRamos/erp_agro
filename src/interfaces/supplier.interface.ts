@@ -99,6 +99,7 @@ export interface AccountStatementFilters {
   supplier_id?: number;
   currency?: string;
   entity?: number;
+  cuenta?: string;
   start_date?: string;
   end_date?: string;
   only_pending?: boolean;
