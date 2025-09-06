@@ -136,18 +136,20 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
                 <Select
                   value={currentCurrency}
                   onChange={(value) => toggleInvoiceSelection(record, value, currentBankAccount)}
-                  style={{ width: 90 }}
+                  style={{ width: 160 }}
                   disabled={!isSelected}
                 >
                   {availableCurrencies.map(currency => (
                     <Select.Option key={currency} value={currency}>
-                      {currency}
+                      {currency === 'EFECTIVO_UYU' ? 'Efectivo UYU'
+                        : currency === 'EFECTIVO_USD' ? 'Efectivo USD'
+                        : currency}
                     </Select.Option>
                   ))}
                 </Select>
               )}
             </div>
-            {isSelected && hasValidAccount && (
+            {isSelected && hasValidAccount && currentCurrency !== 'EFECTIVO_UYU' && currentCurrency !== 'EFECTIVO_USD' && (
               <div className="ml-6">
                 <Select
                   value={currentBankAccount}
