@@ -64,8 +64,9 @@ import {
   OtherExpensesHome,
   OtherExpensesForm,
   OtherExpensesList,
+  HomeSupplier,
   SupplierInvoiceList,
-  SupplierAccountStatement
+  SupplierAccountStatement,
 } from "../features/index";
 import { MenuRoute } from "../interfaces";
 
@@ -437,7 +438,7 @@ export const menuRoutes: MenuRoute[] = [
     icon: "fa-solid fa-truck",
     title: "Proveedores",
     description: "Proveedores",
-    component: <SupplierInvoiceList />,
+    component: <HomeSupplier />,
     visible: true,
     subMenu: [
       {

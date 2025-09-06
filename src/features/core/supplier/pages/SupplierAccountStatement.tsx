@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import dayjs from 'dayjs';
 import { Card, Col, Row, Spin, Typography, Result, Statistic, Empty } from 'antd';
 import { useSupplierAccountStatement } from '../../../../hooks/supplier/useSupplierAccountStatement';
 import { AccountStatementFilters, AccountStatementTable } from '../../../../ui/components';
@@ -27,25 +28,50 @@ export const SupplierAccountStatement = () => {
     }));
   }, [suppliers]);
 
-  // Calculate summary data
+  // Filter movements by selected cuenta (if any)
+  const filteredMovements = useMemo(() => {
+    const movements = data?.movements ?? [];
+    if (!filters.cuenta) return movements;
+    return movements.filter(movement => movement.cuenta === filters.cuenta);
+  }, [data, filters.cuenta]);
+
+  // Calculate summary data (based on filtered movements)
   const summaryData = useMemo(() => {
-    if (!data?.movements) return { totalDebit: 0, totalCredit: 0 };
-    
-    return data.movements.reduce((acc, movement) => ({
+    if (!filteredMovements || filteredMovements.length === 0) {
+      return { totalDebit: 0, totalCredit: 0 };
+    }
+    return filteredMovements.reduce((acc, movement) => ({
       totalDebit: acc.totalDebit + movement.debit,
       totalCredit: acc.totalCredit + movement.credit
     }), { totalDebit: 0, totalCredit: 0 });
-  }, [data?.movements]);
+  }, [filteredMovements]);
+
+  // Recompute running balance based only on filtered movements (per cuenta)
+  const recomputedMovements = useMemo(() => {
+    const sorted = [...filteredMovements].sort((a, b) =>
+      dayjs(a.document_date).valueOf() - dayjs(b.document_date).valueOf()
+    );
+    let running = 0;
+    return sorted.map(m => {
+      running = running + m.debit - m.credit;
+      return { ...m, balance: running };
+    });
+  }, [filteredMovements]);
+
+  // Current balance based on recomputed movements
+  const currentBalanceByCuenta = useMemo(() => {
+    if (recomputedMovements.length === 0) return 0;
+    return recomputedMovements[recomputedMovements.length - 1].balance;
+  }, [recomputedMovements]);
 
   // Extract unique cuentas from movements
   const availableCuentas = useMemo(() => {
-    if (!data?.movements) return [];
-    
+    const movements = data?.movements ?? [];
     const uniqueCuentas = Array.from(
-      new Set(data.movements.map(movement => movement.cuenta).filter(Boolean))
+      new Set(movements.map(movement => movement.cuenta).filter(Boolean))
     );
     return uniqueCuentas.sort();
-  }, [data?.movements]);
+  }, [data]);
 
   if (error) {
     return (
@@ -117,10 +143,10 @@ export const SupplierAccountStatement = () => {
                     <Card>
                       <Statistic
                         title="Saldo Actual"
-                        value={data.current_balance}
+                        value={currentBalanceByCuenta}
                         precision={2}
                         valueStyle={{ 
-                          color: data.current_balance >= 0 ? '#cf1322' : '#3f8600',
+                          color: currentBalanceByCuenta >= 0 ? '#cf1322' : '#3f8600',
                           fontWeight: 'bold'
                         }}
                         suffix={data.currency}
@@ -156,7 +182,7 @@ export const SupplierAccountStatement = () => {
                     <Card>
                       <Statistic
                         title="Total de Movimientos"
-                        value={data.total_movements}
+                        value={filteredMovements.length}
                         valueStyle={{ fontSize: '18px' }}
                       />
                     </Card>
@@ -166,7 +192,7 @@ export const SupplierAccountStatement = () => {
                 {/* Movements Table */}
                 <Card title="Detalle de Movimientos">
                   <AccountStatementTable
-                    movements={data.movements}
+                    movements={recomputedMovements}
                     currency={data.currency}
                     loading={isLoading}
                   />

@@ -94,7 +94,7 @@ export const CreateMovement = () => {
               })}
             >
               <option value="">Seleccione un cultivo</option>
-              {availableCrops?.map((crop) => (
+              {Array.isArray(availableCrops) && availableCrops?.map((crop) => (
                 <option key={crop.code} value={crop.rowid}>
                   {crop.code}
                 </option>
@@ -114,9 +114,9 @@ export const CreateMovement = () => {
               })}
             >
               <option value="">Seleccione un almacén</option>
-              {warehouses?.map((category) => (
+              {Array.isArray(warehouses) && warehouses?.map((category) => (
                 <optgroup key={category.name} label={category.name}>
-                  {category.warehouses.map((warehouse) => (
+                  {Array.isArray(category.warehouses) && category.warehouses.map((warehouse) => (
                     <option
                       key={`${category.name}-${warehouse.id}`}
                       value={warehouse.id}
@@ -137,7 +137,7 @@ export const CreateMovement = () => {
               })}
             >
               <option value="">Seleccione un costo logístico</option>
-              {logisticCosts?.map((cost) => (
+              {Array.isArray(logisticCosts) && logisticCosts?.map((cost) => (
                 <option key={cost.id} value={cost.cost}>
                     {cost.origin} {'->'} {cost.destination} | ${cost.cost}
                 </option>
@@ -167,7 +167,7 @@ export const CreateMovement = () => {
               disabled={!selectedCrop || isLoadingCrop}
             >
               <option value="">Seleccione un lote</option>
-              {lots?.map((lot) => (
+              {Array.isArray(lots) && lots?.map((lot) => (
                 <option key={lot.id_lote} value={lot.id_lote}>
                   {lot.name}
                 </option>
@@ -182,7 +182,7 @@ export const CreateMovement = () => {
               disabled={!selectedCrop || isLoadingCrop || isLoadingSublots}
             >
               <option value="">Seleccione un sublote</option>
-              {sublots?.map((sublot) => (
+              {Array.isArray(sublots) && sublots?.map((sublot) => (
                 <option key={sublot.id} value={sublot.id}>
                   {sublot.name}
                 </option>
@@ -205,7 +205,7 @@ export const CreateMovement = () => {
               disabled={!selectedCrop || isLoadingVarieties}
             >
               <option value="">Seleccione una variedad</option>
-              {varieties?.map((variety) => (
+              {Array.isArray(varieties) && varieties?.map((variety) => (
                 <option key={variety.rowid} value={variety.name}>
                   {variety.name}
                 </option>
