@@ -31,9 +31,14 @@ export const SupplierAccountStatement = () => {
   // Filter movements by selected cuenta (if any)
   const filteredMovements = useMemo(() => {
     const movements = data?.movements ?? [];
-    if (!filters.cuenta) return movements;
-    return movements.filter(movement => movement.cuenta === filters.cuenta);
-  }, [data, filters.cuenta]);
+    const byCuenta = !filters.cuenta
+      ? movements
+      : movements.filter(movement => movement.cuenta === filters.cuenta);
+    const byDocType = (filters.document_types && filters.document_types.length > 0)
+      ? byCuenta.filter(m => filters.document_types!.includes(m.document_type))
+      : byCuenta;
+    return byDocType;
+  }, [data, filters.cuenta, filters.document_types]);
 
   // Calculate summary data (based on filtered movements)
   const summaryData = useMemo(() => {
@@ -73,6 +78,13 @@ export const SupplierAccountStatement = () => {
     return uniqueCuentas.sort();
   }, [data]);
 
+  // Extract unique document types from movements
+  const availableDocumentTypes = useMemo(() => {
+    const movements = data?.movements ?? [];
+    const unique = Array.from(new Set(movements.map(m => m.document_type).filter(Boolean)));
+    return unique.sort();
+  }, [data]);
+
   if (error) {
     return (
       <div className="p-6">
@@ -100,6 +112,7 @@ export const SupplierAccountStatement = () => {
               onClear={clearFilters}
               suppliers={mappedSuppliers}
               cuentas={availableCuentas}
+              documentTypes={availableDocumentTypes}
             />
 
             {isLoading && (

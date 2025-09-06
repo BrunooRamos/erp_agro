@@ -100,6 +100,7 @@ export interface AccountStatementFilters {
   currency?: string;
   entity?: number;
   cuenta?: string;
+  document_types?: string[];
   start_date?: string;
   end_date?: string;
   only_pending?: boolean;

@@ -10,6 +10,7 @@ interface AccountStatementFiltersProps {
     onClear: () => void;
     suppliers?: Supplier[];
     cuentas?: string[];
+    documentTypes?: string[];
 }
 
 export const AccountStatementFilters: React.FC<AccountStatementFiltersProps> = ({
@@ -17,7 +18,8 @@ export const AccountStatementFilters: React.FC<AccountStatementFiltersProps> = (
     onFiltersChange,
     onClear,
     suppliers = [],
-    cuentas = []
+    cuentas = [],
+    documentTypes = []
 }) => {
     return (
       <Card title="Filtros" className="mb-4">
@@ -62,6 +64,22 @@ export const AccountStatementFilters: React.FC<AccountStatementFiltersProps> = (
               {cuentas.map(cuenta => (
                 <Select.Option key={cuenta} value={cuenta}>
                   {cuenta}
+                </Select.Option>
+              ))}
+            </Select>
+          </Col>
+          <Col xs={24} sm={12} md={8} lg={6}>
+            <Select
+              mode="multiple"
+              placeholder="Tipo de documento"
+              value={filters.document_types}
+              onChange={(value) => onFiltersChange({ document_types: value })}
+              className="w-full"
+              allowClear
+            >
+              {documentTypes.map(type => (
+                <Select.Option key={type} value={type}>
+                  {type}
                 </Select.Option>
               ))}
             </Select>
