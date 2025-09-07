@@ -16,6 +16,7 @@ export interface InvoiceElement {
     invoice:       InvoiceInvoice;
     supplier:      Supplier;
     bank_accounts: BankAccount[];
+    credit_notes?: CreditNote[];
 }
 
 export interface BankAccount {
@@ -48,6 +49,15 @@ export interface InvoiceInvoice {
     paye:           string;
     cuenta:         string;
     currency:       Currency;
+}
+
+export interface CreditNote {
+    id: string;
+    ref: string;
+    date: string | Date;
+    amount: number;
+    currency: 'USD' | 'UYU';
+    status: string;
 }
 
 export interface Supplier {
