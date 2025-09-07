@@ -101,7 +101,7 @@ export const useSupplier = () => {
         setShowPaymentOrderModal(false);
     };
 
-    const availableCurrencies = ["UYU", "USD"];
+    const availableCurrencies = ["UYU", "USD", "EFECTIVO_UYU", "EFECTIVO_USD"];
 
     // Obtener las facturas separadas por moneda
     const getInvoicesByCurrency = () => {
@@ -120,7 +120,7 @@ export const useSupplier = () => {
 
         // Calcular totales por moneda
         const totalUSD = selectedInvoices
-            .filter(item => item.currency === "USD")
+            .filter(item => item.currency === "USD" || item.currency === "EFECTIVO_USD")
             .reduce((sum, item) => {
                 const amount = item.invoice.invoice.pending_amount || 
                     (item.invoice.invoice.currency.code === "USD" 
@@ -130,7 +130,7 @@ export const useSupplier = () => {
             }, 0);
 
         const totalUYU = selectedInvoices
-            .filter(item => item.currency === "UYU")
+            .filter(item => item.currency === "UYU" || item.currency === "EFECTIVO_UYU")
             .reduce((sum, item) => {
                 const amount = item.invoice.invoice.pending_amount || 
                     (item.invoice.invoice.currency.code === "UYU" 
@@ -163,7 +163,7 @@ export const useSupplier = () => {
             const supplier = supplierTotalsMap.get(supplierId)!;
             supplier.invoicesCount++;
             
-            if (item.currency === 'USD') {
+            if (item.currency === 'USD' || item.currency === 'EFECTIVO_USD') {
                 supplier.totalUSD += amount;
             } else {
                 supplier.totalUYU += amount;

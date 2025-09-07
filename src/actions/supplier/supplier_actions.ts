@@ -50,7 +50,7 @@ export const generateSupplierInvoicePDF = (
     doc.text(`Fecha: ${new Date().toLocaleDateString()}`, 14, 30);
     doc.text('Forma de Pago: BANCO', pageWidth - 14, 30, { align: 'right' });
 
-    // Agrupar por proveedor y calcular totales por moneda
+    // Agrupar por proveedor y calcular totales por moneda, separando Banco vs Efectivo
     type SupplierRow = {
         supplierName: string;
         supplierCode?: string;
@@ -59,35 +59,43 @@ export const generateSupplierInvoicePDF = (
         bankAccount?: InvoiceElement["bank_accounts"][number] | null;
     };
 
-    const supplierMap = new Map<string, SupplierRow>();
+    const supplierBankMap = new Map<string, SupplierRow>();
+    const supplierCashMap = new Map<string, SupplierRow>();
+
+    const resolvePaymentCurrencyCode = (currency: string): 'USD' | 'UYU' => {
+        return currency.includes('USD') ? 'USD' : 'UYU';
+    };
 
     selectedInvoices.forEach(item => {
         const supplierId = item.invoice.supplier.id;
         const supplierName = item.invoice.supplier.name;
+        const paymentCurrency = resolvePaymentCurrencyCode(item.currency);
         const amount = item.invoice.invoice.pending_amount ||
-            (item.invoice.invoice.currency.code === item.currency
+            (item.invoice.invoice.currency.code === paymentCurrency
                 ? item.invoice.invoice.currency.total_ttc
                 : item.invoice.invoice.total_ttc);
 
-        if (!supplierMap.has(supplierId)) {
-            supplierMap.set(supplierId, {
+        const isCash = item.currency === 'EFECTIVO_UYU' || item.currency === 'EFECTIVO_USD';
+        const targetMap = isCash ? supplierCashMap : supplierBankMap;
+
+        if (!targetMap.has(supplierId)) {
+            targetMap.set(supplierId, {
                 supplierName,
-                supplierCode: undefined, // No disponible en la interfaz actual de Invoice.supplier
+                supplierCode: undefined,
                 totalUYU: 0,
                 totalUSD: 0,
                 bankAccount: null,
             });
         }
 
-        const row = supplierMap.get(supplierId)!;
-        if (item.currency === 'USD') {
+        const row = targetMap.get(supplierId)!;
+        if (paymentCurrency === 'USD') {
             row.totalUSD += amount;
         } else {
             row.totalUYU += amount;
         }
 
-        // Elegir una cuenta bancaria representativa para el proveedor
-        if (!row.bankAccount) {
+        if (!isCash && !row.bankAccount) {
             const validBankAccounts = getValidBankAccounts(item.invoice);
             if (validBankAccounts.length > 0) {
                 const selected = item.bankAccountId
@@ -98,61 +106,212 @@ export const generateSupplierInvoicePDF = (
         }
     });
 
-    // Totales generales
-    const grandTotalUYU = Array.from(supplierMap.values()).reduce((s, r) => s + r.totalUYU, 0);
-    const grandTotalUSD = Array.from(supplierMap.values()).reduce((s, r) => s + r.totalUSD, 0);
+    // Totales generales por tipo de pago
+    const grandTotalBankUYU = Array.from(supplierBankMap.values()).reduce((s, r) => s + r.totalUYU, 0);
+    const grandTotalBankUSD = Array.from(supplierBankMap.values()).reduce((s, r) => s + r.totalUSD, 0);
+    const grandTotalCashUYU = Array.from(supplierCashMap.values()).reduce((s, r) => s + r.totalUYU, 0);
+    const grandTotalCashUSD = Array.from(supplierCashMap.values()).reduce((s, r) => s + r.totalUSD, 0);
 
-    // Tabla principal similar a Excel
-    const head = [[
-        'Nombre',
-        'Cod.',
-        'UYU',
-        'USD',
-        'Banco',
-        'Tipo',
-        'Mon.',
-        'Nro.',
-        'Titular'
-    ]];
+    // Dos tablas separadas por moneda
+    let currentY = 45;
 
-    const body = Array.from(supplierMap.values())
+    // Tabla para pagos en Pesos (UYU) - Banco
+    const uyRows = Array.from(supplierBankMap.values())
+        .filter(r => r.totalUYU > 0)
         .sort((a, b) => a.supplierName.localeCompare(b.supplierName))
         .map(r => {
             const bank = r.bankAccount;
-            const inferredBankCurrency = r.totalUSD > 0 && r.totalUYU === 0
-                ? 'USD'
-                : r.totalUYU > 0 && r.totalUSD === 0
-                    ? 'UYU'
-                    : '-';
-
             return [
                 r.supplierName,
                 r.supplierCode || '-',
-                r.totalUYU > 0 ? `$ ${r.totalUYU.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-',
-                r.totalUSD > 0 ? `$ ${r.totalUSD.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-',
+                `$ ${r.totalUYU.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                r.totalUSD > 0 ? `U$S ${r.totalUSD.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-',
                 bank?.bank_name || '-',
                 bank?.label || '-',
-                inferredBankCurrency,
+                'UYU',
                 bank?.account_number || bank?.iban || '-',
                 bank?.owner || '-',
             ];
         });
 
-    autoTable(doc, {
-        head,
-        body,
-        startY: 45,
-        theme: 'striped',
-        headStyles: { fillColor: [41, 128, 185] },
-        foot: [[
-            'Total general',
-            '',
-            `$ ${grandTotalUYU.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-            `$ ${grandTotalUSD.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-            '', '', '', '', ''
-        ]],
-        footStyles: { fillColor: [46, 204, 113] }
-    });
+    if (uyRows.length > 0) {
+        doc.setFontSize(13);
+        doc.text('Pagos en Pesos (UYU)', 14, currentY);
+        autoTable(doc, {
+            head: [[
+                'Nombre',
+                'Cod.',
+                'UYU',
+                'USD',
+                'Banco',
+                'Tipo',
+                'Mon.',
+                'Nro.',
+                'Titular'
+            ]],
+            body: uyRows,
+            startY: currentY + 5,
+            theme: 'striped',
+            headStyles: { fillColor: [41, 128, 185] },
+            foot: [[
+                'Total UYU',
+                '',
+                `$ ${grandTotalBankUYU.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                '',
+                '', '', '', '', ''
+            ]],
+            footStyles: { fillColor: [46, 204, 113] }
+        });
+        currentY = (doc as JsPDFWithAutoTable).lastAutoTable.finalY + 10;
+    }
+
+    // Tabla para pagos en Dólares (USD) - Banco
+    const usdRows = Array.from(supplierBankMap.values())
+        .filter(r => r.totalUSD > 0)
+        .sort((a, b) => a.supplierName.localeCompare(b.supplierName))
+        .map(r => {
+            const bank = r.bankAccount;
+            return [
+                r.supplierName,
+                r.supplierCode || '-',
+                r.totalUYU > 0 ? `$ ${r.totalUYU.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-',
+                `U$S ${r.totalUSD.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                bank?.bank_name || '-',
+                bank?.label || '-',
+                'USD',
+                bank?.account_number || bank?.iban || '-',
+                bank?.owner || '-',
+            ];
+        });
+
+    if (usdRows.length > 0) {
+        // Si estamos muy abajo en la página, autoTable puede agregar página nueva automáticamente
+        doc.setFontSize(13);
+        doc.text('Pagos en Dólares (USD)', 14, currentY);
+        autoTable(doc, {
+            head: [[
+                'Nombre',
+                'Cod.',
+                'UYU',
+                'USD',
+                'Banco',
+                'Tipo',
+                'Mon.',
+                'Nro.',
+                'Titular'
+            ]],
+            body: usdRows,
+            startY: currentY + 5,
+            theme: 'striped',
+            headStyles: { fillColor: [41, 128, 185] },
+            foot: [[
+                'Total USD',
+                '',
+                '',
+                `U$S ${grandTotalBankUSD.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                '', '', '', '', ''
+            ]],
+            footStyles: { fillColor: [46, 204, 113] }
+        });
+    }
+
+    // Tabla para pagos en Efectivo UYU
+    const cashUyRows = Array.from(supplierCashMap.values())
+        .filter(r => r.totalUYU > 0)
+        .sort((a, b) => a.supplierName.localeCompare(b.supplierName))
+        .map(r => {
+            return [
+                r.supplierName,
+                r.supplierCode || '-',
+                `$ ${r.totalUYU.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                r.totalUSD > 0 ? `U$S ${r.totalUSD.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-',
+                '-',
+                'EFECTIVO',
+                'UYU',
+                '-',
+                '-',
+            ];
+        });
+
+    if (cashUyRows.length > 0) {
+        currentY = (doc as JsPDFWithAutoTable).lastAutoTable ? (doc as JsPDFWithAutoTable).lastAutoTable.finalY + 10 : currentY;
+        doc.setFontSize(13);
+        doc.text('Pagos en Efectivo (UYU)', 14, currentY);
+        autoTable(doc, {
+            head: [[
+                'Nombre',
+                'Cod.',
+                'UYU',
+                'USD',
+                'Banco',
+                'Tipo',
+                'Mon.',
+                'Nro.',
+                'Titular'
+            ]],
+            body: cashUyRows,
+            startY: currentY + 5,
+            theme: 'striped',
+            headStyles: { fillColor: [41, 128, 185] },
+            foot: [[
+                'Total UYU',
+                '',
+                `$ ${grandTotalCashUYU.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                '',
+                '', '', '', '', ''
+            ]],
+            footStyles: { fillColor: [46, 204, 113] }
+        });
+    }
+
+    // Tabla para pagos en Efectivo USD
+    const cashUsdRows = Array.from(supplierCashMap.values())
+        .filter(r => r.totalUSD > 0)
+        .sort((a, b) => a.supplierName.localeCompare(b.supplierName))
+        .map(r => {
+            return [
+                r.supplierName,
+                r.supplierCode || '-',
+                r.totalUYU > 0 ? `$ ${r.totalUYU.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-',
+                `U$S ${r.totalUSD.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                '-',
+                'EFECTIVO',
+                'USD',
+                '-',
+                '-',
+            ];
+        });
+
+    if (cashUsdRows.length > 0) {
+        currentY = (doc as JsPDFWithAutoTable).lastAutoTable ? (doc as JsPDFWithAutoTable).lastAutoTable.finalY + 10 : currentY;
+        doc.setFontSize(13);
+        doc.text('Pagos en Efectivo (USD)', 14, currentY);
+        autoTable(doc, {
+            head: [[
+                'Nombre',
+                'Cod.',
+                'UYU',
+                'USD',
+                'Banco',
+                'Tipo',
+                'Mon.',
+                'Nro.',
+                'Titular'
+            ]],
+            body: cashUsdRows,
+            startY: currentY + 5,
+            theme: 'striped',
+            headStyles: { fillColor: [41, 128, 185] },
+            foot: [[
+                'Total USD',
+                '',
+                '',
+                `U$S ${grandTotalCashUSD.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                '', '', '', '', ''
+            ]],
+            footStyles: { fillColor: [46, 204, 113] }
+        });
+    }
 
     // Guardar
     doc.save(`orden_pago_resumen_${new Date().toISOString().slice(0, 10)}.pdf`);
