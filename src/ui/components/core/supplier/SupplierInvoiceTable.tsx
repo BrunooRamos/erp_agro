@@ -1,6 +1,6 @@
 import { Table, Checkbox, Tooltip, Select, Typography, Tag, Input, Space, Button } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { InvoiceElement } from '../../../../interfaces';
 import type { InputRef, TableColumnType } from 'antd';
 import type { FilterDropdownProps } from 'antd/es/table/interface';
@@ -28,6 +28,10 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
   availableCurrencies,
 }) => {
   const searchInput = useRef<InputRef>(null);
+  const [expandedRowKeys, setExpandedRowKeys] = useState<string[]>([]);
+  const toggleDetails = (id: string) => {
+    setExpandedRowKeys(prev => prev.includes(id) ? prev.filter(k => k !== id) : [...prev, id]);
+  };
 
   // Función helper para verificar si una cuenta bancaria es válida
   const hasValidBankAccount = (record: InvoiceElement) => {
@@ -186,6 +190,19 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
       },
     },
     {
+      title: 'Detalles',
+      key: 'details',
+      render: (record: InvoiceElement) => {
+        const hasNotes = (record.credit_notes?.length || 0) > 0;
+        const isExpanded = expandedRowKeys.includes(record.invoice.id);
+        return (
+          <Button size="small" onClick={() => toggleDetails(record.invoice.id)} disabled={!hasNotes}>
+            {isExpanded ? 'Ocultar' : 'Detalles'}
+          </Button>
+        );
+      },
+    },
+    {
       title: 'Ref. Dolibarr',
       dataIndex: ['invoice', 'ref'],
       key: 'ref',
@@ -332,6 +349,32 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
       rowKey={(record) => record.invoice.id}
       pagination={{ pageSize: 10 }}
       scroll={{ x: 1500 }}
+      expandable={{
+        expandedRowKeys,
+        onExpandedRowsChange: (keys) => setExpandedRowKeys(keys as string[]),
+        expandIcon: () => null,
+        expandedRowRender: (record: InvoiceElement) => (
+          <div className="pl-6">
+            {record.credit_notes && record.credit_notes.length > 0 ? (
+              <div>
+                <Text strong>Notas de crédito asociadas</Text>
+                <div className="mt-2">
+                  {record.credit_notes.map((note) => (
+                    <div key={note.id} className="text-sm mb-1">
+                      <span>
+                        {note.ref} | {new Date(note.date).toLocaleDateString()} | {note.currency === 'USD' ? `U$S ${note.amount.toFixed(2)}` : `$ ${note.amount.toFixed(2)}`} | {note.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <Text type="secondary">Sin notas de crédito</Text>
+            )}
+          </div>
+        ),
+        rowExpandable: (record: InvoiceElement) => (record.credit_notes?.length || 0) > 0,
+      }}
     />
   );
 };
