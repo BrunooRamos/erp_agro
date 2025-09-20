@@ -35,6 +35,7 @@ export * from "./cost-center/useExpenses"
 // Supplier
 export * from "./supplier/useSupplier"
 export * from "./supplier/useSupplierAccountStatement"
+export * from "./supplier/useSupplierDueReport"
 
 // Config
 export * from "./config/useBaseMutation"
