@@ -149,3 +149,91 @@ export interface SupplierTotal {
   totalUSD: number;
   totalUYU: number;
 }
+
+// ---- Supplier Due Report (Vencimientos Estudio) ----
+
+export interface AvailableAccountsResponse {
+  total_count: number;
+  accounts: AvailableAccount[];
+}
+
+export interface AvailableAccount {
+  cuenta: string;
+  label: string;
+}
+
+export interface SupplierDueReportFilters {
+  account: string; // value of "cuenta"
+  date_from: string; // YYYY-MM-DD
+  date_to: string; // YYYY-MM-DD
+}
+
+export interface SupplierDueReport {
+  total_count: number;
+  report_header: SupplierDueReportHeader;
+  invoices: SupplierDueReportInvoiceEntry[];
+  subtotals: {
+    by_supplier: SupplierDueReportSupplierSubtotal[];
+    by_month_due: SupplierDueReportMonthSubtotal[];
+  };
+  grand_total: SupplierDueReportTotal;
+}
+
+export interface SupplierDueReportHeader {
+  account_label: string;
+  date_from: string; // YYYY-MM-DD
+  date_to: string; // YYYY-MM-DD
+  generated_at: string; // ISO string
+}
+
+export interface SupplierDueReportInvoiceEntry {
+  invoice: SupplierDueReportInvoice;
+  supplier: { id: string; name: string };
+  payments: SupplierDueReportPayment[];
+  credit_notes: SupplierDueReportCreditNote[];
+  bank_accounts: unknown[];
+}
+
+export interface SupplierDueReportInvoice {
+  id: string;
+  ref: string; // N° Doc.
+  ref_supplier?: string | null; // Optional/tooltip
+  date: string; // YYYY-MM-DD
+  due_date: string; // YYYY-MM-DD
+  month_year_due: string; // MM-YYYY
+  type_document: 'Credito' | 'Contado' | 'Pago' | 'Nota de crédito';
+  printable_amounts: {
+    amount_uyu: number; // Columna "$"
+    amount_usd: number; // Columna "U$S"
+  };
+}
+
+export interface SupplierDueReportPayment {
+  payment_order_ref: string | null; // N° Orden de Pago
+  payment_order_date: string | null; // YYYY-MM-DD
+}
+
+export interface SupplierDueReportCreditNote {
+  id: string;
+  ref: string;
+  amount: number;
+  currency: 'UYU' | 'USD';
+}
+
+export interface SupplierDueReportSupplierSubtotal {
+  supplier_id: string;
+  supplier_name: string;
+  amount_uyu: number;
+  amount_usd: number;
+}
+
+export interface SupplierDueReportMonthSubtotal {
+  month_year_due: string; // MM-YYYY
+  amount_uyu: number;
+  amount_usd: number;
+}
+
+export interface SupplierDueReportTotal {
+  amount_uyu: number;
+  amount_usd: number;
+}

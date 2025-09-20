@@ -17,6 +17,13 @@ export const HomeSupplier = () => {
         to="/supplier/invoices"
         description="Ordenes de pago"
       />
+      <OptionCard
+        visible={true}
+        icon="fa-solid fa-file-invoice"
+        title="Vencimientos (Estudio)"
+        to="/supplier/due-report"
+        description="Vencimientos (Estudio)"
+      />
     </div>
   );
 };

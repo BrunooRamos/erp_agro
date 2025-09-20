@@ -67,6 +67,7 @@ import {
   HomeSupplier,
   SupplierInvoiceList,
   SupplierAccountStatement,
+  SupplierDueReport,
 } from "../features/index";
 import { MenuRoute } from "../interfaces";
 
@@ -453,6 +454,13 @@ export const menuRoutes: MenuRoute[] = [
         title: "Estado de cuenta",
         description: "Estado de cuenta de proveedores",
         component: <SupplierAccountStatement />,
+        visible: true,
+      },
+      {
+        to: "/supplier/due-report",
+        title: "Vencimientos (Estudio)",
+        description: "Reporte de Vencimientos (Estudio)",
+        component: <SupplierDueReport />,
         visible: true,
       },
     ],
