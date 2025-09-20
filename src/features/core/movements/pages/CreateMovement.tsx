@@ -197,20 +197,34 @@ export const CreateMovement = () => {
             error={errors.variety?.message || ""}
             required
           >
-            <select
-              className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
-              {...register("variety", {
-                required: "Este campo es requerido",
-              })}
-              disabled={!selectedCrop || isLoadingVarieties}
-            >
-              <option value="">Seleccione una variedad</option>
-              {Array.isArray(varieties) && varieties?.map((variety) => (
-                <option key={variety.rowid} value={variety.name}>
-                  {variety.name}
-                </option>
-              ))}
-            </select>
+            {Array.isArray(varieties) && varieties.length > 0 ? (
+              <select
+                className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
+                {...register("variety", {
+                  required: "Este campo es requerido",
+                })}
+                disabled={!selectedCrop || isLoadingVarieties}
+              >
+                <option value="">Seleccione una variedad</option>
+                {varieties.map((variety) => (
+                  <option key={variety.rowid} value={variety.name}>
+                    {variety.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                {...register("variety", {
+                  required: "Este campo es requerido",
+                })}
+                name="variety"
+                placeholder="Ingrese la variedad"
+                type="text"
+                autoComplete="off"
+                className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
+                disabled={!selectedCrop || isLoadingVarieties}
+              />
+            )}
           </FormField>
 
           <FormField
