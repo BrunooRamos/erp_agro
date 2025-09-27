@@ -1,20 +1,35 @@
 import { useForm } from "react-hook-form";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { generateFieldLotCode } from "../../../../helpers";
 import {
   CropForm,
   FieldEntity,
-  CropLot,
 } from "../../../../interfaces";
 import { useCrop, useField } from "../../../../hooks";
 import { FormField } from "../../../../ui/components";
 
+// Local UI form type to align inputs (strings) with API (numbers)
+type CropFormUI = Omit<CropForm, 'codigo_campo' | 'status' | 'lots' | 'sub_lots'> & {
+  codigo_campo: string;
+  status: string;
+  lots: Array<{ id_lote: string; area_utilizada: number }>;
+  sub_lots?: Array<{ id_parent_lot: string; name: string; area_utilizada: number }>;
+};
+
 export const FormCrop = () => {
-  // Get the createCrop mutation (update functionality removed)
-  const { createCrop } = useCrop();
+  const { code } = useParams(); // This is actually rowid for get operation
+  const isEditMode = !!code;
+  
+  // Get the createCrop and updateCrop mutations
+  // For get operation, we pass the rowid (which comes as 'code' param)
+  const { createCrop, updateCrop, getCrop } = useCrop(code);
   const { mutate: createCropMutation } = createCrop;
+  const { mutate: updateCropMutation } = updateCrop;
+  
+  // Get crop data for edit mode
+  const { data: cropData, isLoading: isLoadingCrop } = getCrop;
 
   // Get fields data
   const { getFields } = useField();
@@ -30,11 +45,11 @@ export const FormCrop = () => {
     setValue,
     watch,
     reset,
-  } = useForm<CropForm>();
+  } = useForm<CropFormUI>();
 
   // Local states
   const [selectedFieldName, setSelectedFieldName] = useState<string>("");
-  const [selectedLots, setSelectedLots] = useState<CropLot[]>([]);
+  const [selectedLots, setSelectedLots] = useState<Array<{id_lote: string, area_utilizada: number}>>([]);
   // State to control "use max area" checkboxes per lot
   const [maxAreaChecked, setMaxAreaChecked] = useState<{ [key: string]: boolean }>({});
 
@@ -53,19 +68,76 @@ export const FormCrop = () => {
   const selectedPeriod = watch("periodo");
   const selectedYear = watch("anio");
 
-  // Generate the crop code using helper function
+  // Generate the crop code using helper function (only for create mode)
   useEffect(() => {
-    const codeString = generateFieldLotCode(
-      selectedFieldName,
-      selectedCultivo,
-      selectedPeriod,
-      selectedYear
-    );
-    setValue("code", codeString);
-  }, [selectedFieldName, selectedCultivo, selectedPeriod, selectedYear, setValue]);
+    if (!isEditMode) {
+      const codeString = generateFieldLotCode(
+        selectedFieldName,
+        selectedCultivo,
+        selectedPeriod,
+        selectedYear
+      );
+      setValue("code", codeString);
+    }
+  }, [selectedFieldName, selectedCultivo, selectedPeriod, selectedYear, setValue, isEditMode]);
+
+  // Populate form with existing crop data in edit mode
+  useEffect(() => {
+    if (isEditMode && cropData && fieldsData) {
+      // Set basic form fields
+      setValue("code", cropData.code || "");
+      setValue("codigo_campo", cropData.codigo_campo ? cropData.codigo_campo.toString() : "");
+      setValue("cultivo", cropData.cultivo || "");
+      setValue("periodo", cropData.periodo || "");
+      setValue("anio", cropData.anio || "");
+      setValue("etapa", cropData.etapa || "");
+      setValue("description", cropData.description || "");
+      setValue("status", cropData.status ?? "1");
+      
+      // Set field name for code generation
+      const field = fieldsData.find((f) => f.rowid === String(cropData.codigo_campo ?? ""));
+      if (field) {
+        setSelectedFieldName(field.name);
+      }
+      
+      // Set existing lots if available
+      if (cropData.lots && Array.isArray(cropData.lots) && cropData.lots.length > 0) {
+        const lots = cropData.lots
+          .filter(lot => lot && lot.id_lote) // Filter out invalid lots
+          .map(lot => ({
+            id_lote: lot.id_lote.toString(), // Keep as string for form handling
+            area_utilizada: lot.area_utilizada || 0
+          }));
+        setSelectedLots(lots);
+        
+        // Set existing sublots if available
+        const sublots: { [lotId: string]: Array<{ name: string; area_utilizada: number }> } = {};
+        const maxAreaStates: { [key: string]: boolean } = {};
+        
+        cropData.lots.forEach(lot => {
+          const lotId = lot.id_lote.toString();
+          
+          // Check if this lot is using max area (comparing with available lotData when it's loaded)
+          if (lot.sub_lots && Array.isArray(lot.sub_lots) && lot.sub_lots.length > 0) {
+            sublots[lotId] = lot.sub_lots.map(sublot => ({
+              name: sublot.name,
+              area_utilizada: sublot.area_utilizada
+            }));
+            maxAreaStates[lotId] = false; // Has sublots, so not using max area
+          } else {
+            // No sublots, check if using max area (will be determined when lotData is available)
+            maxAreaStates[lotId] = false; // Default to false, will be updated when lotData loads
+          }
+        });
+        
+        setAddedSubLots(sublots);
+        setMaxAreaChecked(maxAreaStates);
+      }
+    }
+  }, [isEditMode, cropData, fieldsData, setValue]);
 
   // Retrieve available lots based on the selected field
-  const { getLotByField } = useField(undefined, selectedField);
+  const { getLotByField } = useField(undefined, selectedField || undefined);
   const { data: lotData } = getLotByField;
   useEffect(() => {
     if (selectedField) {
@@ -73,13 +145,45 @@ export const FormCrop = () => {
     }
   }, [selectedField, getLotByField]);
 
+  // Update max area states when lot data is available and we have selected lots from edit mode
+  useEffect(() => {
+    if (isEditMode && lotData && selectedLots.length > 0) {
+      const updatedMaxAreaStates: { [key: string]: boolean } = {};
+      
+      selectedLots.forEach(selectedLot => {
+        const lotInfo = lotData.find(lot => lot.rowid === selectedLot.id_lote);
+        if (lotInfo) {
+          // Check if the selected area equals the lot's max area and there are no sublots
+          const hasSubLots = addedSubLots[selectedLot.id_lote]?.length > 0;
+          const isUsingMaxArea = !hasSubLots && selectedLot.area_utilizada === Number(lotInfo.area_real);
+          updatedMaxAreaStates[selectedLot.id_lote] = isUsingMaxArea;
+        }
+      });
+      
+      setMaxAreaChecked(prev => ({ ...prev, ...updatedMaxAreaStates }));
+    }
+  }, [isEditMode, lotData, selectedLots, addedSubLots]);
+
   // Update the used area for a lot (checks if it exceeds the available area)
   const handleLotAreaChange = (lotId: string, area: number) => {
-    const lot = lotData?.find((l) => l.rowid === lotId);
-    if (lot && area > Number(lot.area_real)) {
-      toast.error(`El área no puede ser mayor a ${lot.area_real}`);
+    const lot = lotData?.find((l) => l.rowid.toString() === lotId);
+    if (!lot) return;
+
+    // If there are sublots, don't allow direct area (they should manage area through sublots)
+    const hasSubLots = addedSubLots[lotId]?.length > 0;
+    if (hasSubLots && area > 0) {
+      toast.error("No puede asignar área directa cuando hay sublotes. Gestione el área a través de los sublotes.");
       return;
     }
+
+    // Validate area limit
+    if (!validateAreaLimit(lotId, area, false)) {
+      const currentSublotsArea = addedSubLots[lotId]?.reduce((sum, sublot) => sum + sublot.area_utilizada, 0) || 0;
+      const remaining = Number(lot.area_real) - currentSublotsArea;
+      toast.error(`Área excede el límite. Área máxima: ${lot.area_real} ha. Área disponible: ${remaining.toFixed(2)} ha`);
+      return;
+    }
+
     setSelectedLots((prev) =>
       prev.some((l) => l.id_lote === lotId)
         ? prev.map((l) => (l.id_lote === lotId ? { ...l, area_utilizada: area } : l))
@@ -99,16 +203,47 @@ export const FormCrop = () => {
     }
   };
 
-  // Handle sublot addition:
-  // - Disables the "use max area" option
-  // - Resets the lot's used area to 0
-  // - Adds the sublot to the list of sublots for that lot
+  // Calculate total area used for a lot (direct area + sublots area)
+  const calculateTotalAreaUsed = (lotId: string) => {
+    const directArea = selectedLots.find(l => l.id_lote === lotId)?.area_utilizada || 0;
+    const sublotsArea = addedSubLots[lotId]?.reduce((sum, sublot) => sum + sublot.area_utilizada, 0) || 0;
+    return directArea + sublotsArea;
+  };
+
+  // Check if adding area would exceed lot's maximum
+  const validateAreaLimit = (lotId: string, newArea: number, isSubLot: boolean = false) => {
+    const lot = lotData?.find((l) => l.rowid.toString() === lotId);
+    if (!lot) return false;
+
+    const currentDirectArea = selectedLots.find(l => l.id_lote === lotId)?.area_utilizada || 0;
+    const currentSublotsArea = addedSubLots[lotId]?.reduce((sum, sublot) => sum + sublot.area_utilizada, 0) || 0;
+    
+    let totalArea;
+    if (isSubLot) {
+      totalArea = currentDirectArea + currentSublotsArea + newArea;
+    } else {
+      totalArea = newArea + currentSublotsArea;
+    }
+
+    return totalArea <= Number(lot.area_real);
+  };
+
+  // Handle sublot addition with validation
   const handleSubLotChange = (lotId: string) => {
     const currentInput = subLotInputs[lotId];
     if (currentInput && currentInput.name && currentInput.area_utilizada > 0) {
+      // Validate area limit
+      if (!validateAreaLimit(lotId, currentInput.area_utilizada, true)) {
+        const lot = lotData?.find((l) => l.rowid.toString() === lotId);
+        const totalUsed = calculateTotalAreaUsed(lotId);
+        const remaining = Number(lot?.area_real || 0) - totalUsed;
+        toast.error(`Área excede el límite. Área máxima: ${lot?.area_real} ha. Área disponible: ${remaining.toFixed(2)} ha`);
+        return;
+      }
+
       // Disable "use max area" for this lot
       setMaxAreaChecked((prev) => ({ ...prev, [lotId]: false }));
-      // Reset the lot's used area to 0
+      // Reset the lot's used area to 0 if there are sublots
       handleLotAreaChange(lotId, 0);
       // Add the sublot
       setAddedSubLots((prev) => ({
@@ -124,35 +259,82 @@ export const FormCrop = () => {
 
   // On form submission, compile the crop data along with lots and sublots
   const onSubmit = handleSubmit((data) => {
-    const formData = {
-      ...data,
-      lots: selectedLots,
+    // Validate that no lot exceeds its maximum area
+    const invalidLots = selectedLots.filter(selectedLot => {
+      const totalUsed = calculateTotalAreaUsed(selectedLot.id_lote);
+      const lot = lotData?.find((l) => l.rowid.toString() === selectedLot.id_lote);
+      return lot && totalUsed > Number(lot.area_real);
+    });
+
+    if (invalidLots.length > 0) {
+      toast.error("Algunos lotes exceden su área máxima. Por favor, corrija antes de continuar.");
+      return;
+    }
+
+    // Build API payload with proper data types according to API specification
+    const apiData: CropForm = {
+      code: data.code,
+      codigo_campo: parseInt(data.codigo_campo),
+      cultivo: data.cultivo,
+      periodo: data.periodo,
+      anio: data.anio,
+      etapa: data.etapa,
+      description: data.description,
+      status: parseInt(data.status),
+      lots: selectedLots.map(lot => ({
+        id_lote: parseInt(lot.id_lote),
+        area_utilizada: parseFloat(lot.area_utilizada.toString())
+      })),
     };
 
-    // Transform sublots data into an array
+    // Transform sublots data into an array with proper types
     const subLots = Object.entries(addedSubLots).flatMap(([lotId, sublots]) =>
       sublots.map(({ name, area_utilizada }) => ({
-        id_parent_lot: lotId,
+        id_parent_lot: parseInt(lotId),
         name,
-        area_utilizada,
+        area_utilizada: parseFloat(area_utilizada.toString())
       }))
     );
-    formData.sub_lots = subLots;
+    if (subLots.length > 0) {
+      apiData.sub_lots = subLots;
+    }
   
-    createCropMutation(formData, {
-      onSuccess: () => {
-        navigate("/crop/list");
-        reset();
-      },
-      onError: (error) => {
-        toast.error("Error al crear el cultivo: " + error);
-      },
-    });
+    // Debug: Log the data being sent
+    console.log("=== FORM DATA BEING SENT ===");
+    console.log("Is Edit Mode:", isEditMode);
+    console.log("URL Param (rowid for get):", code);
+    console.log("Crop Data code (for update):", cropData?.code);
+    console.log("Form Data:", JSON.stringify(apiData, null, 2));
+    console.log("Selected Lots:", selectedLots);
+    console.log("Added SubLots:", addedSubLots);
+    console.log("================================");
+  
+     if (isEditMode && cropData?.code) {
+       updateCropMutation({ code: cropData.code, data: apiData }, {
+        onSuccess: () => {
+          navigate("/crop/list");
+        },
+        onError: (error) => {
+          console.error("Update Error:", error);
+          toast.error("Error al actualizar el cultivo: " + error);
+        },
+      });
+    } else {
+      createCropMutation(apiData, {
+        onSuccess: () => {
+          navigate("/crop/list");
+          reset();
+        },
+        onError: (error) => {
+          toast.error("Error al crear el cultivo: " + error);
+        },
+      });
+    }
   });
 
   const navigate = useNavigate();
 
-  if (isLoadingField) {
+  if (isLoadingField || (isEditMode && isLoadingCrop)) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-white bg-opacity-75 z-50">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-zinc-800"></div>
@@ -162,7 +344,9 @@ export const FormCrop = () => {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-4">Crear Cultivo</h1>
+      <h1 className="text-2xl font-bold mb-4">
+        {isEditMode ? "Editar Cultivo" : "Crear Cultivo"}
+      </h1>
       <form onSubmit={onSubmit} className="w-full">
         <div className="w-full grid grid-cols-2 gap-4">
           {/* Basic Information Section */}
@@ -177,7 +361,8 @@ export const FormCrop = () => {
               placeholder="ABC123"
               type="text"
               autoComplete="off"
-              className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
+              disabled={isEditMode}
+              className={`w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800 ${isEditMode ? 'bg-gray-100 cursor-not-allowed' : ''}`}
             />
           </FormField>
 
@@ -301,106 +486,142 @@ export const FormCrop = () => {
           <div className="col-span-2 mb-4">
             <h2 className="text-xl font-semibold mb-4 text-zinc-800">Lotes utilizados</h2>
             {lotData && lotData.length > 0 ? (
-              <div className="space-y-3">
-                {lotData.map((lot) => (
-                  <div
-                    key={lot.rowid}
-                    className="flex flex-col p-4 border border-gray-200 rounded-md bg-white shadow-sm hover:border-gray-300 transition-all"
-                  >
-                    <div className="flex items-center justify-between">
-                      {/* Lot selection */}
-                      <div className="flex items-center gap-4">
-                        <input
-                          type="checkbox"
-                          checked={selectedLots.some((l) => l.id_lote === lot.rowid)}
-                          onChange={(e) => handleLotSelection(lot.rowid, e.target.checked)}
-                          className="w-4 h-4 rounded border-gray-300 text-zinc-800 focus:ring-zinc-800"
-                          aria-label={`Select lot ${lot.name}`}
-                        />
-                        <span className="font-medium text-gray-700">{lot.name}</span>
-                      </div>
-                      {/* Sublot inputs and max area checkbox */}
-                      <div className="flex items-center gap-4">
-                        <div className="relative">
-                          <input
-                            value={subLotInputs[lot.rowid]?.name || ""}
-                            onChange={(e) =>
-                              setSubLotInputs((prev) => ({
-                                ...prev,
-                                [lot.rowid]: {
-                                  ...prev[lot.rowid],
-                                  name: e.target.value,
-                                  area_utilizada: prev[lot.rowid]?.area_utilizada || 0,
-                                },
-                              }))
-                            }
-                            type="text"
-                            placeholder="Sublote"
-                            className="w-32 px-3 py-2 mx-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-zinc-800 focus:border-zinc-800"
-                          />
-                          <input
-                            value={subLotInputs[lot.rowid]?.area_utilizada || ""}
-                            onChange={(e) =>
-                              setSubLotInputs((prev) => ({
-                                ...prev,
-                                [lot.rowid]: {
-                                  ...prev[lot.rowid],
-                                  name: prev[lot.rowid]?.name || "",
-                                  area_utilizada: Number(e.target.value),
-                                },
-                              }))
-                            }
-                            type="number"
-                            placeholder="0"
-                            className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-zinc-800 focus:border-zinc-800"
-                            min="0"
-                            max={lot.area_real}
-                            step="0.01"
-                          />
-                          <button
-                            type="button"
-                            className="bg-zinc-800 text-white px-4 py-2 mx-2 rounded-md"
-                            onClick={() => handleSubLotChange(lot.rowid)}
-                          >
-                            Agregar sublote
-                          </button>
-                        </div>
-                        {addedSubLots[lot.rowid]?.length > 0 && (
-                          <div className="ml-4">
-                            <h4 className="font-medium mb-2">Sublotes agregados:</h4>
-                            <ul className="space-y-2">
-                              {addedSubLots[lot.rowid].map((sublot, index) => (
-                                <li key={index} className="text-sm text-gray-600">
-                                  {sublot.name} - {sublot.area_utilizada} ha
-                                </li>
-                              ))}
-                            </ul>
+              <div className="space-y-4">
+                {lotData.map((lot) => {
+                  const lotId = lot.rowid.toString();
+                  const isSelected = selectedLots.some((l) => l.id_lote === lotId);
+                  const selectedLot = selectedLots.find(l => l.id_lote === lotId);
+                  const isMaxAreaChecked = maxAreaChecked[lotId] || false;
+                  
+                  return (
+                    <div
+                      key={lot.rowid}
+                      className="flex flex-col p-4 border border-gray-200 rounded-md bg-white shadow-sm hover:border-gray-300 transition-all"
+                    >
+                      {/* Header del lote */}
+                      <div className="p-4 border-b border-gray-200">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={(e) => handleLotSelection(lotId, e.target.checked)}
+                              className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              aria-label={`Select lot ${lot.name}`}
+                            />
+                            <div>
+                              <h3 className="font-semibold text-gray-900 text-lg">{lot.name}</h3>
+                              <p className="text-sm text-gray-500">Área disponible: {lot.area_real} ha</p>
+                            </div>
                           </div>
-                        )}
-                        <span className="text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-md">
-                          Max: {lot.area_real}
-                        </span>
-                        <input
-                          title="Usar área máxima"
-                          type="checkbox"
-                          checked={maxAreaChecked[lot.rowid] || false}
-                          onChange={(e) => {
-                            const useMax = e.target.checked;
-                            setMaxAreaChecked((prev) => ({ ...prev, [lot.rowid]: useMax }));
-                            // Remove previously added sublots for this lot
-                            setAddedSubLots((prev) => {
-                              const newAdded = { ...prev };
-                              delete newAdded[lot.rowid];
-                              return newAdded;
-                            });
-                            handleLotAreaChange(lot.rowid, useMax ? +lot.area_real : 0);
-                          }}
-                          className="w-4 h-4 rounded border-gray-300"
-                        />
+                          
+                          {/* Keep header minimal and consistent with common components */}
+                        </div>
                       </div>
+
+                      {/* Contenido del lote - solo visible si está seleccionado */}
+                      {isSelected && (
+                        <div className="flex items-center gap-4 mt-4">
+                          <div className="relative">
+                            <input
+                              title="Usar área máxima"
+                              type="checkbox"
+                              checked={isMaxAreaChecked}
+                              onChange={(e) => {
+                                const useMax = e.target.checked;
+                                setMaxAreaChecked((prev) => ({ ...prev, [lotId]: useMax }));
+                                setAddedSubLots((prev) => {
+                                  const newAdded = { ...prev };
+                                  delete newAdded[lotId];
+                                  return newAdded;
+                                });
+                                handleLotAreaChange(lotId, useMax ? +lot.area_real : 0);
+                              }}
+                              className="w-4 h-4 rounded border-gray-300 text-zinc-800 focus:ring-zinc-800"
+                            />
+                            <label className="ml-2 text-sm text-gray-700">
+                              Usar área máxima (Max: {lot.area_real})
+                            </label>
+                          </div>
+                          {!isMaxAreaChecked && (
+                            <>
+                              <input
+                                type="number"
+                                value={selectedLot?.area_utilizada || ''}
+                                onChange={(e) => handleLotAreaChange(lotId, Number(e.target.value))}
+                                placeholder="0"
+                                className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-zinc-800 focus:border-zinc-800"
+                                min="0"
+                                max={lot.area_real}
+                                step="0.01"
+                              />
+                              <span className="text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-md">
+                                Max: {lot.area_real}
+                              </span>
+                            </>
+                          )}
+                          {/* Sublotes */}
+                          <div className="flex items-center gap-2">
+                            <input
+                              value={subLotInputs[lotId]?.name || ''}
+                              onChange={(e) =>
+                                setSubLotInputs((prev) => ({
+                                  ...prev,
+                                  [lotId]: {
+                                    ...prev[lotId],
+                                    name: e.target.value,
+                                    area_utilizada: prev[lotId]?.area_utilizada || 0,
+                                  },
+                                }))
+                              }
+                              type="text"
+                              placeholder="Sublote"
+                              className="w-32 px-3 py-2 mx-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-zinc-800 focus:border-zinc-800"
+                            />
+                            <input
+                              value={subLotInputs[lotId]?.area_utilizada || ''}
+                              onChange={(e) =>
+                                setSubLotInputs((prev) => ({
+                                  ...prev,
+                                  [lotId]: {
+                                    ...prev[lotId],
+                                    name: prev[lotId]?.name || '',
+                                    area_utilizada: Number(e.target.value),
+                                  },
+                                }))
+                              }
+                              type="number"
+                              placeholder="0"
+                              className="w-32 px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-zinc-800 focus:border-zinc-800"
+                              min="0"
+                              max={lot.area_real}
+                              step="0.01"
+                            />
+                            <button
+                              type="button"
+                              className="bg-zinc-800 text-white px-4 py-2 mx-2 rounded-md"
+                              onClick={() => handleSubLotChange(lotId)}
+                            >
+                              Agregar sublote
+                            </button>
+                          </div>
+                          {addedSubLots[lotId]?.length > 0 && (
+                            <div className="ml-4">
+                              <h4 className="font-medium mb-2">Sublotes agregados:</h4>
+                              <ul className="space-y-2">
+                                {addedSubLots[lotId].map((sublot, index) => (
+                                  <li key={index} className="text-sm text-gray-600">
+                                    {sublot.name} - {sublot.area_utilizada} ha
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <p className="text-gray-500 italic text-center py-8 bg-gray-50 rounded-md">
@@ -423,7 +644,7 @@ export const FormCrop = () => {
                 type="submit"
                 className="w-full px-4 py-2 bg-zinc-800 text-white rounded-sm hover:bg-zinc-900 focus:outline-none transition-colors"
               >
-                Crear Cultivo
+                {isEditMode ? "Actualizar Cultivo" : "Crear Cultivo"}
               </button>
             </div>
           </div>

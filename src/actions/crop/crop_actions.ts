@@ -11,8 +11,8 @@ export const putUpdateCrop = async (code: string, crop: CropForm) => {
     return response.data;
 };
 
-export const getByIdCrop = async (code: string) => {
-    const response = await dolibarrApi.get(`/vicentina/crop/get/${code}`);
+export const getByIdCrop = async (rowid: string) => {
+    const response = await dolibarrApi.get(`/vicentina/crop/get/${rowid}`);
     return response.data as CropWithLot;
 };
 

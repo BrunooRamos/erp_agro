@@ -1,5 +1,5 @@
 import { dolibarrApi } from "../../api";
-import { AccountStatementFilters, InvoiceElement, SupplierAccountStatement, SupplierInvoice, Thirdparty, ThirdpartyFilters, AvailableAccountsResponse, SupplierDueReport, SupplierDueReportFilters } from "../../interfaces";
+import { AccountStatementFilters, InvoiceElement, SupplierAccountStatement, SupplierInvoice, Thirdparty, ThirdpartyFilters, AvailableAccountsResponse, SupplierDueReport, SupplierDueReportFilters, AccountMovement } from "../../interfaces";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -366,7 +366,7 @@ export const getSupplierDueReport = async (filters: SupplierDueReportFilters): P
   if (filters.date_to) params.append('date_to', filters.date_to);
 
   const response = await dolibarrApi.get(`/vicentina/supplier-account-statement?${params.toString()}`);
-  const data = response.data as SupplierAccountStatement;
+  const raw = response.data as unknown;
 
   // Transform the account statement movements into the due-report contract
   const formatMonth = (iso: string) => {
@@ -376,9 +376,60 @@ export const getSupplierDueReport = async (filters: SupplierDueReportFilters): P
     return `${mm}-${yyyy}`;
   };
 
-  const movements = data.movements || [];
+  // Helper to normalize both legacy single-supplier and new aggregated responses into a unified stream of rows
+  type AggregatedResponse = {
+    currency: string;
+    total_suppliers: number;
+    grand_current_balance: number;
+    grand_total_movements: number;
+    suppliers: Array<{
+      supplier: { id: number; name: string };
+      currency: string;
+      current_balance: number;
+      total_movements: number;
+      movements: AccountMovement[];
+    }>;
+    filters?: unknown;
+  };
 
-  const invoices = movements.flatMap(m => {
+  const isAggregated = (v: unknown): v is AggregatedResponse => {
+    if (typeof v !== 'object' || v === null) return false;
+    return Array.isArray((v as { suppliers?: unknown }).suppliers);
+  };
+  const isLegacy = (v: unknown): v is SupplierAccountStatement => {
+    if (typeof v !== 'object' || v === null) return false;
+    const obj = v as { movements?: unknown; supplier?: unknown };
+    return Array.isArray(obj.movements) && Boolean(obj.supplier);
+  };
+
+  const movements: { supplierId: number; supplierName: string; movement: AccountMovement }[] = [];
+  if (isAggregated(raw)) {
+    for (const s of raw.suppliers) {
+      for (const m of (s.movements || [])) {
+        movements.push({ supplierId: s.supplier.id, supplierName: s.supplier.name, movement: m });
+      }
+    }
+  } else if (isLegacy(raw)) {
+    for (const m of (raw.movements || [])) {
+      movements.push({ supplierId: raw.supplier.id, supplierName: raw.supplier.name, movement: m });
+    }
+  } else {
+    // Fallback: nothing usable
+    return {
+      total_count: 0,
+      report_header: {
+        account_label: `Cuenta ${filters.account || ''}`.trim(),
+        date_from: filters.date_from,
+        date_to: filters.date_to,
+        generated_at: new Date().toISOString(),
+      },
+      invoices: [],
+      subtotals: { by_supplier: [], by_month_due: [] },
+      grand_total: { amount_uyu: 0, amount_usd: 0 },
+    };
+  }
+
+  const invoices = movements.flatMap(({ supplierId, supplierName, movement: m }) => {
     const rows: SupplierDueReport["invoices"] = [] as unknown as SupplierDueReport["invoices"];
     const isUSD = m.currency === 'USD';
     const amount = (m.debit || 0) - (m.credit || 0);
@@ -399,7 +450,7 @@ export const getSupplierDueReport = async (filters: SupplierDueReportFilters): P
             amount_usd: isUSD ? amount : 0,
           },
         },
-        supplier: { id: String(data.supplier.id), name: data.supplier.name },
+        supplier: { id: String(supplierId), name: supplierName },
         payments: [],
         credit_notes: [],
         bank_accounts: [],
@@ -420,7 +471,7 @@ export const getSupplierDueReport = async (filters: SupplierDueReportFilters): P
             amount_usd: isUSD ? amount : 0,
           },
         },
-        supplier: { id: String(data.supplier.id), name: data.supplier.name },
+        supplier: { id: String(supplierId), name: supplierName },
         payments: [],
         credit_notes: [],
         bank_accounts: [],
@@ -442,7 +493,7 @@ export const getSupplierDueReport = async (filters: SupplierDueReportFilters): P
             amount_usd: isUSD ? payAmount : 0,
           },
         },
-        supplier: { id: String(data.supplier.id), name: data.supplier.name },
+        supplier: { id: String(supplierId), name: supplierName },
         payments: [{ payment_order_date: m.document_date, payment_order_ref: m.document_ref || null }],
         credit_notes: [],
         bank_accounts: [],
