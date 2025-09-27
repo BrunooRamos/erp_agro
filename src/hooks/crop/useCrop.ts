@@ -24,7 +24,7 @@ export const useCrop = ( crop_id?: string, lot?: string) => {
   });
 
   const getCrop = useBaseQuery(["crop", crop_id ?? ""], () => getByIdCrop(crop_id!), {
-    enabled: !!crop_id, // Only run query if code exists
+    enabled: !!crop_id, // Only run query if crop_id exists
   });
 
   const deleteCrop = useBaseMutation(deleteCropAction, {

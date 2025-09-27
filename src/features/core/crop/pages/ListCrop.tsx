@@ -16,26 +16,13 @@ import { useNavigate } from "react-router-dom";
 export const ListCrop = () => {
   const navigate = useNavigate();
 
-  const { listCrop, deleteCrop } = useCrop();
+  const { listCrop } = useCrop();
 
-  const { data = [], isLoading, error, refetch } = listCrop;
-  const { mutate: deleteCropAction, isPending: isDeletePending } = deleteCrop;
+  const { data = [], isLoading, error } = listCrop;
 
   const columnHelper = createColumnHelper<CropEntity>();
 
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
-
-  const handleDelete = (crop: CropEntity) => {
-    const confirmMessage = `¿Está seguro que desea eliminar el siguiente cultivo?\n\nCódigo: ${crop.code}\nCampo: ${crop.codigo_campo}\nCultivo: ${crop.cultivo}`;
-
-    if (window.confirm(confirmMessage)) {
-      deleteCropAction(crop.code, {
-        onSuccess: () => {
-          refetch();
-        },
-      });
-    }
-  };
 
 
   const columns = [
@@ -77,11 +64,11 @@ export const ListCrop = () => {
       cell: (info) => (
         <div className="flex gap-2">
           <button
-            onClick={() => handleDelete(info.row.original)}
-            className="px-3 py-1 bg-red-500 text-white rounded hover:bg-red-600 text-sm"
+            onClick={() => navigate(`/crop/edit/${info.row.original.code}`)}
+            className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600 text-sm"
           >
-            <i className="fas fa-trash-alt mr-1"></i>
-            Eliminar
+            <i className="fas fa-edit mr-1"></i>
+            Editar
           </button>
         </div>
       ),
@@ -99,7 +86,7 @@ export const ListCrop = () => {
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-  if (isLoading || isDeletePending) {
+  if (isLoading) {
     return (
       <div className="fixed inset-0 flex items-center justify-center bg-white bg-opacity-75 z-50">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-zinc-800"></div>
@@ -214,6 +201,17 @@ export const ListCrop = () => {
                         Código: {crop.code}
                       </p>
                     </div>
+                  </div>
+                  {/* Action buttons */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => navigate(`/crop/edit/${crop.rowid}`)}
+                      className="flex items-center gap-2 px-3 py-1 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors text-sm"
+                      title="Editar cultivo"
+                    >
+                      <i className="fas fa-edit"></i>
+                      <span>Editar</span>
+                    </button>
                   </div>
                 </div>
               </div>

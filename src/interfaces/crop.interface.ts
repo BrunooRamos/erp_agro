@@ -2,7 +2,7 @@
 // Create crop
 export interface CropForm {
     code: string;
-    codigo_campo: string;
+    codigo_campo: number;
     cultivo: string;
     periodo: string;
     anio: string;
@@ -14,12 +14,12 @@ export interface CropForm {
 }
 
 export interface CropLot {
-    id_lote: string,
+    id_lote: number,
     area_utilizada: number
 }
 
 export interface CropSubLot {
-    id_parent_lot: string;
+    id_parent_lot: number;
     name: string;
     area_utilizada: number;
 }
@@ -80,9 +80,10 @@ export interface CropWithLot {
 }
 
 export interface CropLotResponse {
-    id_lote:        string;
+    id_lote:        number;
     name:           string;
     area_total:     number;
     area_utilizada: number;
     campo_name:     string;
+    sub_lots?:      CropSubLot[];
 }

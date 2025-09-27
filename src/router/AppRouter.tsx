@@ -211,7 +211,7 @@ export const menuRoutes: MenuRoute[] = [
         visible: true,
       },
       {
-        to: "/crop/edit/:code", // Simplified route pattern
+        to: "/crop/edit/:code", // Parameter is actually rowid for get operation
         title: "Editar cultivo",
         description: "Formulario para editar cultivo",
         component: <FormCrop />,
