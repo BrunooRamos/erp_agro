@@ -1,5 +1,5 @@
 import { dolibarrApi } from "../../api";
-import { AccountStatementFilters, InvoiceElement, SupplierAccountStatement, SupplierInvoice, Thirdparty, ThirdpartyFilters, AvailableAccountsResponse, SupplierDueReport, SupplierDueReportFilters } from "../../interfaces";
+import { AccountStatementFilters, InvoiceElement, SupplierAccountStatement, SupplierInvoice, Thirdparty, ThirdpartyFilters, AvailableAccountsResponse, SupplierDueReport, SupplierDueReportFilters, AccountMovement } from "../../interfaces";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -392,8 +392,15 @@ export const getSupplierDueReport = async (filters: SupplierDueReportFilters): P
     filters?: unknown;
   };
 
-  const isAggregated = (v: any): v is AggregatedResponse => Array.isArray(v?.suppliers);
-  const isLegacy = (v: any): v is SupplierAccountStatement => Array.isArray(v?.movements) && v?.supplier;
+  const isAggregated = (v: unknown): v is AggregatedResponse => {
+    if (typeof v !== 'object' || v === null) return false;
+    return Array.isArray((v as { suppliers?: unknown }).suppliers);
+  };
+  const isLegacy = (v: unknown): v is SupplierAccountStatement => {
+    if (typeof v !== 'object' || v === null) return false;
+    const obj = v as { movements?: unknown; supplier?: unknown };
+    return Array.isArray(obj.movements) && Boolean(obj.supplier);
+  };
 
   const movements: { supplierId: number; supplierName: string; movement: AccountMovement }[] = [];
   if (isAggregated(raw)) {
