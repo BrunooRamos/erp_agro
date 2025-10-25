@@ -1,5 +1,5 @@
 import React from 'react';
-import { Button, Card, Col, Row, Select, Checkbox, DatePicker } from "antd";
+import { Button, Card, Col, Row, Select, DatePicker } from "antd";
 import { Supplier } from "../../../../interfaces";
 import dayjs from "dayjs";
 import { AccountStatementFilters as FilterInterface } from "../../../../interfaces/supplier.interface";
@@ -86,34 +86,26 @@ export const AccountStatementFilters: React.FC<AccountStatementFiltersProps> = (
           </Col>
           <Col xs={24} sm={12} md={8} lg={6}>
             <DatePicker.RangePicker
-              value={filters.start_date && filters.end_date ? [
-                dayjs(filters.start_date),
-                dayjs(filters.end_date)
+              value={filters.date_from && filters.date_to ? [
+                dayjs(filters.date_from),
+                dayjs(filters.date_to)
               ] : null}
               onChange={(dates) => {
                 if (dates) {
                   onFiltersChange({
-                    start_date: dates[0]?.format('YYYY-MM-DD'),
-                    end_date: dates[1]?.format('YYYY-MM-DD')
+                    date_from: dates[0]?.format('YYYY-MM-DD'),
+                    date_to: dates[1]?.format('YYYY-MM-DD')
                   });
                 } else {
                   onFiltersChange({
-                    start_date: undefined,
-                    end_date: undefined
+                    date_from: undefined,
+                    date_to: undefined
                   });
                 }
               }}
               placeholder={['Fecha inicio', 'Fecha fin']}
               className="w-full"
             />
-          </Col>
-          <Col xs={24} sm={12} md={8} lg={6}>
-            <Checkbox
-              checked={filters.only_pending}
-              onChange={(e) => onFiltersChange({ only_pending: e.target.checked })}
-            >
-              Solo pendientes
-            </Checkbox>
           </Col>
         </Row>
         <Row className="mt-4">
