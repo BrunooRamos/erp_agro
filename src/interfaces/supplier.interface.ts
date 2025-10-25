@@ -111,8 +111,8 @@ export interface AccountStatementFilters {
   entity?: number;
   cuenta?: string;
   document_types?: string[];
-  start_date?: string;
-  end_date?: string;
+  date_from?: string;
+  date_to?: string;
   only_pending?: boolean;
 }
 

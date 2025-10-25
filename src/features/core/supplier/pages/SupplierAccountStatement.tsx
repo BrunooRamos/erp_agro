@@ -1,9 +1,11 @@
 import { useMemo } from 'react';
 import dayjs from 'dayjs';
-import { Card, Col, Row, Spin, Typography, Result, Statistic, Empty } from 'antd';
+import { Card, Col, Row, Spin, Typography, Result, Statistic, Empty, Button } from 'antd';
+import { FilePdfOutlined } from '@ant-design/icons';
 import { useSupplierAccountStatement } from '../../../../hooks/supplier/useSupplierAccountStatement';
 import { AccountStatementFilters, AccountStatementTable } from '../../../../ui/components';
 import { useThirdparties } from '../../../../hooks/supplier/useThirdparties';
+import { generateSupplierAccountStatementPDF } from '../../../../actions/supplier/supplier_actions';
 
 const { Title } = Typography;
 
@@ -84,6 +86,13 @@ export const SupplierAccountStatement = () => {
     const unique = Array.from(new Set(movements.map(m => m.document_type).filter(Boolean)));
     return unique.sort();
   }, [data]);
+
+  // Handle PDF export
+  const handleExportPDF = () => {
+    if (data && recomputedMovements.length > 0) {
+      generateSupplierAccountStatementPDF(data, recomputedMovements);
+    }
+  };
 
   if (error) {
     return (
@@ -203,7 +212,19 @@ export const SupplierAccountStatement = () => {
                 </Row>
 
                 {/* Movements Table */}
-                <Card title="Detalle de Movimientos">
+                <Card
+                  title="Detalle de Movimientos"
+                  extra={
+                    <Button
+                      type="primary"
+                      icon={<FilePdfOutlined />}
+                      onClick={handleExportPDF}
+                      disabled={recomputedMovements.length === 0}
+                    >
+                      Exportar PDF
+                    </Button>
+                  }
+                >
                   <AccountStatementTable
                     movements={recomputedMovements}
                     currency={data.currency}

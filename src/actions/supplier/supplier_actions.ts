@@ -720,3 +720,207 @@ export const generateSupplierDueReportPDF = (report: SupplierDueReport): void =>
 
   (doc as unknown as jsPDF).save(`vencimientos_estudio_${new Date().toISOString().slice(0,10)}.pdf`);
 };
+
+/**
+ * Generate PDF for Supplier Account Statement with watermark
+ */
+export const generateSupplierAccountStatementPDF = (
+  accountStatement: SupplierAccountStatement,
+  movements: AccountMovement[]
+): void => {
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' }) as unknown as JsPDFWithAutoTable;
+
+  const margin = 40;
+  const pageWidth = (doc as unknown as jsPDF).internal.pageSize.getWidth();
+  const pageHeight = (doc as unknown as jsPDF).internal.pageSize.getHeight();
+
+  const formatDate = (iso: string) => {
+    if (!iso) return '';
+    return new Date(iso).toLocaleDateString('es-UY', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  };
+
+  const formatMoney = (n?: number | null) => typeof n === 'number'
+    ? n.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+    : '0.00';
+
+  // Add logo image to all pages (top right corner)
+  const addLogo = () => {
+    const img = new Image();
+    img.src = '/static/vicentina-1024x1024.png';
+
+    // Position in top right corner
+    const imgWidth = 60;
+    const imgHeight = 60;
+    const x = pageWidth - imgWidth - 20;
+    const y = 20;
+
+    try {
+      (doc as unknown as jsPDF).addImage(img, 'PNG', x, y, imgWidth, imgHeight);
+    } catch (error) {
+      console.warn('Could not add logo image:', error);
+    }
+  };
+
+  // Header function
+  const drawHeader = () => {
+    const headerStartY = 100; // Start header below the logo
+
+    (doc as unknown as jsPDF).setFontSize(16);
+    (doc as unknown as jsPDF).setFont('helvetica', 'bold');
+    (doc as unknown as jsPDF).text('ESTADO DE CUENTA - PROVEEDOR', margin, headerStartY);
+
+    (doc as unknown as jsPDF).setFontSize(11);
+    (doc as unknown as jsPDF).setFont('helvetica', 'bold');
+    (doc as unknown as jsPDF).text(`Proveedor: ${accountStatement.supplier?.name || 'N/A'}`, margin, headerStartY + 22);
+
+    (doc as unknown as jsPDF).setFont('helvetica', 'normal');
+    (doc as unknown as jsPDF).setFontSize(10);
+    (doc as unknown as jsPDF).text(`Moneda: ${accountStatement.currency}`, margin, headerStartY + 36);
+    (doc as unknown as jsPDF).text(`Fecha de generación: ${new Date().toLocaleDateString('es-UY')}`, margin, headerStartY + 48);
+  };
+
+  // Calculate totals
+  const totalDebit = movements.reduce((acc, m) => acc + m.debit, 0);
+  const totalCredit = movements.reduce((acc, m) => acc + m.credit, 0);
+  const currentBalance = movements.length > 0 ? movements[movements.length - 1].balance : 0;
+
+  // Draw summary box
+  const drawSummary = (startY: number) => {
+    const summaryX = margin;
+    const summaryY = startY;
+    const boxWidth = pageWidth - (margin * 2);
+    const boxHeight = 80;
+
+    (doc as unknown as jsPDF).setDrawColor(200, 200, 200);
+    (doc as unknown as jsPDF).setFillColor(245, 245, 245);
+    (doc as unknown as jsPDF).rect(summaryX, summaryY, boxWidth, boxHeight, 'FD');
+
+    (doc as unknown as jsPDF).setFontSize(11);
+    (doc as unknown as jsPDF).setFont('helvetica', 'bold');
+
+    const col1X = summaryX + 20;
+    const col2X = summaryX + boxWidth / 2 + 20;
+    const rowY1 = summaryY + 25;
+    const rowY2 = summaryY + 50;
+
+    // Total Debe
+    (doc as unknown as jsPDF).text('Total Debe:', col1X, rowY1);
+    (doc as unknown as jsPDF).setTextColor(207, 19, 34); // Red
+    (doc as unknown as jsPDF).text(`${formatMoney(totalDebit)} ${accountStatement.currency}`, col1X + 100, rowY1);
+
+    // Total Haber
+    (doc as unknown as jsPDF).setTextColor(0, 0, 0);
+    (doc as unknown as jsPDF).text('Total Haber:', col2X, rowY1);
+    (doc as unknown as jsPDF).setTextColor(63, 134, 0); // Green
+    (doc as unknown as jsPDF).text(`${formatMoney(totalCredit)} ${accountStatement.currency}`, col2X + 100, rowY1);
+
+    // Saldo Actual
+    (doc as unknown as jsPDF).setTextColor(0, 0, 0);
+    (doc as unknown as jsPDF).text('Saldo Actual:', col1X, rowY2);
+    (doc as unknown as jsPDF).setTextColor(currentBalance >= 0 ? 207 : 63, currentBalance >= 0 ? 19 : 134, currentBalance >= 0 ? 34 : 0);
+    (doc as unknown as jsPDF).text(`${formatMoney(currentBalance)} ${accountStatement.currency}`, col1X + 100, rowY2);
+
+    // Total Movimientos
+    (doc as unknown as jsPDF).setTextColor(0, 0, 0);
+    (doc as unknown as jsPDF).text('Total Movimientos:', col2X, rowY2);
+    (doc as unknown as jsPDF).text(`${movements.length}`, col2X + 120, rowY2);
+
+    (doc as unknown as jsPDF).setTextColor(0, 0, 0); // Reset color
+
+    return summaryY + boxHeight + 20;
+  };
+
+  // Prepare table data
+  const tableHead = [['Fecha', 'Tipo', 'Ref. Proveedor', 'Debe', 'Haber', 'Saldo']];
+
+  const tableBody = movements.map(movement => [
+    formatDate(movement.document_date),
+    movement.document_type,
+    movement.document_ref_supplier || '-',
+    formatMoney(movement.debit),
+    formatMoney(movement.credit),
+    formatMoney(movement.balance)
+  ]);
+
+  // Add logo to first page
+  addLogo();
+
+  // Draw header
+  drawHeader();
+
+  // Draw summary (start after header at Y=160)
+  const tableStartY = drawSummary(160);
+
+  // Draw table
+  autoTable(doc as unknown as jsPDF, {
+    head: tableHead,
+    body: tableBody,
+    startY: tableStartY,
+    margin: { top: 160, bottom: margin + 20, left: margin, right: margin },
+    theme: 'grid',
+    styles: {
+      fontSize: 9,
+      cellPadding: 6,
+      lineColor: [200, 200, 200],
+      lineWidth: 0.5
+    },
+    headStyles: {
+      fillColor: [70, 130, 180],
+      textColor: 255,
+      fontStyle: 'bold',
+      halign: 'center'
+    },
+    columnStyles: {
+      0: { cellWidth: 65, halign: 'center' },   // Fecha
+      1: { cellWidth: 95, halign: 'left' },     // Tipo
+      2: { cellWidth: 110, halign: 'left' },    // Ref. Proveedor
+      3: { cellWidth: 75, halign: 'right' },    // Debe
+      4: { cellWidth: 75, halign: 'right' },    // Haber
+      5: { cellWidth: 75, halign: 'right' }     // Saldo
+    },
+    alternateRowStyles: {
+      fillColor: [250, 250, 250]
+    },
+    didDrawPage: () => {
+      // Add logo to each page
+      addLogo();
+
+      // Add header to pages after the first one
+      if ((doc as unknown as jsPDF).getCurrentPageInfo().pageNumber > 1) {
+        drawHeader();
+      }
+
+      // Footer with page number
+      const pageNum = (doc as unknown as jsPDF).getCurrentPageInfo().pageNumber;
+      const totalPages = (doc as unknown as jsPDF).getNumberOfPages();
+      (doc as unknown as jsPDF).setFontSize(9);
+      (doc as unknown as jsPDF).setFont('helvetica', 'normal');
+      (doc as unknown as jsPDF).text(
+        `Página ${pageNum} de ${totalPages}`,
+        pageWidth / 2,
+        pageHeight - margin / 2,
+        { align: 'center' }
+      );
+    },
+    willDrawCell: (data) => {
+      // Color coding for Debe (red) and Haber (green) columns
+      if (data.section === 'body') {
+        if (data.column.index === 3) { // Debe column
+          data.cell.styles.textColor = [207, 19, 34]; // Red
+          data.cell.styles.fontStyle = 'bold';
+        } else if (data.column.index === 4) { // Haber column
+          data.cell.styles.textColor = [63, 134, 0]; // Green
+          data.cell.styles.fontStyle = 'bold';
+        } else if (data.column.index === 5) { // Saldo column
+          const balanceValue = parseFloat((data.cell.raw as string).replace(/\./g, '').replace(',', '.'));
+          data.cell.styles.textColor = balanceValue >= 0 ? [207, 19, 34] : [63, 134, 0];
+          data.cell.styles.fontStyle = 'bold';
+        }
+      }
+    }
+  });
+
+  // Save the PDF
+  const fileName = `estado_cuenta_${accountStatement.supplier?.name?.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`;
+  (doc as unknown as jsPDF).save(fileName);
+};
