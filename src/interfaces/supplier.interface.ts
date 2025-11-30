@@ -49,6 +49,7 @@ export interface InvoiceInvoice {
     paye:           string;
     cuenta:         string;
     currency:       Currency;
+    in_payment_order?: number; // 0 = disponible, 1 = en orden de pago pendiente
 }
 
 export interface CreditNote {

@@ -9,4 +9,68 @@
 
 .filter-button {
   width: 90px;
+}
+
+/* Estados de facturas - Indicadores visuales */
+.invoice-status-available {
+  background-color: #ffffff !important;
+  border-left: 4px solid #d9d9d9;
+}
+
+.invoice-status-in-payment-order {
+  background-color: #fff3cd !important;
+  border-left: 4px solid #ffc107;
+}
+
+.invoice-status-paid {
+  background-color: #d4edda !important;
+  border-left: 4px solid #28a745;
+}
+
+/* Deshabilitar hover de Ant Design Table para mantener colores constantes */
+.invoice-status-available:hover > td,
+.invoice-status-in-payment-order:hover > td,
+.invoice-status-paid:hover > td {
+  background-color: inherit !important;
+}
+
+/* Leyenda de estados */
+.invoice-status-legend {
+  display: flex;
+  gap: 16px;
+  padding: 12px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.invoice-status-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.invoice-status-indicator {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border-left: 4px solid;
+}
+
+.invoice-status-indicator.available {
+  background-color: #ffffff;
+  border-color: #d9d9d9;
+  border: 1px solid #d9d9d9;
+  border-left: 4px solid #d9d9d9;
+}
+
+.invoice-status-indicator.in-payment-order {
+  background-color: #fff3cd;
+  border-color: #ffc107;
+}
+
+.invoice-status-indicator.paid {
+  background-color: #d4edda;
+  border-color: #28a745;
 } 

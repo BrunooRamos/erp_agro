@@ -4,6 +4,7 @@ import { useRef, useState } from 'react';
 import { InvoiceElement } from '../../../../interfaces';
 import type { InputRef, TableColumnType } from 'antd';
 import type { FilterDropdownProps } from 'antd/es/table/interface';
+import { getInvoiceStatus, isInvoiceSelectable, getDisabledTooltip } from '../../../../helpers/supplier/invoiceStatus';
 import './SupplierInvoiceTable.css';
 
 const { Text } = Typography;
@@ -119,6 +120,20 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
 
   const columns = [
     {
+      title: 'Estado',
+      dataIndex: 'status',
+      key: 'status',
+      width: 140,
+      render: (_: unknown, record: InvoiceElement) => {
+        const statusInfo = getInvoiceStatus(record);
+        return (
+          <Tooltip title={statusInfo.description}>
+            <Tag color={statusInfo.badgeColor}>{statusInfo.label}</Tag>
+          </Tooltip>
+        );
+      },
+    },
+    {
       title: 'Seleccionar',
       dataIndex: 'selection',
       key: 'selection',
@@ -128,14 +143,19 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
         const currentCurrency = getSelectedCurrency(record.invoice.id);
         const currentBankAccount = getSelectedBankAccount(record.invoice.id);
         const hasValidAccount = hasValidBankAccount(record);
-        
+        const selectable = isInvoiceSelectable(record);
+        const disabledTooltip = getDisabledTooltip(record);
+
         return (
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
-              <Checkbox 
-                checked={isSelected}
-                onChange={() => toggleInvoiceSelection(record, currentCurrency, currentBankAccount)}
-              />
+              <Tooltip title={disabledTooltip}>
+                <Checkbox
+                  checked={isSelected}
+                  onChange={() => toggleInvoiceSelection(record, currentCurrency, currentBankAccount)}
+                  disabled={!selectable}
+                />
+              </Tooltip>
               {isSelected && (
                 <Select
                   value={currentCurrency}
@@ -163,8 +183,8 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
                   placeholder="Seleccionar cuenta"
                 >
                   {record.bank_accounts
-                    .filter(account => 
-                      (account.account_number && account.account_number.trim() !== '') || 
+                    .filter(account =>
+                      (account.account_number && account.account_number.trim() !== '') ||
                       (account.iban && account.iban.trim() !== '')
                     )
                     .map(account => (
@@ -343,12 +363,16 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
   ];
 
   return (
-    <Table 
-      dataSource={invoices} 
-      columns={columns} 
+    <Table
+      dataSource={invoices}
+      columns={columns}
       rowKey={(record) => record.invoice.id}
       pagination={{ pageSize: 10 }}
       scroll={{ x: 1500 }}
+      rowClassName={(record) => {
+        const statusInfo = getInvoiceStatus(record);
+        return statusInfo.className;
+      }}
       expandable={{
         expandedRowKeys,
         onExpandedRowsChange: (keys) => setExpandedRowKeys(keys as string[]),
