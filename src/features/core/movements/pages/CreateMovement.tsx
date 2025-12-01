@@ -39,7 +39,14 @@ export const CreateMovement = () => {
   const { listCrop, getCrop, getVarieties, getSublots } = useCrop( selectedCrop, selectedLot );
 
   const { data: crops } = listCrop;
-  const availableCrops = crops?.filter((crop) => crop.cultivo === "Papa");
+  const availableCrops = crops
+    ?.filter((crop) => crop.cultivo.toLowerCase() === "papa")
+    ?.sort((a, b) => {
+      // Primero los activos (status === "1"), luego los inactivos (status === "0")
+      if (a.status === "1" && b.status === "0") return -1;
+      if (a.status === "0" && b.status === "1") return 1;
+      return 0;
+    });
 
   const { data: crop, isLoading: isLoadingCrop } = getCrop;
   const lots = crop?.lots;
@@ -96,7 +103,7 @@ export const CreateMovement = () => {
               <option value="">Seleccione un cultivo</option>
               {Array.isArray(availableCrops) && availableCrops?.map((crop) => (
                 <option key={crop.code} value={crop.rowid}>
-                  {crop.code}
+                  {crop.code} - {crop.status === "1" ? "Activo" : "Inactivo"}
                 </option>
               ))}
             </select>
@@ -241,8 +248,7 @@ export const CreateMovement = () => {
               placeholder="Código de la variedad"
               type="text"
               autoComplete="off"
-              className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
-              style={{ textTransform: 'uppercase' }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800 uppercase"
               onChange={(e) => {
                 e.target.value = e.target.value.toUpperCase();
               }}
