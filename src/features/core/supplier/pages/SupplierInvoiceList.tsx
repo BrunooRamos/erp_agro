@@ -1,14 +1,14 @@
 import { useMemo } from "react";
 import { useSupplier } from "../../../../hooks";
 import { Button, Card, Col, Row, Spin, Typography, Empty, Statistic } from "antd";
-import { SupplierInvoiceTable, PaymentOrderModal } from "../../../../ui/components";
+import { SupplierInvoiceTable, PaymentOrderModal, InvoiceStatusLegend } from "../../../../ui/components";
 
 const { Title, Text } = Typography;
 
 export const SupplierInvoiceList = () => {
-    const { 
-        listSupplier, 
-        selectedInvoices, 
+    const {
+        listSupplier,
+        selectedInvoices,
         toggleInvoiceSelection,
         isInvoiceSelected,
         getSelectedCurrency,
@@ -19,7 +19,8 @@ export const SupplierInvoiceList = () => {
         closePaymentOrderModal,
         showPaymentOrderModal,
         getTotalsForModal,
-        availableCurrencies
+        availableCurrencies,
+        isGeneratingPDF
     } = useSupplier();
     
     const { data: supplier, isLoading } = listSupplier;
@@ -164,7 +165,7 @@ export const SupplierInvoiceList = () => {
 
                         <div className="mb-4">
                             <Text strong>
-                                {selectedInvoices.length > 0 
+                                {selectedInvoices.length > 0
                                     ? `${selectedInvoices.length} facturas seleccionadas (${uyuCount} en pesos, ${usdCount} en dólares)`
                                     : 'Seleccione las facturas para generar una orden de pago'
                                 }
@@ -173,6 +174,9 @@ export const SupplierInvoiceList = () => {
                                 Seleccione las facturas, elija la moneda de pago y la cuenta bancaria para cada una
                             </div>
                         </div>
+
+                        {/* Leyenda de estados */}
+                        <InvoiceStatusLegend />
 
                         <SupplierInvoiceTable 
                             invoices={invoices}
@@ -194,6 +198,7 @@ export const SupplierInvoiceList = () => {
                 supplierTotals={totals.supplierTotals}
                 totalUSD={totals.totalUSD}
                 totalUYU={totals.totalUYU}
+                loading={isGeneratingPDF}
             />
         </div>
     );

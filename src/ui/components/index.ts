@@ -43,3 +43,4 @@ export * from './core/supplier/SupplierInvoiceTable';
 export * from './core/supplier/AccountStatementFilters';
 export * from './core/supplier/AccountStatementTable';
 export * from './core/supplier/PaymentOrderModal';
+export * from './core/supplier/InvoiceStatusLegend';

@@ -924,3 +924,17 @@ export const generateSupplierAccountStatementPDF = (
   const fileName = `estado_cuenta_${accountStatement.supplier?.name?.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.pdf`;
   (doc as unknown as jsPDF).save(fileName);
 };
+
+/**
+ * Marca facturas como incluidas en una orden de pago
+ * @param invoiceIds - Array de IDs de facturas
+ * @returns Promise con la respuesta del servidor
+ */
+export const markInvoicesInPaymentOrder = async (
+  invoiceIds: string[]
+): Promise<boolean> => {
+  const response = await dolibarrApi.post('/vicentina/markInvoicesAsInPaymentOrder', {
+    invoice_ids: invoiceIds.map(id => parseInt(id, 10))
+  });
+  return response.data as boolean;
+};

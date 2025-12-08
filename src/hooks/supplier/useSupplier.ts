@@ -1,7 +1,8 @@
 import { useState, useCallback } from "react";
-import { generateSupplierInvoicePDF, getSupplier } from "../../actions";
+import { generateSupplierInvoicePDF, getSupplier, markInvoicesInPaymentOrder } from "../../actions";
 import { useBaseQuery } from "../config/useBaseQuery";
 import { InvoiceElement, SupplierTotal } from "../../interfaces";
+import { message } from "antd";
 
 interface SelectedInvoice {
   invoice: InvoiceElement;
@@ -12,6 +13,7 @@ interface SelectedInvoice {
 export const useSupplier = () => {
     const [selectedInvoices, setSelectedInvoices] = useState<SelectedInvoice[]>([]);
     const [showPaymentOrderModal, setShowPaymentOrderModal] = useState(false);
+    const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
     const listSupplier = useBaseQuery(
         ['supplier'],
@@ -87,10 +89,40 @@ export const useSupplier = () => {
         setSelectedInvoices([]);
     };
 
-    const generatePDF = (orderNumber: string) => {
+    const generatePDF = async (orderNumber: string) => {
         if (selectedInvoices.length === 0) return;
-        generateSupplierInvoicePDF(selectedInvoices, orderNumber);
-        setShowPaymentOrderModal(false);
+
+        setIsGeneratingPDF(true);
+        try {
+            // 1. Generar el PDF
+            generateSupplierInvoicePDF(selectedInvoices, orderNumber);
+
+            // 2. Extraer IDs de facturas
+            const invoiceIds = selectedInvoices.map(item => item.invoice.invoice.id);
+
+            // 3. Marcar facturas como "en orden de pago" en el backend
+            const success = await markInvoicesInPaymentOrder(invoiceIds);
+
+            if (success) {
+                // 4. Refrescar la lista de facturas para ver los cambios
+                await listSupplier.refetch();
+
+                // 5. Limpiar selección y cerrar modal
+                setSelectedInvoices([]);
+                setShowPaymentOrderModal(false);
+
+                // 6. Mostrar notificación de éxito
+                message.success('Orden de pago generada exitosamente. Las facturas han sido marcadas como "En orden de pago".');
+            } else {
+                message.warning('El PDF fue generado pero hubo un problema al actualizar el estado de las facturas.');
+                setShowPaymentOrderModal(false);
+            }
+        } catch (error) {
+            console.error('Error al generar orden de pago:', error);
+            message.error('Error al generar la orden de pago. Por favor, intente nuevamente.');
+        } finally {
+            setIsGeneratingPDF(false);
+        }
     };
 
     const showPaymentOrderModalHandler = () => {
@@ -190,6 +222,7 @@ export const useSupplier = () => {
         showPaymentOrderModal,
         getTotalsForModal,
         availableCurrencies,
-        getInvoicesByCurrency
+        getInvoicesByCurrency,
+        isGeneratingPDF
     };
 };
