@@ -34,8 +34,13 @@ export const ListPotateoHarvest = () => {
     
     const [selectedCropCode, setSelectedCropCode] = useState<string>("");
     const [selectedType, setSelectedType] = useState<string>("all");
-    const { listPotateoHarvest } = useMovement(selectedCropCode);
+    const [searchCropCode, setSearchCropCode] = useState<string>("");
+    const { listPotateoHarvest } = useMovement(searchCropCode);
     const { data: harvests = [], isLoading: isLoadingHarvests } = listPotateoHarvest;
+
+    const handleSearch = () => {
+        setSearchCropCode(selectedCropCode);
+    };
 
     const sortedHarvests = useMemo(() => {
         const filtered = selectedType === "all" 
@@ -65,7 +70,7 @@ export const ListPotateoHarvest = () => {
             </div>
 
             <div className="mb-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label htmlFor="crop-select" className="block text-sm font-medium text-gray-700 mb-2">
                             Seleccionar Cultivo
@@ -102,6 +107,16 @@ export const ListPotateoHarvest = () => {
                         </select>
                     </div>
                 </div>
+                <div className="flex justify-end">
+                    <button
+                        onClick={handleSearch}
+                        disabled={!selectedCropCode || isLoadingCrops}
+                        className="px-6 py-2 bg-indigo-600 text-white rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors duration-200 flex items-center gap-2"
+                    >
+                        <i className="fas fa-search"></i>
+                        Buscar
+                    </button>
+                </div>
             </div>
 
             {isLoadingCrops && (
@@ -110,7 +125,7 @@ export const ListPotateoHarvest = () => {
                 </div>
             )}
 
-            {selectedCropCode && (
+            {searchCropCode && (
                 <>
                     <div className="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
