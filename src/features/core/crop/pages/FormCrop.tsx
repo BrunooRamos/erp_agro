@@ -10,7 +10,7 @@ import {
 import { useCrop, useField } from "../../../../hooks";
 import { FormField } from "../../../../ui/components";
 
-// Local UI form type to align inputs (strings) with API (numbers)
+// Local UI form type to align inputs (strings) with API
 type CropFormUI = Omit<CropForm, 'codigo_campo' | 'status' | 'lots' | 'sub_lots'> & {
   codigo_campo: string;
   status: string;
