@@ -31,7 +31,7 @@ export const useMovement = (cropCode?: string) => {
 
 
     const listPotateoHarvest = useBaseQuery(
-        ['potateo-harvest'],
+        ['potateo-harvest', cropCode || ''],
         () => getPotateoHarvest(cropCode!),
         {
             enabled: !!cropCode,
