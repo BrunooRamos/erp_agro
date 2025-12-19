@@ -10,6 +10,7 @@ export interface MovementForm {
     logistic_cost: number;
     type: string;
     sublot: string;
+    document_number?: string;
 }
 
 export interface LogisticCostForm {
