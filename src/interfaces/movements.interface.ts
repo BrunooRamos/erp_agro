@@ -42,6 +42,7 @@ export interface PotatoHarvestResponse {
     quantity:      number;
     date_creation: string;
     user_created:  number;
+    document_number?: string;
 }
 
 
@@ -58,6 +59,7 @@ export interface MouvementsHistoric {
     dates:     DatesHistoric;
     lot_info:       LotInfo;
     sublote:       SublotHistoric;
+    document_number?: string;
 }
 
 export interface LotInfo {
