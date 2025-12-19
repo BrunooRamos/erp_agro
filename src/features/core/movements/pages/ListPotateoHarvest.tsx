@@ -165,6 +165,11 @@ export const ListPotateoHarvest = () => {
                                                         year: 'numeric'
                                                     })}
                                                 </span>
+                                                {harvest.document_number && (
+                                                    <span className="text-sm text-gray-600 font-medium">
+                                                        Remito: {harvest.document_number}
+                                                    </span>
+                                                )}
                                             </div>
                                             <div className="text-right">
                                                 <span className="text-lg font-semibold text-gray-900">
