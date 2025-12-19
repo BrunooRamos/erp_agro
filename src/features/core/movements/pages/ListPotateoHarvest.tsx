@@ -198,6 +198,15 @@ export const ListPotateoHarvest = () => {
                                                 <p className="text-sm font-medium text-gray-900">{harvest.warehouse.ref}</p>
                                             </div>
                                         </div>
+                                        
+                                        <div className="mt-3 pt-3 border-t border-gray-100">
+                                            <div className="flex items-center space-x-2">
+                                                <span className="text-xs text-gray-500">Remito:</span>
+                                                <span className="text-sm font-medium text-gray-900">
+                                                    {harvest.document_number || 'Sin remito'}
+                                                </span>
+                                            </div>
+                                        </div>
 
                                         <div className="mt-3 pt-3 border-t border-gray-100">
                                             <div className="flex justify-between items-center text-sm">
