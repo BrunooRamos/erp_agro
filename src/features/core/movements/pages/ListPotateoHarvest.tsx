@@ -165,6 +165,11 @@ export const ListPotateoHarvest = () => {
                                                         year: 'numeric'
                                                     })}
                                                 </span>
+                                                {harvest.document_number && (
+                                                    <span className="text-sm text-gray-600 font-medium">
+                                                        Remito: {harvest.document_number}
+                                                    </span>
+                                                )}
                                             </div>
                                             <div className="text-right">
                                                 <span className="text-lg font-semibold text-gray-900">
@@ -191,6 +196,15 @@ export const ListPotateoHarvest = () => {
                                             <div>
                                                 <p className="text-xs text-gray-500">Almacén</p>
                                                 <p className="text-sm font-medium text-gray-900">{harvest.warehouse.ref}</p>
+                                            </div>
+                                        </div>
+                                        
+                                        <div className="mt-3 pt-3 border-t border-gray-100">
+                                            <div className="flex items-center space-x-2">
+                                                <span className="text-xs text-gray-500">Remito:</span>
+                                                <span className="text-sm font-medium text-gray-900">
+                                                    {harvest.document_number || 'Sin remito'}
+                                                </span>
                                             </div>
                                         </div>
 
