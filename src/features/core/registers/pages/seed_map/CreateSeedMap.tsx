@@ -66,6 +66,24 @@ export const CreateSeedMap = () => {
         true,
         "Semillas"
       );
+
+      //!Papa Semilla - filtrar solo subcategoría "semilla"
+      const { data: papaProducts, isLoading: isLoadingPapa } = useGetProductsByCategory(
+        true,
+        "Papa"
+      );
+
+      // Combinar semillas normales con Papa Semilla (solo productos de subcategoría "semilla")
+      const combinedSeeds = useMemo(() => {
+        const normalSeeds = seeds || [];
+        const papaSemilla = (papaProducts || [])
+          .filter(product => product.subcategory_name?.toLowerCase() === "semilla")
+          .map(product => ({
+            ...product,
+            label: `Papa Semilla - ${product.label}`,
+          }));
+        return [...normalSeeds, ...papaSemilla];
+      }, [seeds, papaProducts]);
     
       // Search query for seeds
       const [searchQuerySeeds, setSearchQuerySeeds] = useState("");
@@ -241,10 +259,10 @@ export const CreateSeedMap = () => {
     
       // Add useMemo for available seeds and chemicals
       const availableSeeds = useMemo(() => {
-        return seeds?.filter(
+        return combinedSeeds?.filter(
           (seed) => !selectedSeeds.some((selected) => selected.id === seed.id)
         ) || [];
-      }, [seeds, selectedSeeds]);
+      }, [combinedSeeds, selectedSeeds]);
     
       const availableChemicals = useMemo(() => {
         return chemicals?.filter(
@@ -257,6 +275,7 @@ export const CreateSeedMap = () => {
         isLoadingMachinery ||
         isLoadingCusa ||
         isLoadingSeeds ||
+        isLoadingPapa ||
         isLoadingChemicals
       ) {
         return (
@@ -457,7 +476,7 @@ export const CreateSeedMap = () => {
                     <EditProductModal
                       editingProduct={editingSeed}
                       warehouses={
-                        seeds?.find((s) => s.id === editingSeed?.id)?.warehouses ||
+                        combinedSeeds?.find((s) => s.id === editingSeed?.id)?.warehouses ||
                         []
                       }
                       onClose={() => setEditingSeed(null)}
