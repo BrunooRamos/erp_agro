@@ -137,7 +137,8 @@ export const CreateRAF = () => {
   const shouldFetchChemicals =
     (selectedType === "mantenimiento_cultivo" &&
       selectedSubType === "apl_agroquimico") ||
-    (selectedType === "barbecho" && selectedSubType === "quimico");
+    (selectedType === "barbecho" && selectedSubType === "quimico") ||
+    (selectedType === "encalado");
 
   // Get category by label
   const {
@@ -516,6 +517,7 @@ export const CreateRAF = () => {
                 onSearchChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setSearchQuery(e.target.value)
                 }
+                initialSubcategoryName={selectedType === "encalado" ? "Encalado" : undefined}
               />
 
               <SelectedProductsList

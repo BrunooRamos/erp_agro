@@ -168,6 +168,11 @@ export const ListPotateoHarvest = () => {
                                                 {harvest.document_number && (
                                                     <span className="text-sm text-gray-600 font-medium">
                                                         Remito: {harvest.document_number}
+                                                        {harvest.document_date && (
+                                                            <span className="text-xs text-gray-500 ml-1">
+                                                                ({new Date(harvest.document_date).toLocaleDateString('es-ES')})
+                                                            </span>
+                                                        )}
                                                     </span>
                                                 )}
                                             </div>
@@ -200,11 +205,21 @@ export const ListPotateoHarvest = () => {
                                         </div>
                                         
                                         <div className="mt-3 pt-3 border-t border-gray-100">
-                                            <div className="flex items-center space-x-2">
-                                                <span className="text-xs text-gray-500">Remito:</span>
-                                                <span className="text-sm font-medium text-gray-900">
-                                                    {harvest.document_number || 'Sin remito'}
-                                                </span>
+                                            <div className="flex items-center space-x-4">
+                                                <div className="flex items-center space-x-2">
+                                                    <span className="text-xs text-gray-500">Remito:</span>
+                                                    <span className="text-sm font-medium text-gray-900">
+                                                        {harvest.document_number || 'Sin remito'}
+                                                    </span>
+                                                </div>
+                                                {harvest.document_date && (
+                                                    <div className="flex items-center space-x-2">
+                                                        <span className="text-xs text-gray-500">Fecha Remito:</span>
+                                                        <span className="text-sm font-medium text-gray-900">
+                                                            {new Date(harvest.document_date).toLocaleDateString('es-ES')}
+                                                        </span>
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
 
