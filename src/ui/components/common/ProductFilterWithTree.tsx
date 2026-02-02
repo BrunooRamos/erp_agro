@@ -9,6 +9,7 @@ interface ProductFilterWithTreeProps {
   onProductsFiltered: (products: ProductsResponse[]) => void;
   searchQuery: string;
   onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  initialSubcategoryName?: string;
 }
 
 export const ProductFilterWithTree: React.FC<ProductFilterWithTreeProps> = ({ 
@@ -16,9 +17,33 @@ export const ProductFilterWithTree: React.FC<ProductFilterWithTreeProps> = ({
   categories, 
   onProductsFiltered,
   searchQuery,
-  onSearchChange 
+  onSearchChange,
+  initialSubcategoryName
 }) => {
   const [selectedChain, setSelectedChain] = useState<CategoryResponse[]>([]);
+
+  // Initialize with default subcategory when provided
+  useEffect(() => {
+    if (initialSubcategoryName && categories && selectedChain.length === 0) {
+      const findCategoryByName = (cat: CategoryResponse, targetName: string): CategoryResponse[] | null => {
+        if (cat.label === targetName) {
+          return [cat];
+        }
+        for (const subcat of cat.subcategories) {
+          const result = findCategoryByName(subcat, targetName);
+          if (result) {
+            return [cat, ...result];
+          }
+        }
+        return null;
+      };
+
+      const chain = findCategoryByName(categories, initialSubcategoryName);
+      if (chain) {
+        setSelectedChain(chain);
+      }
+    }
+  }, [initialSubcategoryName, categories, selectedChain.length]);
 
   const handleCategoryChange = (chain: CategoryResponse[]) => {
     setSelectedChain(chain);

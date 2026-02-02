@@ -304,6 +304,20 @@ export const CreateMovement = () => {
             />
           </FormField>
 
+          <FormField
+            label="Fecha del remito"
+            error={errors.document_date?.message || ""}
+          >
+            <input
+              {...register("document_date")}
+              name="document_date"
+              placeholder="DD/MM/YYYY"
+              type="date"
+              autoComplete="off"
+              className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
+            />
+          </FormField>
+
           <ActionButtons
             onCancel={() => navigate("/movements")}
             onSubmit={onSubmit}

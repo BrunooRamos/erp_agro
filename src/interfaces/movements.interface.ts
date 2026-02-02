@@ -11,6 +11,7 @@ export interface MovementForm {
     type: string;
     sublot: string;
     document_number?: string;
+    document_date?: string;
 }
 
 export interface LogisticCostForm {
@@ -43,6 +44,7 @@ export interface PotatoHarvestResponse {
     date_creation: string;
     user_created:  number;
     document_number?: string;
+    document_date?: string;
 }
 
 
@@ -60,6 +62,7 @@ export interface MouvementsHistoric {
     lot_info:       LotInfo;
     sublote:       SublotHistoric;
     document_number?: string;
+    document_date?: string;
 }
 
 export interface LotInfo {
