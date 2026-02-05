@@ -165,6 +165,10 @@ export const CreateRAF = () => {
       return;
     }
 
+    if (data.type === "encalado" && !data.sub_type) {
+      data.sub_type = "encalado";
+    }
+
     // Check if chemicals are required and if they're selected
     const chemicalsRequired = shouldFetchChemicals;
     const hasChemicals = selectedProducts.length > 0;
