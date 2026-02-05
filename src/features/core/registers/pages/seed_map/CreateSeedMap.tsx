@@ -240,6 +240,13 @@ export const CreateSeedMap = () => {
       const { mutate: createSeedMapMutation } = createSeedMap;
     
       const onSubmit = handleSubmit((data) => {
+        const confirmation = window.prompt(
+          "Para confirmar la creación del registro, escriba OK"
+        );
+        if (confirmation?.trim().toLowerCase() !== "ok") {
+          return;
+        }
+
         data.selectedLots = selectedLots;
         data.selectedSeeds = selectedSeeds;
         data.selectedChemicals = selectedChemicals;

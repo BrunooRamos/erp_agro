@@ -136,7 +136,8 @@ export const CreateRAF = () => {
   // If the type is maintenance or barbecho and the sub_type is chemical, then fetch chemicals
   const shouldFetchChemicals =
     (selectedType === "mantenimiento_cultivo" &&
-      selectedSubType === "apl_agroquimico") ||
+      (selectedSubType === "apl_agroquimico" ||
+        selectedSubType === "apl_fertilizante")) ||
     (selectedType === "barbecho" && selectedSubType === "quimico") ||
     (selectedType === "encalado");
 
@@ -157,6 +158,13 @@ export const CreateRAF = () => {
   const { mutate: createRAFMutation } = createRAF;
 
   const onSubmit = handleSubmit((data) => {
+    const confirmation = window.prompt(
+      "Para confirmar la creación del registro, escriba OK"
+    );
+    if (confirmation?.trim().toLowerCase() !== "ok") {
+      return;
+    }
+
     // Check if chemicals are required and if they're selected
     const chemicalsRequired = shouldFetchChemicals;
     const hasChemicals = selectedProducts.length > 0;
@@ -517,7 +525,13 @@ export const CreateRAF = () => {
                 onSearchChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                   setSearchQuery(e.target.value)
                 }
-                initialSubcategoryName={selectedType === "encalado" ? "Encalado" : undefined}
+                initialSubcategoryName={
+                  selectedType === "encalado"
+                    ? "Encalado"
+                    : selectedSubType === "apl_fertilizante"
+                    ? "Fertilizante"
+                    : undefined
+                }
               />
 
               <SelectedProductsList

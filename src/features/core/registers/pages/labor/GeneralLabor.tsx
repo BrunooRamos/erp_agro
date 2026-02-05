@@ -78,6 +78,13 @@ export const GeneralLabor = () => {
   const { mutate: createGeneralLaborMutation } = createGeneralLabor;
 
   const onSubmit = handleSubmit((data) => {
+    const confirmation = window.prompt(
+      "Para confirmar la creación del registro, escriba OK"
+    );
+    if (confirmation?.trim().toLowerCase() !== "ok") {
+      return;
+    }
+
     data.selectedLots = selectedLots;
     data.selectedSublots = selectedSublots;
 
