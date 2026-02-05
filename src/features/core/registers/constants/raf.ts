@@ -9,7 +9,7 @@ export const RAF_OPTIONS = {
             { value: "quimico", label: "Químico" },
         ],
         mantenimiento_cultivo: [
-            { value: "apl_nitrogeno", label: "Aplicación de Nitrógeno" },
+            { value: "apl_fertilizante", label: "Aplicación de Fertilizante" },
             { value: "apl_agroquimico", label: "Aplicación de Agroquímico" },
         ]
     }
