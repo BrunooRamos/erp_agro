@@ -3,7 +3,7 @@ import { OptionCard } from "../../../../ui/components/core/OptionCard";
 export const HomePage = () => {
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-8">Bienvenido a Vicentina - Agro</h1>
+      <h1 className="text-2xl font-bold mb-8">Bienvenido a Vicentina</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <OptionCard
