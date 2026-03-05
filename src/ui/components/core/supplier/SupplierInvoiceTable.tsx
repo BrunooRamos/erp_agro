@@ -1,5 +1,5 @@
-import { Table, Checkbox, Tooltip, Select, Typography, Tag, Input, Space, Button } from 'antd';
-import { SearchOutlined } from '@ant-design/icons';
+import { Table, Checkbox, Tooltip, Select, Typography, Tag, Input, Space, Button, Modal } from 'antd';
+import { SearchOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { useRef, useState } from 'react';
 import { InvoiceElement } from '../../../../interfaces';
 import type { InputRef, TableColumnType } from 'antd';
@@ -16,6 +16,8 @@ interface SupplierInvoiceTableProps {
   getSelectedCurrency: (id: string) => string;
   getSelectedBankAccount: (id: string) => string;
   availableCurrencies: string[];
+  onUnmarkFromPaymentOrder?: (invoiceId: string) => Promise<void>;
+  isUnmarkingInvoice?: boolean;
 }
 
 type DataIndex = ['invoice', 'cuenta'] | ['supplier', 'name'];
@@ -27,9 +29,12 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
   getSelectedCurrency,
   getSelectedBankAccount,
   availableCurrencies,
+  onUnmarkFromPaymentOrder,
+  isUnmarkingInvoice = false,
 }) => {
   const searchInput = useRef<InputRef>(null);
   const [expandedRowKeys, setExpandedRowKeys] = useState<string[]>([]);
+  const [unmarkConfirmInvoice, setUnmarkConfirmInvoice] = useState<InvoiceElement | null>(null);
   const toggleDetails = (id: string) => {
     setExpandedRowKeys(prev => prev.includes(id) ? prev.filter(k => k !== id) : [...prev, id]);
   };
@@ -129,6 +134,27 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
         return (
           <Tooltip title={statusInfo.description}>
             <Tag color={statusInfo.badgeColor}>{statusInfo.label}</Tag>
+          </Tooltip>
+        );
+      },
+    },
+    {
+      title: 'Quitar de OP',
+      key: 'unmarkPaymentOrder',
+      width: 120,
+      render: (_: unknown, record: InvoiceElement) => {
+        if (record.invoice.in_payment_order !== 1) return null;
+        return (
+          <Tooltip title="Quitar esta factura de la orden de pago">
+            <Button
+              size="small"
+              danger
+              icon={<CloseCircleOutlined />}
+              onClick={() => setUnmarkConfirmInvoice(record)}
+              loading={isUnmarkingInvoice && unmarkConfirmInvoice?.invoice.id === record.invoice.id}
+            >
+              Quitar de OP
+            </Button>
           </Tooltip>
         );
       },
@@ -362,7 +388,15 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
     }
   ];
 
+  const handleUnmarkConfirm = async () => {
+    if (unmarkConfirmInvoice && onUnmarkFromPaymentOrder) {
+      await onUnmarkFromPaymentOrder(unmarkConfirmInvoice.invoice.id);
+      setUnmarkConfirmInvoice(null);
+    }
+  };
+
   return (
+    <>
     <Table
       dataSource={invoices}
       columns={columns}
@@ -400,5 +434,29 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
         rowExpandable: (record: InvoiceElement) => (record.credit_notes?.length || 0) > 0,
       }}
     />
+
+    {/* Modal de confirmación para quitar factura de orden de pago */}
+    <Modal
+      title="Quitar factura de orden de pago"
+      open={!!unmarkConfirmInvoice}
+      onOk={handleUnmarkConfirm}
+      onCancel={() => setUnmarkConfirmInvoice(null)}
+      okText="Sí, quitar"
+      cancelText="Cancelar"
+      okButtonProps={{ danger: true, loading: isUnmarkingInvoice }}
+    >
+      {unmarkConfirmInvoice && (
+        <div>
+          <p>¿Está seguro de quitar esta factura de la orden de pago?</p>
+          <div className="mt-2 p-3 bg-gray-50 rounded">
+            <p><Text strong>Ref:</Text> {unmarkConfirmInvoice.invoice.ref}</p>
+            <p><Text strong>Proveedor:</Text> {unmarkConfirmInvoice.supplier.name}</p>
+            <p><Text strong>Monto:</Text> ${(unmarkConfirmInvoice.invoice.pending_amount || unmarkConfirmInvoice.invoice.total_ttc || 0).toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {unmarkConfirmInvoice.invoice.currency?.code || 'UYU'}</p>
+          </div>
+          <p className="mt-2 text-gray-500">La factura volverá al estado "Disponible" y podrá incluirse en una nueva orden de pago.</p>
+        </div>
+      )}
+    </Modal>
+    </>
   );
 };

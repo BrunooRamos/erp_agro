@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { generateSupplierInvoicePDF, getSupplier, markInvoicesInPaymentOrder } from "../../actions";
+import { generateSupplierInvoicePDF, getSupplier, markInvoicesInPaymentOrder, unmarkInvoicesFromPaymentOrder } from "../../actions";
 import { useBaseQuery } from "../config/useBaseQuery";
 import { InvoiceElement, SupplierTotal } from "../../interfaces";
 import { message } from "antd";
@@ -14,6 +14,7 @@ export const useSupplier = () => {
     const [selectedInvoices, setSelectedInvoices] = useState<SelectedInvoice[]>([]);
     const [showPaymentOrderModal, setShowPaymentOrderModal] = useState(false);
     const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+    const [isUnmarkingInvoice, setIsUnmarkingInvoice] = useState(false);
 
     const listSupplier = useBaseQuery(
         ['supplier'],
@@ -208,6 +209,27 @@ export const useSupplier = () => {
         return { totalUSD, totalUYU, supplierTotals };
     }, [selectedInvoices]);
 
+    /**
+     * Desmarca una factura de la orden de pago (quita el flag in_payment_order)
+     */
+    const unmarkFromPaymentOrder = async (invoiceId: string) => {
+        setIsUnmarkingInvoice(true);
+        try {
+            const success = await unmarkInvoicesFromPaymentOrder([invoiceId]);
+            if (success) {
+                await listSupplier.refetch();
+                message.success('La factura fue quitada de la orden de pago.');
+            } else {
+                message.warning('Hubo un problema al quitar la factura de la orden de pago.');
+            }
+        } catch (error) {
+            console.error('Error al desmarcar factura de orden de pago:', error);
+            message.error('Error al quitar la factura de la orden de pago. Por favor, intente nuevamente.');
+        } finally {
+            setIsUnmarkingInvoice(false);
+        }
+    };
+
     return {
         listSupplier,
         selectedInvoices,
@@ -223,6 +245,8 @@ export const useSupplier = () => {
         getTotalsForModal,
         availableCurrencies,
         getInvoicesByCurrency,
-        isGeneratingPDF
+        isGeneratingPDF,
+        unmarkFromPaymentOrder,
+        isUnmarkingInvoice
     };
 };

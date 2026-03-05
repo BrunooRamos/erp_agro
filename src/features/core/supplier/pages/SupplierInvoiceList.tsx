@@ -20,7 +20,9 @@ export const SupplierInvoiceList = () => {
         showPaymentOrderModal,
         getTotalsForModal,
         availableCurrencies,
-        isGeneratingPDF
+        isGeneratingPDF,
+        unmarkFromPaymentOrder,
+        isUnmarkingInvoice
     } = useSupplier();
     
     const { data: supplier, isLoading } = listSupplier;
@@ -185,6 +187,8 @@ export const SupplierInvoiceList = () => {
                             getSelectedCurrency={getSelectedCurrency}
                             getSelectedBankAccount={getSelectedBankAccount}
                             availableCurrencies={availableCurrencies}
+                            onUnmarkFromPaymentOrder={unmarkFromPaymentOrder}
+                            isUnmarkingInvoice={isUnmarkingInvoice}
                         />
                     </Card>
                 </Col>
