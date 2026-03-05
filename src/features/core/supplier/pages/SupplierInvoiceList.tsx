@@ -20,7 +20,9 @@ export const SupplierInvoiceList = () => {
         showPaymentOrderModal,
         getTotalsForModal,
         availableCurrencies,
-        isGeneratingPDF
+        isGeneratingPDF,
+        unmarkFromPaymentOrder,
+        isUnmarking
     } = useSupplier();
     
     const { data: supplier, isLoading } = listSupplier;
@@ -178,13 +180,15 @@ export const SupplierInvoiceList = () => {
                         {/* Leyenda de estados */}
                         <InvoiceStatusLegend />
 
-                        <SupplierInvoiceTable 
+                        <SupplierInvoiceTable
                             invoices={invoices}
                             isInvoiceSelected={isInvoiceSelected}
                             toggleInvoiceSelection={toggleInvoiceSelection}
                             getSelectedCurrency={getSelectedCurrency}
                             getSelectedBankAccount={getSelectedBankAccount}
                             availableCurrencies={availableCurrencies}
+                            onUnmarkFromPaymentOrder={unmarkFromPaymentOrder}
+                            isUnmarking={isUnmarking}
                         />
                     </Card>
                 </Col>
