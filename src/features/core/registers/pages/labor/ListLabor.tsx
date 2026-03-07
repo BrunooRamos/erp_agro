@@ -123,8 +123,13 @@ export const ListLabor = () => {
             </div>
 
             <div className="grid gap-4">
-                {filteredLaborList.map((labor) => (
-                    <div 
+                {filteredLaborList.map((labor) => {
+                    const totalArea = labor.selectedSublots.reduce((sum, sublot) => sum + sublot.area_utilizada, 0)
+                        + labor.selectedLots
+                            .filter(lot => !labor.selectedSublots.some(sublot => sublot.id_parent_lote === lot.rowid))
+                            .reduce((sum, lot) => sum + lot.area_utilizada, 0);
+                    return (
+                    <div
                         key={labor.rowid}
                         className="bg-white rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200"
                     >
@@ -154,11 +159,11 @@ export const ListLabor = () => {
                                     <div className="flex items-center gap-4">
                                         <span className="text-sm text-zinc-600">
                                             <i className="fa-solid fa-gas-pump mr-1 text-amber-500"></i>
-                                            Combustible: {(labor.selectedSublots.reduce((sum, sublot) => sum + sublot.area_utilizada, 0) * labor.cusa_info.lts_ha).toFixed(2)} lts
+                                            Combustible: {(totalArea * labor.cusa_info.lts_ha).toFixed(2)} lts
                                         </span>
                                         <span className="text-sm text-zinc-600">
                                             <i className="fa-solid fa-chart-area mr-1 text-emerald-500"></i>
-                                            Área total: {labor.selectedSublots.reduce((sum, sublot) => sum + sublot.area_utilizada, 0)} ha
+                                            Área total: {totalArea} ha
                                         </span>
                                     </div>
                                 </div>
@@ -220,7 +225,8 @@ export const ListLabor = () => {
                             </div>
                         </div>
                     </div>
-                ))}
+                    );
+                })}
 
                 {(!filteredLaborList || filteredLaborList.length === 0) && (
                     <div className="text-center py-12 bg-gray-50 rounded-lg border border-dashed border-gray-200">
