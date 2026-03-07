@@ -27,11 +27,19 @@ export const QualityOutputs = ({
 
   // Efecto para inicializar los valores de calidad
   useEffect(() => {
+    if (qualities.length === 0) return;
+
     qualities.forEach((quality, index) => {
+      // Always ensure quality_id is set correctly
       setValue(`quality_outputs.${index}.quality_id`, Number(quality.rowid));
-      setValue(`quality_outputs.${index}.bags`, 0);
+
+      // Only set bags to 0 on first initialization (when bags is undefined/null)
+      const currentBags = watch(`quality_outputs.${index}.bags`);
+      if (currentBags === undefined || currentBags === null) {
+        setValue(`quality_outputs.${index}.bags`, 0);
+      }
     });
-  }, [qualities, setValue]);
+  }, [qualities, setValue, watch]);
 
   return (
     <div className="col-span-2 mt-6">
