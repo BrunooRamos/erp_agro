@@ -10,3 +10,4 @@ export * from './pages/wash/HomeWash';
 export * from './pages/wash/QualitiesAndLabels';
 export * from './pages/wash/CostWash';
 export * from './pages/wash/ProcessWash';
+export * from './pages/wash/ListWashProcesses';

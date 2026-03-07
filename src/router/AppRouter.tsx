@@ -54,6 +54,7 @@ import {
   QualitiesAndLabels,
   CostWash,
   ProcessWash,
+  ListWashProcesses,
   HomeCostCenter,
   ResultStatus,
   ListPotateoHarvest,
@@ -523,6 +524,14 @@ export const menuRoutes: MenuRoute[] = [
     component: <CostWash />,
     visible: false,
     icon: "fa-solid fa-plus",
+  },
+  {
+    to: "/post-harvest/wash/list",
+    title: "Listado de procesos de lavado",
+    description: "Listado de procesos de lavado",
+    component: <ListWashProcesses />,
+    visible: false,
+    icon: "fa-solid fa-list",
   },
   // Sub menus de cada uno de los registros los cuales ya son sub menus
   {
