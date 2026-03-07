@@ -8,6 +8,7 @@ import {
 } from "../../../../../ui/components";
 import { useEffect, useState } from "react";
 import { Select } from "antd";
+import { toast } from "react-toastify";
 
 export const ProcessWash = () => {
   const { listWashQualities, listWashCosts, createWashProcess } = usePostHarvest();
@@ -44,8 +45,6 @@ export const ProcessWash = () => {
     ) || [])
     .sort((a, b) => (a.ref || "").localeCompare(b.ref || ""));
   
-  console.log(JSON.stringify(products, null, 2));
-
   // Estado para el stock máximo disponible
   const [maxStock, setMaxStock] = useState<number>(0);
 
@@ -84,14 +83,25 @@ export const ProcessWash = () => {
 
 
   const onSubmit = handleSubmit((data) => {
-    console.log(JSON.stringify(data, null, 2));
-    createWashProcessMutation(data,
-      {
-        onSuccess: () => {
-          reset();
-        },
-      }
-    );
+    // Filter out quality outputs with 0 bags or missing quality_id
+    const filteredData = {
+      ...data,
+      quality_outputs: data.quality_outputs.filter(
+        (output) => output.quality_id && output.bags > 0
+      ),
+    };
+
+    // Don't submit if no quality outputs
+    if (filteredData.quality_outputs.length === 0) {
+      toast.error("Debe asignar bolsas a al menos una calidad");
+      return;
+    }
+
+    createWashProcessMutation(filteredData, {
+      onSuccess: () => {
+        reset();
+      },
+    });
   });
 
   return (
