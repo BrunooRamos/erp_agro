@@ -132,3 +132,19 @@ export interface QualityOutput {
   quality_id: number;
   bags: number;
 }
+
+export interface WashProcessResponse {
+  rowid: string;
+  date: Date;
+  number_of_bins: string;
+  potato_name: string;
+  parent_potato_name: string;
+  user_created: string;
+  quality_outputs: WashQualityOutputResponse[];
+}
+
+export interface WashQualityOutputResponse {
+  quality_name: string;
+  label_name: string;
+  bags: number;
+}

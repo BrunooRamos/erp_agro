@@ -1,6 +1,6 @@
 import { CreateCaliberForm, CreateTongCostForm, TongProccesForm, CostWashForm, CreateQualityForm, WashProcessForm } from "../../interfaces";
 import { toast } from "react-toastify";
-import { deleteTongCostById, getCalibers, getTongCosts, postCreateCaliber, postCreateTongCost, postCreateTongProcess, getTongProcesses, postCreateWashCost, getWashCosts, postCreateWashQuality, getWashQualities, postCreateWashProcess } from "../../actions";
+import { deleteTongCostById, getCalibers, getTongCosts, postCreateCaliber, postCreateTongCost, postCreateTongProcess, getTongProcesses, postCreateWashCost, getWashCosts, postCreateWashQuality, getWashQualities, postCreateWashProcess, getWashProcesses } from "../../actions";
 import { useBaseMutation, useBaseQuery } from "../";
 
 
@@ -94,5 +94,10 @@ export const usePostHarvest = () => {
         }
     );
 
-    return { createCaliber, listCalibers, createTongCost, listTongCosts, deleteTongCost, createTongProcess, listTongProcesses, createWashCost, listWashCosts, createWashQuality, listWashQualities, createWashProcess };
+    const listWashProcesses = useBaseQuery(
+        ['washProcesses'],
+        getWashProcesses
+    );
+
+    return { createCaliber, listCalibers, createTongCost, listTongCosts, deleteTongCost, createTongProcess, listTongProcesses, createWashCost, listWashCosts, createWashQuality, listWashQualities, createWashProcess, listWashProcesses };
 }
