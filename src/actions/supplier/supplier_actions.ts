@@ -938,3 +938,12 @@ export const markInvoicesInPaymentOrder = async (
   });
   return response.data as boolean;
 };
+
+export const unmarkInvoicesFromPaymentOrder = async (
+  invoiceIds: string[]
+): Promise<boolean> => {
+  const response = await dolibarrApi.post('/vicentina/unmarkInvoicesFromPaymentOrder', {
+    invoice_ids: invoiceIds.map(id => parseInt(id, 10))
+  });
+  return response.data as boolean;
+};
