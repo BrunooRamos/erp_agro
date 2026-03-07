@@ -24,6 +24,13 @@ export const HomeWash = () => {
         to="/post-harvest/wash/costs"
         description="Formulario para crear costos de lavado"
       />
+      <OptionCard
+        visible={true}
+        icon="fa-solid fa-list"
+        title="Listado de procesos"
+        to="/post-harvest/wash/list"
+        description="Ver listado de procesos de lavado"
+      />
     </div>
   );
 };
