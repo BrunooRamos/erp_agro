@@ -7,6 +7,7 @@ import {
   ActionButtons,
 } from "../../../../../ui/components";
 import { useEffect, useState } from "react";
+import { Select } from "antd";
 
 export const ProcessWash = () => {
   const { listWashQualities, listWashCosts, createWashProcess } = usePostHarvest();
@@ -27,18 +28,21 @@ export const ProcessWash = () => {
   } = useForm<WashProcessForm>();
 
   //!Pipeline
-  // Filtrar productos padre (sin parent_key) que tienen hijos en el galpón principal
-  const parentProducts = products?.filter((product) => !product.parent_key);
+  // Filtrar productos padre (sin parent_key) que tienen hijos en el galpón principal — ordenados alfabéticamente
+  const parentProducts = products
+    ?.filter((product) => !product.parent_key)
+    ?.sort((a, b) => (a.ref || "").localeCompare(b.ref || ""));
 
   // Id del producto padre seleccionado
   const [selectedParentId, setSelectedParentId] = useState<string>("");
 
-  // Obtener productos hijo basados en el padre seleccionado y que estén en warehouse 7
-  const childProducts = products
+  // Obtener productos hijo basados en el padre seleccionado y que estén en warehouse 7 — ordenados alfabéticamente
+  const childProducts = (products
     ?.find((product) => product.id === selectedParentId)
     ?.variations?.filter((variation) => 
       variation.warehouses?.some((w) => w.id === 7)
-    ) || [];
+    ) || [])
+    .sort((a, b) => (a.ref || "").localeCompare(b.ref || ""));
   
   console.log(JSON.stringify(products, null, 2));
 
@@ -46,9 +50,10 @@ export const ProcessWash = () => {
   const [maxStock, setMaxStock] = useState<number>(0);
 
   // Cuando cambia el padre, actualizar el estado y limpiar la selección del hijo
-  const handleParentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const parentId = e.target.value;
+  const handleParentChange = (value: string | undefined) => {
+    const parentId = value || "";
     setSelectedParentId(parentId);
+    setValue("parent_potato_id", parentId);
     setValue("potato_id", ""); // Limpiar la selección del hijo
     setMaxStock(0); // Resetear el stock máximo
   };
@@ -110,22 +115,25 @@ export const ProcessWash = () => {
             required
             error={errors.parent_potato_id?.message || ""}
           >
-            <select
+            <Select
               id="parent-potato-select"
               aria-label="Seleccionar producto principal"
-              {...register("parent_potato_id", {
-                required: "Este campo es requerido",
-                onChange: handleParentChange,
-              })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800"
+              placeholder="Seleccione un producto principal"
+              showSearch
+              allowClear
+              value={watch("parent_potato_id") || undefined}
+              onChange={(value) => handleParentChange(value)}
+              filterOption={(input, option) =>
+                !!option?.children?.toString().toLowerCase().includes(input.toLowerCase())
+              }
+              className="w-full"
             >
-              <option value="">Seleccione un producto principal</option>
               {parentProducts?.map((product) => (
-                <option key={product.id} value={product.id}>
+                <Select.Option key={product.id} value={product.id}>
                   {product.ref}
-                </option>
+                </Select.Option>
               ))}
-            </select>
+            </Select>
           </FormField>
 
           <FormField
@@ -133,29 +141,33 @@ export const ProcessWash = () => {
             required
             error={errors.potato_id?.message || ""}
           >
-            <select
+            <Select
               id="potato-variant-select"
               aria-label="Seleccionar variante del producto"
-              {...register("potato_id", {
-                required: "Este campo es requerido",
-              })}
+              placeholder="Seleccione una variante"
+              showSearch
+              allowClear
+              value={watch("potato_id") || undefined}
+              onChange={(value) => setValue("potato_id", value || "")}
               disabled={!selectedParentId}
-              className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800 disabled:bg-gray-100"
+              filterOption={(input, option) =>
+                !!option?.children?.toString().toLowerCase().includes(input.toLowerCase())
+              }
+              className="w-full"
             >
-              <option value="">Seleccione una variante</option>
               {childProducts?.map((product) => {
                 // Encontrar el almacén con ID 7
                 const warehouse7 = product.warehouses?.find((w) => w.id === 7);
                 const stock = warehouse7?.stock || 0;
 
                 return (
-                  <option key={product.id} value={product.id}>
+                  <Select.Option key={product.id} value={product.id}>
                     {product.ref}
                     {` (Stock: ${stock})`}
-                  </option>
+                  </Select.Option>
                 );
               })}
-            </select>
+            </Select>
           </FormField>
 
           <FormField
