@@ -1,5 +1,6 @@
 import { useRegisters } from "../../../../../hooks";
 import { useState, useMemo } from "react";
+import dayjs from 'dayjs';
 
 export const ListRAF = () => {
     const { listRAF } = useRegisters();
@@ -15,8 +16,8 @@ export const ListRAF = () => {
     // Filtrar la lista según el código de cultivo seleccionado
     const filteredRafList = useMemo(() => {
         if (!rafList) return [];
-        if (selectedCropCode === 'all') return rafList;
-        return rafList.filter(register => register.raf.crop_code === selectedCropCode);
+        const filtered = selectedCropCode === 'all' ? rafList : rafList.filter(register => register.raf.crop_code === selectedCropCode);
+        return filtered.sort((a, b) => dayjs(b.raf.date).valueOf() - dayjs(a.raf.date).valueOf());
     }, [rafList, selectedCropCode]);
 
     if (isLoading) {
@@ -71,7 +72,7 @@ export const ListRAF = () => {
                                         </h3>
                                         <p className="text-sm text-zinc-500">
                                             <i className="fa-regular fa-calendar-days mr-1" />
-                                            {new Date(register.raf.date).toLocaleDateString()}
+                                            {dayjs(register.raf.date).format('DD/MM/YYYY')}
                                         </p>
                                     </div>
                                 </div>

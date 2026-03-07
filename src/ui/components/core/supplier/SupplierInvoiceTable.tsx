@@ -1,5 +1,5 @@
-import { Table, Checkbox, Tooltip, Select, Typography, Tag, Input, Space, Button } from 'antd';
-import { SearchOutlined } from '@ant-design/icons';
+import { Table, Checkbox, Tooltip, Select, Typography, Tag, Input, Space, Button, Popconfirm } from 'antd';
+import { SearchOutlined, CloseCircleOutlined } from '@ant-design/icons';
 import { useRef, useState } from 'react';
 import { InvoiceElement } from '../../../../interfaces';
 import type { InputRef, TableColumnType } from 'antd';
@@ -16,6 +16,8 @@ interface SupplierInvoiceTableProps {
   getSelectedCurrency: (id: string) => string;
   getSelectedBankAccount: (id: string) => string;
   availableCurrencies: string[];
+  onUnmarkFromPaymentOrder?: (invoiceId: string) => void;
+  isUnmarking?: boolean;
 }
 
 type DataIndex = ['invoice', 'cuenta'] | ['supplier', 'name'];
@@ -27,6 +29,8 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
   getSelectedCurrency,
   getSelectedBankAccount,
   availableCurrencies,
+  onUnmarkFromPaymentOrder,
+  isUnmarking,
 }) => {
   const searchInput = useRef<InputRef>(null);
   const [expandedRowKeys, setExpandedRowKeys] = useState<string[]>([]);
@@ -130,6 +134,34 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
           <Tooltip title={statusInfo.description}>
             <Tag color={statusInfo.badgeColor}>{statusInfo.label}</Tag>
           </Tooltip>
+        );
+      },
+    },
+    {
+      title: 'Acciones',
+      key: 'actions',
+      width: 120,
+      render: (_: unknown, record: InvoiceElement) => {
+        const statusInfo = getInvoiceStatus(record);
+        if (statusInfo.status !== 'in-payment-order' || !onUnmarkFromPaymentOrder) return null;
+        return (
+          <Popconfirm
+            title="Quitar de orden de pago"
+            description="Esta factura dejará de estar marcada como 'En orden de pago' y volverá a estar disponible."
+            onConfirm={() => onUnmarkFromPaymentOrder(record.invoice.id)}
+            okText="Confirmar"
+            cancelText="Cancelar"
+            okButtonProps={{ loading: isUnmarking }}
+          >
+            <Button
+              size="small"
+              danger
+              icon={<CloseCircleOutlined />}
+              loading={isUnmarking}
+            >
+              Quitar de OP
+            </Button>
+          </Popconfirm>
         );
       },
     },

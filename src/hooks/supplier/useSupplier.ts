@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { generateSupplierInvoicePDF, getSupplier, markInvoicesInPaymentOrder } from "../../actions";
+import { generateSupplierInvoicePDF, getSupplier, markInvoicesInPaymentOrder, unmarkInvoicesFromPaymentOrder } from "../../actions";
 import { useBaseQuery } from "../config/useBaseQuery";
 import { InvoiceElement, SupplierTotal } from "../../interfaces";
 import { message } from "antd";
@@ -133,6 +133,26 @@ export const useSupplier = () => {
         setShowPaymentOrderModal(false);
     };
 
+    const [isUnmarking, setIsUnmarking] = useState(false);
+
+    const unmarkFromPaymentOrder = async (invoiceId: string) => {
+        setIsUnmarking(true);
+        try {
+            const success = await unmarkInvoicesFromPaymentOrder([invoiceId]);
+            if (success) {
+                await listSupplier.refetch();
+                message.success('Factura quitada de la orden de pago.');
+            } else {
+                message.error('No se pudo quitar la factura de la orden de pago.');
+            }
+        } catch (error) {
+            console.error('Error al quitar factura de orden de pago:', error);
+            message.error('Error al quitar la factura de la orden de pago.');
+        } finally {
+            setIsUnmarking(false);
+        }
+    };
+
     const availableCurrencies = ["UYU", "USD", "EFECTIVO_UYU", "EFECTIVO_USD"];
 
     // Obtener las facturas separadas por moneda
@@ -223,6 +243,8 @@ export const useSupplier = () => {
         getTotalsForModal,
         availableCurrencies,
         getInvoicesByCurrency,
-        isGeneratingPDF
+        isGeneratingPDF,
+        unmarkFromPaymentOrder,
+        isUnmarking
     };
 };
