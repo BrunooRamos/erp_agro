@@ -179,7 +179,6 @@ export const TongProcces = () => {
 
           <FormField
             label="Variante del Producto"
-            required
             error={errors.potato_id?.message || ""}
           >
             <Select

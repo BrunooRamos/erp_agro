@@ -120,7 +120,7 @@ export interface CostWashResponse extends CostWashForm {
 export interface WashProcessForm {
   date: string;
   parent_potato_id: string;
-  potato_id: string;
+  potato_id?: string;
   number_of_bins: number;
   warehouse_id: number;
   quality_outputs: QualityOutput[];
