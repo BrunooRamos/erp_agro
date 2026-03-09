@@ -127,6 +127,8 @@ export const TongProcces = () => {
     // Asegurarse de que los costos calculados y el warehouse_id estén incluidos en el envío
     const dataToSubmit = {
       ...data,
+      // Si no hay variante seleccionada, usar el producto padre como fuente
+      potato_id: data.potato_id || data.parent_potato_id,
       // Asegurarse de que warehouse_id esté incluido
       warehouse_id: data.warehouse_id || 7,
     };
