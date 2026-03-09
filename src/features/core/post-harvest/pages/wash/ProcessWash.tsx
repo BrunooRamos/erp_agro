@@ -86,6 +86,8 @@ export const ProcessWash = () => {
     // Filter out quality outputs with 0 bags or missing quality_id
     const filteredData = {
       ...data,
+      // Si no hay variante seleccionada, usar el producto padre como fuente
+      potato_id: data.potato_id || data.parent_potato_id,
       quality_outputs: data.quality_outputs.filter(
         (output) => output.quality_id && output.bags > 0
       ),
@@ -148,7 +150,6 @@ export const ProcessWash = () => {
 
           <FormField
             label="Variante del Producto"
-            required
             error={errors.potato_id?.message || ""}
           >
             <Select
