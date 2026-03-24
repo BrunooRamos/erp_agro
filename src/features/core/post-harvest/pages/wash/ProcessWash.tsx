@@ -37,12 +37,10 @@ export const ProcessWash = () => {
   // Id del producto padre seleccionado
   const [selectedParentId, setSelectedParentId] = useState<string>("");
 
-  // Obtener productos hijo basados en el padre seleccionado y que estén en warehouse 7 — ordenados alfabéticamente
+  // Obtener productos hijo basados en el padre seleccionado — ordenados alfabéticamente
   const childProducts = (products
     ?.find((product) => product.id === selectedParentId)
-    ?.variations?.filter((variation) => 
-      variation.warehouses?.some((w) => w.id === 7)
-    ) || [])
+    ?.variations || [])
     .sort((a, b) => (a.ref || "").localeCompare(b.ref || ""));
   
   // Estado para el stock máximo disponible
@@ -182,28 +180,28 @@ export const ProcessWash = () => {
           </FormField>
 
           <FormField
-            label={`Número de bines que se procesan (máx: ${maxStock})`}
+            label={maxStock > 0 ? `Número de bines que se procesan (máx: ${maxStock})` : `Número de bines que se procesan`}
             required
             error={errors.number_of_bins?.message || ""}
           >
             <input
               type="number"
               min="1"
-              max={maxStock}
+              max={maxStock > 0 ? maxStock : undefined}
               {...register("number_of_bins", {
                 required: "Este campo es requerido",
                 min: {
                   value: 1,
                   message: "El número mínimo de bines es 1",
                 },
-                max: {
+                max: maxStock > 0 ? {
                   value: maxStock,
                   message: `El número máximo de bines es ${maxStock}`,
-                },
+                } : undefined,
                 valueAsNumber: true,
               })}
               placeholder="Número de bines"
-              disabled={!selectedChildId || maxStock === 0}
+              disabled={!selectedChildId}
               className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800 disabled:bg-gray-100"
             />
           </FormField>
