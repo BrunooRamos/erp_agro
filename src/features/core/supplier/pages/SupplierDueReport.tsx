@@ -188,7 +188,7 @@ export const SupplierDueReport = () => {
     generateSupplierDueReportExcel(report.data, { currency: filters.currency, supplier_id: filters.supplier_id });
   };
 
-  const hasResults = Boolean(report.data && Array.isArray(report.data.invoices) && report.data.invoices.length > 0);
+  const hasResults = rows.some(r => r.rowType === 'data');
 
   return (
     <div className="p-6">
