@@ -216,7 +216,7 @@ export const useSupplier = () => {
             const supplier = supplierTotalsMap.get(supplierId)!;
             supplier.invoicesCount++;
             const ref = item.invoice.invoice.ref || item.invoice.invoice.ref_supplier || '';
-            if (ref) supplier.invoiceRefs.push(ref);
+            if (ref && !supplier.invoiceRefs.includes(ref)) supplier.invoiceRefs.push(ref);
             
             if (item.currency === 'USD' || item.currency === 'EFECTIVO_USD') {
                 supplier.totalUSD += amount;
