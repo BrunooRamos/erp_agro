@@ -12,6 +12,8 @@ export const useSupplierDueReport = () => {
     account: "",
     date_from: toISO(firstOfMonth),
     date_to: toISO(today),
+    supplier_id: "",
+    currency: "",
   });
 
   const accounts = useBaseQuery<AvailableAccountsResponse>(
@@ -35,6 +37,8 @@ export const useSupplierDueReport = () => {
       account: "",
       date_from: toISO(firstOfMonth),
       date_to: toISO(today),
+      supplier_id: "",
+      currency: "",
     });
   };
 

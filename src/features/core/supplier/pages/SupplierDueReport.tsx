@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useSupplierDueReport } from "../../../../hooks";
 import { SupplierDueReportInvoiceEntry } from "../../../../interfaces";
 import dayjs from "dayjs";
-import { generateSupplierDueReportPDF } from "../../../../actions/supplier/supplier_actions";
+import { generateSupplierDueReportPDF, generateSupplierDueReportExcel } from "../../../../actions/supplier/supplier_actions";
 
 const { Title, Text } = Typography;
 
@@ -38,13 +38,50 @@ export const SupplierDueReport = () => {
     clearFilters();
   };
 
+  const uniqueSuppliers = useMemo(() => {
+    if (!report.data?.invoices) return [];
+    const map = new Map<string, string>();
+    for (const e of report.data.invoices) {
+      if (!map.has(e.supplier.id)) map.set(e.supplier.id, e.supplier.name);
+    }
+    return Array.from(map.entries()).map(([id, name]) => ({ value: id, label: name })).sort((a, b) => a.label.localeCompare(b.label));
+  }, [report.data]);
+
   const rows = useMemo(() => {
     if (!report.data) return [] as UiRow[];
     const data = report.data;
-    const invoices = Array.isArray(data.invoices) ? data.invoices : [];
+    let invoices = Array.isArray(data.invoices) ? data.invoices : [];
     if (invoices.length === 0) return [] as UiRow[];
-    const supplierSubtotals = Array.isArray(data.subtotals?.by_supplier) ? data.subtotals!.by_supplier : [];
-    const monthSubtotals = Array.isArray(data.subtotals?.by_month_due) ? data.subtotals!.by_month_due : [];
+
+    // Client-side filtering
+    if (filters.supplier_id) {
+      invoices = invoices.filter(e => e.supplier.id === filters.supplier_id);
+    }
+    if (filters.currency === 'UYU') {
+      invoices = invoices.filter(e => (e.invoice.printable_amounts?.amount_uyu || 0) !== 0);
+    } else if (filters.currency === 'USD') {
+      invoices = invoices.filter(e => (e.invoice.printable_amounts?.amount_usd || 0) !== 0);
+    }
+
+    if (invoices.length === 0) return [] as UiRow[];
+    // Recompute subtotals from filtered invoices
+    const supplierSubtotalMap = new Map<string, { supplier_name: string; amount_uyu: number; amount_usd: number }>();
+    const monthSubtotalMap = new Map<string, { amount_uyu: number; amount_usd: number }>();
+    for (const e of invoices) {
+      const sid = e.supplier.id;
+      if (!supplierSubtotalMap.has(sid)) supplierSubtotalMap.set(sid, { supplier_name: e.supplier.name, amount_uyu: 0, amount_usd: 0 });
+      const s = supplierSubtotalMap.get(sid)!;
+      s.amount_uyu += e.invoice.printable_amounts?.amount_uyu || 0;
+      s.amount_usd += e.invoice.printable_amounts?.amount_usd || 0;
+
+      const month = e.invoice.month_year_due;
+      if (!monthSubtotalMap.has(month)) monthSubtotalMap.set(month, { amount_uyu: 0, amount_usd: 0 });
+      const m = monthSubtotalMap.get(month)!;
+      m.amount_uyu += e.invoice.printable_amounts?.amount_uyu || 0;
+      m.amount_usd += e.invoice.printable_amounts?.amount_usd || 0;
+    }
+    const supplierSubtotals = Array.from(supplierSubtotalMap.entries()).map(([id, v]) => ({ supplier_id: id, ...v }));
+    const monthSubtotals = Array.from(monthSubtotalMap.entries()).map(([month_year_due, v]) => ({ month_year_due, ...v }));
     const sorted = [...invoices].sort((a, b) => {
       if (a.invoice.month_year_due !== b.invoice.month_year_due) return a.invoice.month_year_due.localeCompare(b.invoice.month_year_due);
       if (a.supplier.name !== b.supplier.name) return a.supplier.name.localeCompare(b.supplier.name);
@@ -109,17 +146,19 @@ export const SupplierDueReport = () => {
       }
     });
 
-    // Grand total (guard nulls)
+    // Grand total from filtered invoices
+    const grandUyu = invoices.reduce((acc, e) => acc + (e.invoice.printable_amounts?.amount_uyu || 0), 0);
+    const grandUsd = invoices.reduce((acc, e) => acc + (e.invoice.printable_amounts?.amount_usd || 0), 0);
     output.push({
       rowType: 'grandTotal',
       key: `grand-total`,
       label: 'TOTAL GENERAL',
-      amount_uyu: data.grand_total?.amount_uyu,
-      amount_usd: data.grand_total?.amount_usd,
+      amount_uyu: grandUyu,
+      amount_usd: grandUsd,
     });
 
     return output;
-  }, [report.data]);
+  }, [report.data, filters.supplier_id, filters.currency]);
 
   const columns = [
     { title: 'M-A Vto.', dataIndex: ['invoice', 'month_year_due'], width: 100, render: (_: unknown, r: UiRow) => r.rowType === 'data' ? r.invoice?.month_year_due : '' },
@@ -130,8 +169,8 @@ export const SupplierDueReport = () => {
     { title: 'N° Doc.', dataIndex: ['invoice', 'ref'], width: 140, render: (_: unknown, r: UiRow) => r.rowType === 'data' ? r.invoice?.ref : '' },
     { title: 'Fecha Orden de Pago', dataIndex: ['payments', '0', 'payment_order_date'], width: 150, render: (_: unknown, r: UiRow) => r.rowType === 'data' ? formatDate(r.payments?.[0]?.payment_order_date || undefined) : '' },
     { title: 'N° Orden de Pago', dataIndex: ['payments', '0', 'payment_order_ref'], width: 160, render: (_: unknown, r: UiRow) => r.rowType === 'data' ? (r.payments?.[0]?.payment_order_ref || '') : '' },
-    { title: '$', dataIndex: ['invoice', 'printable_amounts', 'amount_uyu'], align: 'right' as const, width: 120, render: (_: unknown, r: UiRow) => r.rowType === 'data' ? formatMoney(r.invoice?.printable_amounts?.amount_uyu) : formatMoney(r.amount_uyu) },
-    { title: 'U$S', dataIndex: ['invoice', 'printable_amounts', 'amount_usd'], align: 'right' as const, width: 120, render: (_: unknown, r: UiRow) => r.rowType === 'data' ? formatMoney(r.invoice?.printable_amounts?.amount_usd) : formatMoney(r.amount_usd) },
+    { title: '$', dataIndex: ['invoice', 'printable_amounts', 'amount_uyu'], align: 'right' as const, width: 120, render: (_: unknown, r: UiRow) => filters.currency === 'USD' ? '' : (r.rowType === 'data' ? formatMoney(r.invoice?.printable_amounts?.amount_uyu) : formatMoney(r.amount_uyu)) },
+    { title: 'U$S', dataIndex: ['invoice', 'printable_amounts', 'amount_usd'], align: 'right' as const, width: 120, render: (_: unknown, r: UiRow) => filters.currency === 'UYU' ? '' : (r.rowType === 'data' ? formatMoney(r.invoice?.printable_amounts?.amount_usd) : formatMoney(r.amount_usd)) },
   ];
 
   const onExportPDF = async () => {
@@ -142,6 +181,11 @@ export const SupplierDueReport = () => {
     } finally {
       setIsExporting(false);
     }
+  };
+
+  const onExportExcel = () => {
+    if (!report.data) return;
+    generateSupplierDueReportExcel(report.data, { currency: filters.currency, supplier_id: filters.supplier_id });
   };
 
   const hasResults = Boolean(report.data && Array.isArray(report.data.invoices) && report.data.invoices.length > 0);
@@ -188,10 +232,42 @@ export const SupplierDueReport = () => {
                   />
                 </div>
               </div>
+              <div>
+                <Text strong>Proveedor</Text>
+                <div>
+                  <Select
+                    placeholder="Todos"
+                    allowClear
+                    showSearch
+                    optionFilterProp="label"
+                    style={{ width: 240 }}
+                    value={filters.supplier_id || undefined}
+                    onChange={(v) => updateFilters({ supplier_id: v || '' })}
+                    options={uniqueSuppliers}
+                  />
+                </div>
+              </div>
+              <div>
+                <Text strong>Moneda</Text>
+                <div>
+                  <Select
+                    placeholder="Todas"
+                    allowClear
+                    style={{ width: 160 }}
+                    value={filters.currency || undefined}
+                    onChange={(v) => updateFilters({ currency: (v || '') as '' | 'UYU' | 'USD' })}
+                    options={[
+                      { value: 'UYU', label: 'Pesos (UYU)' },
+                      { value: 'USD', label: 'Dólares (USD)' },
+                    ]}
+                  />
+                </div>
+              </div>
               <Space>
                 <Button type="primary" onClick={onSearch} loading={report.isFetching}>Buscar</Button>
                 <Button onClick={onClear}>Limpiar</Button>
                 <Button onClick={onExportPDF} disabled={!hasResults} loading={isExporting}>Exportar PDF</Button>
+                <Button onClick={onExportExcel} disabled={!hasResults}>Exportar Excel</Button>
               </Space>
             </Space>
           </Card>
