@@ -201,7 +201,7 @@ export const ProcessWash = () => {
                 valueAsNumber: true,
               })}
               placeholder="Número de bines"
-              disabled={!selectedChildId}
+              disabled={!selectedParentId}
               className="w-full px-3 py-2 border border-gray-300 rounded-sm focus:outline-none focus:ring-2 focus:ring-zinc-800 disabled:bg-gray-100"
             />
           </FormField>
