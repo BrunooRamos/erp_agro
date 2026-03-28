@@ -149,6 +149,7 @@ export interface SupplierTotal {
   invoicesCount: number;
   totalUSD: number;
   totalUYU: number;
+  invoiceRefs: string[];
 }
 
 // ---- Supplier Due Report (Vencimientos Estudio) ----
