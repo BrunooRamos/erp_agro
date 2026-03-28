@@ -168,6 +168,8 @@ export interface SupplierDueReportFilters {
   account: string; // value of "cuenta"
   date_from: string; // YYYY-MM-DD
   date_to: string; // YYYY-MM-DD
+  supplier_id?: string;
+  currency?: 'UYU' | 'USD' | '';
 }
 
 export interface SupplierDueReport {

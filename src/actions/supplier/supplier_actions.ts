@@ -2,6 +2,7 @@ import { dolibarrApi } from "../../api";
 import { AccountStatementFilters, InvoiceElement, SupplierAccountStatement, SupplierInvoice, Thirdparty, ThirdpartyFilters, AvailableAccountsResponse, SupplierDueReport, SupplierDueReportFilters, AccountMovement } from "../../interfaces";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 export const getSupplier = async () : Promise<SupplierInvoice> => {
     const response = await dolibarrApi.get('/vicentina/pending-supplier-invoices');
@@ -552,6 +553,33 @@ export const getSupplierDueReport = async (filters: SupplierDueReportFilters): P
   };
 
   return transformed;
+};
+
+export const generateSupplierDueReportExcel = (report: SupplierDueReport, filters: { currency?: string; supplier_id?: string }): void => {
+  const invoices = report.invoices || [];
+
+  let filtered = invoices;
+  if (filters.supplier_id) filtered = filtered.filter(e => e.supplier.id === filters.supplier_id);
+  if (filters.currency === 'UYU') filtered = filtered.filter(e => (e.invoice.printable_amounts?.amount_uyu || 0) !== 0);
+  if (filters.currency === 'USD') filtered = filtered.filter(e => (e.invoice.printable_amounts?.amount_usd || 0) !== 0);
+
+  const rows = filtered.map(e => ({
+    'M-A Vto.': e.invoice.month_year_due,
+    'Proveedor': e.supplier.name,
+    'Fecha Vto.': e.invoice.due_date,
+    'Tipo Doc.': e.invoice.type_document,
+    'Fecha Doc.': e.invoice.date,
+    'N° Doc.': e.invoice.ref,
+    'Fecha OP': e.payments?.[0]?.payment_order_date || '',
+    'N° OP': e.payments?.[0]?.payment_order_ref || '',
+    '$ (UYU)': filters.currency === 'USD' ? '' : (e.invoice.printable_amounts?.amount_uyu || ''),
+    'U$S (USD)': filters.currency === 'UYU' ? '' : (e.invoice.printable_amounts?.amount_usd || ''),
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Vencimientos');
+  XLSX.writeFile(wb, `vencimientos_${new Date().toISOString().slice(0, 10)}.xlsx`);
 };
 
 export const generateSupplierDueReportPDF = (report: SupplierDueReport): void => {
