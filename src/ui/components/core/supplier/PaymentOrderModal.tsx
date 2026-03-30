@@ -132,6 +132,13 @@ export const PaymentOrderModal: React.FC<PaymentOrderModalProps> = ({
                     <Text className="block text-gray-600">
                       {supplier.invoicesCount} factura{supplier.invoicesCount !== 1 ? 's' : ''}
                     </Text>
+                    {supplier.invoiceRefs && supplier.invoiceRefs.length > 0 && (
+                      <div className="mt-1">
+                        {supplier.invoiceRefs.map((ref, i) => (
+                          <Text key={i} className="block text-xs text-gray-500">• {ref}</Text>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div className="text-right">
                     {supplier.totalUSD > 0 && (

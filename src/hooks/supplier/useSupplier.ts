@@ -208,12 +208,15 @@ export const useSupplier = () => {
                     supplierName,
                     invoicesCount: 0,
                     totalUSD: 0,
-                    totalUYU: 0
+                    totalUYU: 0,
+                    invoiceRefs: []
                 });
             }
             
             const supplier = supplierTotalsMap.get(supplierId)!;
             supplier.invoicesCount++;
+            const ref = item.invoice.invoice.ref || item.invoice.invoice.ref_supplier || '';
+            if (ref && !supplier.invoiceRefs.includes(ref)) supplier.invoiceRefs.push(ref);
             
             if (item.currency === 'USD' || item.currency === 'EFECTIVO_USD') {
                 supplier.totalUSD += amount;
