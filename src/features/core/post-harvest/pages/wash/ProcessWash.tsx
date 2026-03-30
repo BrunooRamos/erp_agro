@@ -100,6 +100,8 @@ export const ProcessWash = () => {
     createWashProcessMutation(filteredData, {
       onSuccess: () => {
         reset();
+        setSelectedParentId("");
+        setMaxStock(0);
       },
     });
   });
