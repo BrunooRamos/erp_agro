@@ -1,7 +1,7 @@
 # Vicentina ERP 
 ## Bruno Ramos - 2025
 
-### 1. Contexto general
+### 1. Contexto general:
 Vicentina ha trabajado en gran parte de su existencia con tablas de Excel, sin embargo, dada la logica de negocio y la dificultad para realizar 
 dearrollos personalizados en Excel, independientemente de su felxibilidad, han hecho que en último tiempo estos documentos se "rompan", y no se puedan
 arreglar fácilmente. Esto a producido que, si bien los datos se tienen, no se pueden usar para crear información, por lo tanto, se pierde la 
