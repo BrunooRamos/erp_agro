@@ -100,6 +100,15 @@ export const ProcessWash = () => {
     createWashProcessMutation(filteredData, {
       onSuccess: () => {
         reset();
+        setSelectedParentId("");
+        setMaxStock(0);
+
+        // Re-initialize quality_ids after reset so that selecting the same
+        // product again doesn't leave quality_id undefined in form state
+        washQualities.forEach((quality, index) => {
+          setValue(`quality_outputs.${index}.quality_id`, Number(quality.rowid));
+          setValue(`quality_outputs.${index}.bags`, 0);
+        });
       },
     });
   });
