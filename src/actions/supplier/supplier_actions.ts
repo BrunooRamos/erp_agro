@@ -35,7 +35,8 @@ const getValidBankAccounts = (invoice: InvoiceElement) => {
 
 export const generateSupplierInvoicePDF = (
     selectedInvoices: SelectedInvoice[],
-    orderNumber: string
+    orderNumber: string,
+    includeInvoiceDetail: boolean = false
 ): void => {
     const doc = new jsPDF() as JsPDFWithAutoTable;
 
@@ -58,6 +59,7 @@ export const generateSupplierInvoicePDF = (
         totalUYU: number;
         totalUSD: number;
         bankAccount?: InvoiceElement["bank_accounts"][number] | null;
+        invoices: Array<{ ref: string; amount: number; currency: 'USD' | 'UYU' }>;
     };
 
     const supplierBankMap = new Map<string, SupplierRow>();
@@ -86,6 +88,7 @@ export const generateSupplierInvoicePDF = (
                 totalUYU: 0,
                 totalUSD: 0,
                 bankAccount: null,
+                invoices: [],
             });
         }
 
@@ -95,6 +98,12 @@ export const generateSupplierInvoicePDF = (
         } else {
             row.totalUYU += amount;
         }
+
+        row.invoices.push({
+            ref: item.invoice.invoice.ref || item.invoice.invoice.ref_supplier || '-',
+            amount,
+            currency: paymentCurrency,
+        });
 
         if (!isCash && !row.bankAccount) {
             const validBankAccounts = getValidBankAccounts(item.invoice);
@@ -116,23 +125,50 @@ export const generateSupplierInvoicePDF = (
     // Dos tablas separadas por moneda
     let currentY = 45;
 
+    // Helper para formatear montos
+    const fmtAmount = (n: number) => n.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    // Helper para generar sub-filas de detalle de facturas
+    const buildDetailRows = (invoices: SupplierRow['invoices']) =>
+        invoices.map(inv => [
+            `  → ${inv.ref}`,
+            '',
+            inv.currency === 'UYU' ? `$ ${fmtAmount(inv.amount)}` : '',
+            inv.currency === 'USD' ? `U$S ${fmtAmount(inv.amount)}` : '',
+            '', '', '', '', '',
+        ]);
+
+    // Callback para estilizar filas de detalle (fuente más chica y gris)
+    const detailRowDidParseCell = includeInvoiceDetail ? (data: { section: string; row: { raw: unknown }; cell: { styles: { fontSize: number; textColor: number[]; fontStyle: string } } }) => {
+        if (data.section === 'body') {
+            const raw = data.row.raw as string[];
+            if (Array.isArray(raw) && typeof raw[0] === 'string' && raw[0].startsWith('  →')) {
+                data.cell.styles.fontSize = 8;
+                data.cell.styles.textColor = [100, 100, 100];
+                data.cell.styles.fontStyle = 'italic';
+            }
+        }
+    } : undefined;
+
     // Tabla para pagos en Pesos (UYU) - Banco
     const uyRows = Array.from(supplierBankMap.values())
         .filter(r => r.totalUYU > 0)
         .sort((a, b) => a.supplierName.localeCompare(b.supplierName))
-        .map(r => {
+        .flatMap(r => {
             const bank = r.bankAccount;
-            return [
+            const summaryRow = [
                 r.supplierName,
                 r.supplierCode || '-',
-                `$ ${r.totalUYU.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-                r.totalUSD > 0 ? `U$S ${r.totalUSD.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-',
+                `$ ${fmtAmount(r.totalUYU)}`,
+                r.totalUSD > 0 ? `U$S ${fmtAmount(r.totalUSD)}` : '-',
                 bank?.bank_name || '-',
                 bank?.label || '-',
                 'UYU',
                 bank?.account_number || bank?.iban || '-',
                 bank?.owner || '-',
             ];
+            if (!includeInvoiceDetail) return [summaryRow];
+            return [summaryRow, ...buildDetailRows(r.invoices)];
         });
 
     if (uyRows.length > 0) {
@@ -157,11 +193,12 @@ export const generateSupplierInvoicePDF = (
             foot: [[
                 'Total UYU',
                 '',
-                `$ ${grandTotalBankUYU.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                `$ ${fmtAmount(grandTotalBankUYU)}`,
                 '',
                 '', '', '', '', ''
             ]],
-            footStyles: { fillColor: [46, 204, 113] }
+            footStyles: { fillColor: [46, 204, 113] },
+            ...(detailRowDidParseCell ? { didParseCell: detailRowDidParseCell } : {}),
         });
         currentY = (doc as JsPDFWithAutoTable).lastAutoTable.finalY + 10;
     }
@@ -170,23 +207,24 @@ export const generateSupplierInvoicePDF = (
     const usdRows = Array.from(supplierBankMap.values())
         .filter(r => r.totalUSD > 0)
         .sort((a, b) => a.supplierName.localeCompare(b.supplierName))
-        .map(r => {
+        .flatMap(r => {
             const bank = r.bankAccount;
-            return [
+            const summaryRow = [
                 r.supplierName,
                 r.supplierCode || '-',
-                r.totalUYU > 0 ? `$ ${r.totalUYU.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-',
-                `U$S ${r.totalUSD.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                r.totalUYU > 0 ? `$ ${fmtAmount(r.totalUYU)}` : '-',
+                `U$S ${fmtAmount(r.totalUSD)}`,
                 bank?.bank_name || '-',
                 bank?.label || '-',
                 'USD',
                 bank?.account_number || bank?.iban || '-',
                 bank?.owner || '-',
             ];
+            if (!includeInvoiceDetail) return [summaryRow];
+            return [summaryRow, ...buildDetailRows(r.invoices)];
         });
 
     if (usdRows.length > 0) {
-        // Si estamos muy abajo en la página, autoTable puede agregar página nueva automáticamente
         doc.setFontSize(13);
         doc.text('Pagos en Dólares (USD)', 14, currentY);
         autoTable(doc, {
@@ -209,10 +247,11 @@ export const generateSupplierInvoicePDF = (
                 'Total USD',
                 '',
                 '',
-                `U$S ${grandTotalBankUSD.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                `U$S ${fmtAmount(grandTotalBankUSD)}`,
                 '', '', '', '', ''
             ]],
-            footStyles: { fillColor: [46, 204, 113] }
+            footStyles: { fillColor: [46, 204, 113] },
+            ...(detailRowDidParseCell ? { didParseCell: detailRowDidParseCell } : {}),
         });
     }
 
@@ -220,18 +259,20 @@ export const generateSupplierInvoicePDF = (
     const cashUyRows = Array.from(supplierCashMap.values())
         .filter(r => r.totalUYU > 0)
         .sort((a, b) => a.supplierName.localeCompare(b.supplierName))
-        .map(r => {
-            return [
+        .flatMap(r => {
+            const summaryRow = [
                 r.supplierName,
                 r.supplierCode || '-',
-                `$ ${r.totalUYU.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
-                r.totalUSD > 0 ? `U$S ${r.totalUSD.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-',
+                `$ ${fmtAmount(r.totalUYU)}`,
+                r.totalUSD > 0 ? `U$S ${fmtAmount(r.totalUSD)}` : '-',
                 '-',
                 'EFECTIVO',
                 'UYU',
                 '-',
                 '-',
             ];
+            if (!includeInvoiceDetail) return [summaryRow];
+            return [summaryRow, ...buildDetailRows(r.invoices)];
         });
 
     if (cashUyRows.length > 0) {
@@ -257,11 +298,12 @@ export const generateSupplierInvoicePDF = (
             foot: [[
                 'Total UYU',
                 '',
-                `$ ${grandTotalCashUYU.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                `$ ${fmtAmount(grandTotalCashUYU)}`,
                 '',
                 '', '', '', '', ''
             ]],
-            footStyles: { fillColor: [46, 204, 113] }
+            footStyles: { fillColor: [46, 204, 113] },
+            ...(detailRowDidParseCell ? { didParseCell: detailRowDidParseCell } : {}),
         });
     }
 
@@ -269,18 +311,20 @@ export const generateSupplierInvoicePDF = (
     const cashUsdRows = Array.from(supplierCashMap.values())
         .filter(r => r.totalUSD > 0)
         .sort((a, b) => a.supplierName.localeCompare(b.supplierName))
-        .map(r => {
-            return [
+        .flatMap(r => {
+            const summaryRow = [
                 r.supplierName,
                 r.supplierCode || '-',
-                r.totalUYU > 0 ? `$ ${r.totalUYU.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '-',
-                `U$S ${r.totalUSD.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                r.totalUYU > 0 ? `$ ${fmtAmount(r.totalUYU)}` : '-',
+                `U$S ${fmtAmount(r.totalUSD)}`,
                 '-',
                 'EFECTIVO',
                 'USD',
                 '-',
                 '-',
             ];
+            if (!includeInvoiceDetail) return [summaryRow];
+            return [summaryRow, ...buildDetailRows(r.invoices)];
         });
 
     if (cashUsdRows.length > 0) {
@@ -307,10 +351,11 @@ export const generateSupplierInvoicePDF = (
                 'Total USD',
                 '',
                 '',
-                `U$S ${grandTotalCashUSD.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+                `U$S ${fmtAmount(grandTotalCashUSD)}`,
                 '', '', '', '', ''
             ]],
-            footStyles: { fillColor: [46, 204, 113] }
+            footStyles: { fillColor: [46, 204, 113] },
+            ...(detailRowDidParseCell ? { didParseCell: detailRowDidParseCell } : {}),
         });
     }
 
