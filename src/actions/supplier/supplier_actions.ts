@@ -139,9 +139,10 @@ export const generateSupplierInvoicePDF = (
         ]);
 
     // Callback para estilizar filas de detalle (fuente más chica y gris)
-    const detailRowDidParseCell = includeInvoiceDetail ? (data: { section: string; row: { raw: unknown }; cell: { styles: { fontSize: number; textColor: number[]; fontStyle: string } } }) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const detailRowDidParseCell = includeInvoiceDetail ? (data: any) => {
         if (data.section === 'body') {
-            const raw = data.row.raw as string[];
+            const raw = data.row?.raw;
             if (Array.isArray(raw) && typeof raw[0] === 'string' && raw[0].startsWith('  →')) {
                 data.cell.styles.fontSize = 8;
                 data.cell.styles.textColor = [100, 100, 100];
