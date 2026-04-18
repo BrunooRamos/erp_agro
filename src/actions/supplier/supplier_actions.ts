@@ -100,7 +100,7 @@ export const generateSupplierInvoicePDF = (
         }
 
         row.invoices.push({
-            ref: item.invoice.invoice.ref || item.invoice.invoice.ref_supplier || '-',
+            ref: item.invoice.invoice.ref_supplier || item.invoice.invoice.ref || '-',
             amount,
             currency: paymentCurrency,
         });
