@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Form, Input, Button, Typography, Divider, Row, Col, Statistic } from 'antd';
+import { Modal, Form, Input, Button, Typography, Divider, Row, Col, Statistic, Checkbox } from 'antd';
 import { SupplierTotal } from '../../../../interfaces';
 
 const { Title, Text } = Typography;
@@ -7,7 +7,7 @@ const { Title, Text } = Typography;
 interface PaymentOrderModalProps {
   visible: boolean;
   onCancel: () => void;
-  onConfirm: (orderNumber: string) => void;
+  onConfirm: (orderNumber: string, includeInvoiceDetail: boolean) => void;
   supplierTotals: SupplierTotal[];
   totalUSD: number;
   totalUYU: number;
@@ -25,18 +25,21 @@ export const PaymentOrderModal: React.FC<PaymentOrderModalProps> = ({
 }) => {
   const [form] = Form.useForm();
   const [orderNumber, setOrderNumber] = useState('');
+  const [includeInvoiceDetail, setIncludeInvoiceDetail] = useState(true);
 
   const handleConfirm = () => {
     form.validateFields().then((values) => {
-      onConfirm(values.orderNumber);
+      onConfirm(values.orderNumber, includeInvoiceDetail);
       form.resetFields();
       setOrderNumber('');
+      setIncludeInvoiceDetail(true);
     });
   };
 
   const handleCancel = () => {
     form.resetFields();
     setOrderNumber('');
+    setIncludeInvoiceDetail(true);
     onCancel();
   };
 
@@ -84,6 +87,14 @@ export const PaymentOrderModal: React.FC<PaymentOrderModalProps> = ({
               onChange={(e) => setOrderNumber(e.target.value)}
               autoFocus
             />
+          </Form.Item>
+          <Form.Item>
+            <Checkbox
+              checked={includeInvoiceDetail}
+              onChange={(e) => setIncludeInvoiceDetail(e.target.checked)}
+            >
+              Incluir detalle de facturas en el PDF
+            </Checkbox>
           </Form.Item>
         </Form>
 

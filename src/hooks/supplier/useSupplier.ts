@@ -89,13 +89,13 @@ export const useSupplier = () => {
         setSelectedInvoices([]);
     };
 
-    const generatePDF = async (orderNumber: string) => {
+    const generatePDF = async (orderNumber: string, includeInvoiceDetail: boolean = false) => {
         if (selectedInvoices.length === 0) return;
 
         setIsGeneratingPDF(true);
         try {
             // 1. Generar el PDF
-            generateSupplierInvoicePDF(selectedInvoices, orderNumber);
+            generateSupplierInvoicePDF(selectedInvoices, orderNumber, includeInvoiceDetail);
 
             // 2. Extraer IDs de facturas
             const invoiceIds = selectedInvoices.map(item => item.invoice.invoice.id);
