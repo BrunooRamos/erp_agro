@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Modal, Form, Input, Button, Typography, Divider, Row, Col, Statistic, Checkbox } from 'antd';
+import { Modal, Form, Input, Button, Typography, Divider, Row, Col, Statistic } from 'antd';
 import { SupplierTotal } from '../../../../interfaces';
 
 const { Title, Text } = Typography;
@@ -25,21 +25,18 @@ export const PaymentOrderModal: React.FC<PaymentOrderModalProps> = ({
 }) => {
   const [form] = Form.useForm();
   const [orderNumber, setOrderNumber] = useState('');
-  const [includeInvoiceDetail, setIncludeInvoiceDetail] = useState(true);
 
-  const handleConfirm = () => {
+  const handleGenerate = (withDetail: boolean) => {
     form.validateFields().then((values) => {
-      onConfirm(values.orderNumber, includeInvoiceDetail);
+      onConfirm(values.orderNumber, withDetail);
       form.resetFields();
       setOrderNumber('');
-      setIncludeInvoiceDetail(true);
     });
   };
 
   const handleCancel = () => {
     form.resetFields();
     setOrderNumber('');
-    setIncludeInvoiceDetail(true);
     onCancel();
   };
 
@@ -59,13 +56,21 @@ export const PaymentOrderModal: React.FC<PaymentOrderModalProps> = ({
           Cancelar
         </Button>,
         <Button
-          key="confirm"
-          type="primary"
+          key="resumen"
           loading={loading}
-          onClick={handleConfirm}
+          onClick={() => handleGenerate(false)}
           disabled={!orderNumber.trim()}
         >
-          Generar PDF
+          PDF Resumen
+        </Button>,
+        <Button
+          key="detalle"
+          type="primary"
+          loading={loading}
+          onClick={() => handleGenerate(true)}
+          disabled={!orderNumber.trim()}
+        >
+          PDF con Facturas
         </Button>
       ]}
       width={700}
@@ -87,14 +92,6 @@ export const PaymentOrderModal: React.FC<PaymentOrderModalProps> = ({
               onChange={(e) => setOrderNumber(e.target.value)}
               autoFocus
             />
-          </Form.Item>
-          <Form.Item>
-            <Checkbox
-              checked={includeInvoiceDetail}
-              onChange={(e) => setIncludeInvoiceDetail(e.target.checked)}
-            >
-              Incluir detalle de facturas en el PDF
-            </Checkbox>
           </Form.Item>
         </Form>
 
