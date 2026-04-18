@@ -14,7 +14,8 @@ export const SupplierInvoiceList = () => {
         getSelectedCurrency,
         getSelectedBankAccount,
         clearSelectedInvoices,
-        generatePDF,
+        downloadPDF,
+        confirmPaymentOrder,
         showPaymentOrderModalHandler,
         closePaymentOrderModal,
         showPaymentOrderModal,
@@ -198,7 +199,8 @@ export const SupplierInvoiceList = () => {
             <PaymentOrderModal
                 visible={showPaymentOrderModal}
                 onCancel={closePaymentOrderModal}
-                onConfirm={generatePDF}
+                onDownloadPDF={downloadPDF}
+                onConfirm={confirmPaymentOrder}
                 supplierTotals={totals.supplierTotals}
                 totalUSD={totals.totalUSD}
                 totalUYU={totals.totalUYU}
