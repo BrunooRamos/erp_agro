@@ -7,7 +7,8 @@ const { Title, Text } = Typography;
 interface PaymentOrderModalProps {
   visible: boolean;
   onCancel: () => void;
-  onConfirm: (orderNumber: string, includeInvoiceDetail: boolean) => void;
+  onDownloadPDF: (orderNumber: string, includeInvoiceDetail: boolean) => void;
+  onConfirm: () => void;
   supplierTotals: SupplierTotal[];
   totalUSD: number;
   totalUYU: number;
@@ -17,6 +18,7 @@ interface PaymentOrderModalProps {
 export const PaymentOrderModal: React.FC<PaymentOrderModalProps> = ({
   visible,
   onCancel,
+  onDownloadPDF,
   onConfirm,
   supplierTotals,
   totalUSD,
@@ -26,12 +28,16 @@ export const PaymentOrderModal: React.FC<PaymentOrderModalProps> = ({
   const [form] = Form.useForm();
   const [orderNumber, setOrderNumber] = useState('');
 
-  const handleGenerate = (withDetail: boolean) => {
+  const handleDownload = (withDetail: boolean) => {
     form.validateFields().then((values) => {
-      onConfirm(values.orderNumber, withDetail);
-      form.resetFields();
-      setOrderNumber('');
+      onDownloadPDF(values.orderNumber, withDetail);
     });
+  };
+
+  const handleConfirm = () => {
+    onConfirm();
+    form.resetFields();
+    setOrderNumber('');
   };
 
   const handleCancel = () => {
@@ -57,20 +63,27 @@ export const PaymentOrderModal: React.FC<PaymentOrderModalProps> = ({
         </Button>,
         <Button
           key="resumen"
-          loading={loading}
-          onClick={() => handleGenerate(false)}
+          onClick={() => handleDownload(false)}
           disabled={!orderNumber.trim()}
         >
           PDF Resumen
         </Button>,
         <Button
           key="detalle"
-          type="primary"
-          loading={loading}
-          onClick={() => handleGenerate(true)}
+          onClick={() => handleDownload(true)}
           disabled={!orderNumber.trim()}
         >
           PDF con Facturas
+        </Button>,
+        <Button
+          key="confirm"
+          type="primary"
+          loading={loading}
+          onClick={handleConfirm}
+          disabled={!orderNumber.trim()}
+          danger
+        >
+          Confirmar Orden
         </Button>
       ]}
       width={700}
@@ -168,9 +181,9 @@ export const PaymentOrderModal: React.FC<PaymentOrderModalProps> = ({
 
         <Divider />
 
-        <div className="text-center">
+        <div className="text-center bg-blue-50 border border-blue-200 rounded p-3">
           <Text type="secondary">
-            Se generará un PDF con la orden de pago completa incluyendo todos los detalles.
+            Primero descargue los PDFs que necesite con los botones <strong>PDF Resumen</strong> (sin facturas) o <strong>PDF con Facturas</strong> (con detalle). Cuando termine, presione <strong>Confirmar Orden</strong> para marcar las facturas como pagadas.
           </Text>
         </div>
       </div>

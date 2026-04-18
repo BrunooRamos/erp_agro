@@ -89,37 +89,38 @@ export const useSupplier = () => {
         setSelectedInvoices([]);
     };
 
-    const generatePDF = async (orderNumber: string, includeInvoiceDetail: boolean = false) => {
+    const downloadPDF = (orderNumber: string, includeInvoiceDetail: boolean = false) => {
+        if (selectedInvoices.length === 0) return;
+        generateSupplierInvoicePDF(selectedInvoices, orderNumber, includeInvoiceDetail);
+    };
+
+    const confirmPaymentOrder = async () => {
         if (selectedInvoices.length === 0) return;
 
         setIsGeneratingPDF(true);
         try {
-            // 1. Generar el PDF
-            generateSupplierInvoicePDF(selectedInvoices, orderNumber, includeInvoiceDetail);
-
-            // 2. Extraer IDs de facturas
+            // 1. Extraer IDs de facturas
             const invoiceIds = selectedInvoices.map(item => item.invoice.invoice.id);
 
-            // 3. Marcar facturas como "en orden de pago" en el backend
+            // 2. Marcar facturas como "en orden de pago" en el backend
             const success = await markInvoicesInPaymentOrder(invoiceIds);
 
             if (success) {
-                // 4. Refrescar la lista de facturas para ver los cambios
+                // 3. Refrescar la lista de facturas para ver los cambios
                 await listSupplier.refetch();
 
-                // 5. Limpiar selección y cerrar modal
+                // 4. Limpiar selección y cerrar modal
                 setSelectedInvoices([]);
                 setShowPaymentOrderModal(false);
 
-                // 6. Mostrar notificación de éxito
-                message.success('Orden de pago generada exitosamente. Las facturas han sido marcadas como "En orden de pago".');
+                // 5. Mostrar notificación de éxito
+                message.success('Orden de pago confirmada. Las facturas han sido marcadas como "En orden de pago".');
             } else {
-                message.warning('El PDF fue generado pero hubo un problema al actualizar el estado de las facturas.');
-                setShowPaymentOrderModal(false);
+                message.warning('Hubo un problema al actualizar el estado de las facturas.');
             }
         } catch (error) {
-            console.error('Error al generar orden de pago:', error);
-            message.error('Error al generar la orden de pago. Por favor, intente nuevamente.');
+            console.error('Error al confirmar orden de pago:', error);
+            message.error('Error al confirmar la orden de pago. Por favor, intente nuevamente.');
         } finally {
             setIsGeneratingPDF(false);
         }
@@ -239,7 +240,8 @@ export const useSupplier = () => {
         getSelectedCurrency,
         getSelectedBankAccount,
         clearSelectedInvoices,
-        generatePDF,
+        downloadPDF,
+        confirmPaymentOrder,
         showPaymentOrderModalHandler,
         closePaymentOrderModal,
         showPaymentOrderModal,
