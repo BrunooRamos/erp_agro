@@ -361,7 +361,14 @@ export const generateSupplierInvoicePDF = (
     }
 
     // Guardar
-    doc.save(`orden_pago_resumen_${new Date().toISOString().slice(0, 10)}.pdf`);
+    const dateSuffix = new Date().toISOString().slice(0, 10);
+    if (includeInvoiceDetail) {
+        doc.save(`orden_pago_detalle_${dateSuffix}.pdf`);
+        // Generar segundo PDF sin detalle para Fernando
+        generateSupplierInvoicePDF(selectedInvoices, orderNumber, false);
+    } else {
+        doc.save(`orden_pago_resumen_${dateSuffix}.pdf`);
+    }
 };
 
 export const getSupplierAccountStatement = async (filters: AccountStatementFilters): Promise<SupplierAccountStatement> => {
