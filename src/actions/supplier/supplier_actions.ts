@@ -131,7 +131,7 @@ export const generateSupplierInvoicePDF = (
     // Helper para generar sub-filas de detalle de facturas
     const buildDetailRows = (invoices: SupplierRow['invoices']) =>
         invoices.map(inv => [
-            `  → ${inv.ref}`,
+            `  > ${inv.ref}`,
             '',
             inv.currency === 'UYU' ? `$ ${fmtAmount(inv.amount)}` : '',
             inv.currency === 'USD' ? `U$S ${fmtAmount(inv.amount)}` : '',
@@ -143,7 +143,7 @@ export const generateSupplierInvoicePDF = (
     const detailRowDidParseCell = includeInvoiceDetail ? (data: any) => {
         if (data.section === 'body') {
             const raw = data.row?.raw;
-            if (Array.isArray(raw) && typeof raw[0] === 'string' && raw[0].startsWith('  →')) {
+            if (Array.isArray(raw) && typeof raw[0] === 'string' && raw[0].startsWith('  >')) {
                 data.cell.styles.fontSize = 8;
                 data.cell.styles.textColor = [100, 100, 100];
                 data.cell.styles.fontStyle = 'italic';
