@@ -181,9 +181,9 @@ export const PaymentOrderModal: React.FC<PaymentOrderModalProps> = ({
 
         <Divider />
 
-        <div className="text-center">
+        <div className="text-center bg-blue-50 border border-blue-200 rounded p-3">
           <Text type="secondary">
-            Se generará un PDF con la orden de pago completa incluyendo todos los detalles.
+            Primero descargue los PDFs que necesite con los botones <strong>PDF Resumen</strong> (sin facturas) o <strong>PDF con Facturas</strong> (con detalle). Cuando termine, presione <strong>Confirmar Orden</strong> para marcar las facturas como pagadas.
           </Text>
         </div>
       </div>
