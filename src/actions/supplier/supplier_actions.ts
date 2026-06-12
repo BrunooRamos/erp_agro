@@ -1,5 +1,5 @@
 import { dolibarrApi } from "../../api";
-import { AccountStatementFilters, InvoiceElement, SupplierAccountStatement, SupplierInvoice, Thirdparty, ThirdpartyFilters, AvailableAccountsResponse, SupplierDueReport, SupplierDueReportFilters, AccountMovement } from "../../interfaces";
+import { AccountStatementFilters, InvoiceElement, SupplierAccountStatement, SupplierInvoice, Thirdparty, ThirdpartyFilters, AvailableAccountsResponse, SupplierDueReport, SupplierDueReportFilters, SupplierDueReportInvoiceEntry, AccountMovement } from "../../interfaces";
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
@@ -603,26 +603,150 @@ export const getSupplierDueReport = async (filters: SupplierDueReportFilters): P
   return transformed;
 };
 
-export const generateSupplierDueReportExcel = (report: SupplierDueReport, filters: { currency?: string; supplier_id?: string }): void => {
-  const invoices = report.invoices || [];
+interface SupplierDueReportExportFilters {
+  currency?: string;
+  supplier_id?: string;
+  type_document?: string;
+}
 
-  let filtered = invoices;
-  if (filters.supplier_id) filtered = filtered.filter(e => e.supplier.id === filters.supplier_id);
-  if (filters.currency === 'UYU') filtered = filtered.filter(e => (e.invoice.printable_amounts?.amount_uyu || 0) !== 0);
-  if (filters.currency === 'USD') filtered = filtered.filter(e => (e.invoice.printable_amounts?.amount_usd || 0) !== 0);
+type SupplierDueRowType = 'data' | 'supplierSubtotal' | 'monthSubtotal' | 'monthAccumulated' | 'grandTotal';
 
-  const rows = filtered.map(e => ({
-    'M-A Vto.': e.invoice.month_year_due,
-    'Proveedor': e.supplier.name,
-    'Fecha Vto.': e.invoice.due_date,
-    'Tipo Doc.': e.invoice.type_document,
-    'Fecha Doc.': e.invoice.date,
-    'N° Doc.': e.invoice.ref,
-    'Fecha OP': e.payments?.[0]?.payment_order_date || '',
-    'N° OP': e.payments?.[0]?.payment_order_ref || '',
-    '$ (UYU)': filters.currency === 'USD' ? '' : (e.invoice.printable_amounts?.amount_uyu || ''),
-    'U$S (USD)': filters.currency === 'UYU' ? '' : (e.invoice.printable_amounts?.amount_usd || ''),
-  }));
+interface SupplierDueRow {
+  rowType: SupplierDueRowType;
+  entry?: SupplierDueReportInvoiceEntry;
+  label?: string;
+  amount_uyu?: number;
+  amount_usd?: number;
+}
+
+/**
+ * Apply client-side filters and build the structured row list (data rows,
+ * supplier subtotals, month subtotals + running monthly accumulated, grand total)
+ * mirroring the on-screen report. Subtotals are recomputed from the filtered set.
+ */
+const buildSupplierDueReportRows = (
+  report: SupplierDueReport,
+  filters: SupplierDueReportExportFilters
+): SupplierDueRow[] => {
+  let invoices = Array.isArray(report.invoices) ? [...report.invoices] : [];
+  if (filters.supplier_id) invoices = invoices.filter(e => e.supplier.id === filters.supplier_id);
+  if (filters.type_document) invoices = invoices.filter(e => e.invoice.type_document === filters.type_document);
+  if (filters.currency === 'UYU') invoices = invoices.filter(e => (e.invoice.printable_amounts?.amount_uyu || 0) !== 0);
+  if (filters.currency === 'USD') invoices = invoices.filter(e => (e.invoice.printable_amounts?.amount_usd || 0) !== 0);
+
+  if (invoices.length === 0) return [];
+
+  const supplierSubtotalMap = new Map<string, { supplier_name: string; amount_uyu: number; amount_usd: number }>();
+  const monthSubtotalMap = new Map<string, { amount_uyu: number; amount_usd: number }>();
+  for (const e of invoices) {
+    const sid = e.supplier.id;
+    if (!supplierSubtotalMap.has(sid)) supplierSubtotalMap.set(sid, { supplier_name: e.supplier.name, amount_uyu: 0, amount_usd: 0 });
+    const s = supplierSubtotalMap.get(sid)!;
+    s.amount_uyu += e.invoice.printable_amounts?.amount_uyu || 0;
+    s.amount_usd += e.invoice.printable_amounts?.amount_usd || 0;
+
+    const month = e.invoice.month_year_due;
+    if (!monthSubtotalMap.has(month)) monthSubtotalMap.set(month, { amount_uyu: 0, amount_usd: 0 });
+    const m = monthSubtotalMap.get(month)!;
+    m.amount_uyu += e.invoice.printable_amounts?.amount_uyu || 0;
+    m.amount_usd += e.invoice.printable_amounts?.amount_usd || 0;
+  }
+
+  const sorted = invoices.sort((a, b) => {
+    if (a.invoice.month_year_due !== b.invoice.month_year_due) return a.invoice.month_year_due.localeCompare(b.invoice.month_year_due);
+    if (a.supplier.name !== b.supplier.name) return a.supplier.name.localeCompare(b.supplier.name);
+    return a.invoice.due_date.localeCompare(b.invoice.due_date);
+  });
+
+  const output: SupplierDueRow[] = [];
+  let currentMonth: string | null = null;
+  let currentSupplierId: string | null = null;
+  let accumulatedUyu = 0;
+  let accumulatedUsd = 0;
+
+  const pushSupplierSubtotal = (supplierId: string) => {
+    const s = supplierSubtotalMap.get(supplierId);
+    if (!s) return;
+    output.push({ rowType: 'supplierSubtotal', label: `Subtotal ${s.supplier_name}`, amount_uyu: s.amount_uyu, amount_usd: s.amount_usd });
+  };
+
+  const pushMonthSubtotal = (month: string) => {
+    const m = monthSubtotalMap.get(month);
+    if (!m) return;
+    output.push({ rowType: 'monthSubtotal', label: `Subtotal ${month}`, amount_uyu: m.amount_uyu, amount_usd: m.amount_usd });
+    accumulatedUyu += m.amount_uyu;
+    accumulatedUsd += m.amount_usd;
+    output.push({ rowType: 'monthAccumulated', label: `Acumulado al ${month}`, amount_uyu: accumulatedUyu, amount_usd: accumulatedUsd });
+  };
+
+  sorted.forEach((entry, idx) => {
+    if (entry.invoice.month_year_due !== currentMonth) {
+      if (currentSupplierId) {
+        pushSupplierSubtotal(currentSupplierId);
+        currentSupplierId = null;
+      }
+      if (currentMonth) pushMonthSubtotal(currentMonth);
+      currentMonth = entry.invoice.month_year_due;
+    }
+    if (entry.supplier.id !== currentSupplierId) {
+      if (currentSupplierId) pushSupplierSubtotal(currentSupplierId);
+      currentSupplierId = entry.supplier.id;
+    }
+
+    output.push({ rowType: 'data', entry });
+
+    const next = sorted[idx + 1];
+    if (!next || next.supplier.id !== currentSupplierId) {
+      if (currentSupplierId) {
+        pushSupplierSubtotal(currentSupplierId);
+        currentSupplierId = null;
+      }
+    }
+    if (!next || next.invoice.month_year_due !== currentMonth) {
+      if (currentMonth) pushMonthSubtotal(currentMonth);
+      currentMonth = next ? next.invoice.month_year_due : null;
+    }
+  });
+
+  const grandUyu = invoices.reduce((acc, e) => acc + (e.invoice.printable_amounts?.amount_uyu || 0), 0);
+  const grandUsd = invoices.reduce((acc, e) => acc + (e.invoice.printable_amounts?.amount_usd || 0), 0);
+  output.push({ rowType: 'grandTotal', label: 'TOTAL GENERAL', amount_uyu: grandUyu, amount_usd: grandUsd });
+
+  return output;
+};
+
+export const generateSupplierDueReportExcel = (report: SupplierDueReport, filters: SupplierDueReportExportFilters): void => {
+  const structuredRows = buildSupplierDueReportRows(report, filters);
+
+  const rows = structuredRows.map(r => {
+    if (r.rowType === 'data') {
+      const e = r.entry!;
+      return {
+        'M-A Vto.': e.invoice.month_year_due,
+        'Proveedor': e.supplier.name,
+        'Fecha Vto.': e.invoice.due_date,
+        'Tipo Doc.': e.invoice.type_document,
+        'Fecha Doc.': e.invoice.date,
+        'N° Doc.': e.invoice.ref,
+        'Fecha OP': e.payments?.[0]?.payment_order_date || '',
+        'N° OP': e.payments?.[0]?.payment_order_ref || '',
+        '$ (UYU)': filters.currency === 'USD' ? '' : (e.invoice.printable_amounts?.amount_uyu || ''),
+        'U$S (USD)': filters.currency === 'UYU' ? '' : (e.invoice.printable_amounts?.amount_usd || ''),
+      };
+    }
+    return {
+      'M-A Vto.': '',
+      'Proveedor': r.label || '',
+      'Fecha Vto.': '',
+      'Tipo Doc.': '',
+      'Fecha Doc.': '',
+      'N° Doc.': '',
+      'Fecha OP': '',
+      'N° OP': '',
+      '$ (UYU)': filters.currency === 'USD' ? '' : (r.amount_uyu || ''),
+      'U$S (USD)': filters.currency === 'UYU' ? '' : (r.amount_usd || ''),
+    };
+  });
 
   const ws = XLSX.utils.json_to_sheet(rows);
   const wb = XLSX.utils.book_new();
@@ -630,7 +754,7 @@ export const generateSupplierDueReportExcel = (report: SupplierDueReport, filter
   XLSX.writeFile(wb, `vencimientos_${new Date().toISOString().slice(0, 10)}.xlsx`);
 };
 
-export const generateSupplierDueReportPDF = (report: SupplierDueReport): void => {
+export const generateSupplierDueReportPDF = (report: SupplierDueReport, filters: SupplierDueReportExportFilters = {}): void => {
   const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' }) as unknown as JsPDFWithAutoTable;
 
   const margin = 36; // ~12mm
@@ -660,91 +784,35 @@ export const generateSupplierDueReportPDF = (report: SupplierDueReport): void =>
     'M-A Vto.', 'Proveedor', 'Fecha Vto.', 'Tipo Doc.', 'Fecha Doc.', 'N° Doc.', 'Fecha Orden de Pago', 'N° Orden de Pago', '$', 'U$S'
   ]];
 
-  const body: (string)[][] = [];
+  // Build structured rows (data + subtotals + monthly accumulated + grand total),
+  // applying the same client-side filters as the on-screen report.
+  const structuredRows = buildSupplierDueReportRows(report, filters);
+  const hideUyu = filters.currency === 'USD';
+  const hideUsd = filters.currency === 'UYU';
 
-  // Sort invoices: group by month_year_due then supplier, inside sort by due_date asc
-  const invoices = [...report.invoices].sort((a, b) => {
-    if (a.invoice.month_year_due !== b.invoice.month_year_due) {
-      return a.invoice.month_year_due.localeCompare(b.invoice.month_year_due);
+  const body: (string)[][] = structuredRows.map(r => {
+    if (r.rowType === 'data') {
+      const e = r.entry!;
+      const payment = e.payments && e.payments[0] ? e.payments[0] : undefined;
+      return [
+        e.invoice.month_year_due,
+        e.supplier.name,
+        formatDate(e.invoice.due_date),
+        e.invoice.type_document,
+        formatDate(e.invoice.date),
+        e.invoice.ref,
+        payment?.payment_order_date ? formatDate(payment.payment_order_date) : '',
+        payment?.payment_order_ref || '',
+        hideUyu ? '' : formatMoney(e.invoice.printable_amounts?.amount_uyu ?? null),
+        hideUsd ? '' : formatMoney(e.invoice.printable_amounts?.amount_usd ?? null),
+      ];
     }
-    if (a.supplier.name !== b.supplier.name) {
-      return a.supplier.name.localeCompare(b.supplier.name);
-    }
-    return a.invoice.due_date.localeCompare(b.invoice.due_date);
+    return [
+      '', r.label || '', '', '', '', '', '', '',
+      hideUyu ? '' : formatMoney(r.amount_uyu ?? null),
+      hideUsd ? '' : formatMoney(r.amount_usd ?? null),
+    ];
   });
-
-  // Helper to push subtotal rows
-  const pushSupplierSubtotal = (supplierId: string) => {
-    const s = report.subtotals.by_supplier.find(x => x.supplier_id === supplierId);
-    if (!s) return;
-    body.push([
-      '', `Subtotal ${s.supplier_name}`, '', '', '', '', '', '', formatMoney(s.amount_uyu), formatMoney(s.amount_usd)
-    ]);
-  };
-
-  const pushMonthSubtotal = (month: string) => {
-    const m = report.subtotals.by_month_due.find(x => x.month_year_due === month);
-    if (!m) return;
-    body.push([
-      '', `Subtotal ${month}`, '', '', '', '', '', '', formatMoney(m.amount_uyu), formatMoney(m.amount_usd)
-    ]);
-  };
-
-  let currentMonth: string | null = null;
-  let currentSupplierId: string | null = null;
-
-  invoices.forEach((row, idx) => {
-    if (row.invoice.month_year_due !== currentMonth) {
-      if (currentSupplierId) {
-        pushSupplierSubtotal(currentSupplierId);
-        currentSupplierId = null;
-      }
-      if (currentMonth) {
-        pushMonthSubtotal(currentMonth);
-      }
-      currentMonth = row.invoice.month_year_due;
-      // Add a visual month header as an empty separator (optional)
-    }
-    if (row.supplier.id !== currentSupplierId) {
-      if (currentSupplierId) {
-        pushSupplierSubtotal(currentSupplierId);
-      }
-      currentSupplierId = row.supplier.id;
-    }
-
-    const payment = row.payments && row.payments[0] ? row.payments[0] : undefined;
-    body.push([
-      row.invoice.month_year_due,
-      row.supplier.name,
-      formatDate(row.invoice.due_date),
-      row.invoice.type_document,
-      formatDate(row.invoice.date),
-      row.invoice.ref,
-      payment?.payment_order_date ? formatDate(payment.payment_order_date) : '',
-      payment?.payment_order_ref || '',
-      formatMoney(row.invoice.printable_amounts?.amount_uyu ?? null),
-      formatMoney(row.invoice.printable_amounts?.amount_usd ?? null),
-    ]);
-
-    const next = invoices[idx + 1];
-    if (!next || next.supplier.id !== currentSupplierId) {
-      if (currentSupplierId) {
-        pushSupplierSubtotal(currentSupplierId);
-        currentSupplierId = null;
-      }
-    }
-    if (!next || next.invoice.month_year_due !== currentMonth) {
-      if (currentMonth) {
-        pushMonthSubtotal(currentMonth);
-      }
-      currentMonth = next ? next.invoice.month_year_due : null;
-    }
-  });
-
-  // Grand total
-  body.push([
-    '', 'TOTAL GENERAL', '', '', '', '', '', '', formatMoney(report.grand_total.amount_uyu), formatMoney(report.grand_total.amount_usd)
-  ]);
 
   const startY = margin + 70;
   autoTable(doc as unknown as jsPDF, {
@@ -782,9 +850,11 @@ export const generateSupplierDueReportPDF = (report: SupplierDueReport): void =>
       const raw = (data.row && (data.row.raw as unknown)) as unknown as string[] | undefined;
       const v = Array.isArray(raw) ? raw[1] : undefined;
       if (typeof v === 'string') {
-        if (v.startsWith('Subtotal') || v === 'TOTAL GENERAL') {
+        if (v.startsWith('Subtotal') || v.startsWith('Acumulado al') || v === 'TOTAL GENERAL') {
           data.cell.styles.fontStyle = 'bold';
-          if (v === 'TOTAL GENERAL') {
+          if (v.startsWith('Acumulado al')) {
+            data.cell.styles.fillColor = [219, 234, 254]; // light blue (≈ Tailwind blue-100)
+          } else if (v === 'TOTAL GENERAL') {
             data.cell.styles.fillColor = [245, 245, 245];
           }
         }

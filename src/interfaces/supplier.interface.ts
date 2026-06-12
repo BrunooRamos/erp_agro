@@ -170,6 +170,7 @@ export interface SupplierDueReportFilters {
   date_to: string; // YYYY-MM-DD
   supplier_id?: string;
   currency?: 'UYU' | 'USD' | '';
+  type_document?: string; // client-side filter by document type
 }
 
 export interface SupplierDueReport {

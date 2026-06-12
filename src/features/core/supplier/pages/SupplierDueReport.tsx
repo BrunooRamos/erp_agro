@@ -10,7 +10,7 @@ const { Title, Text } = Typography;
 const formatDate = (iso?: string) => (iso ? dayjs(iso).format('DD/MM/YYYY') : '');
 const formatMoney = (n?: number) => (typeof n === 'number' && n !== 0 ? n.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "");
 
-type RowType = 'data' | 'supplierSubtotal' | 'monthSubtotal' | 'grandTotal';
+type RowType = 'data' | 'supplierSubtotal' | 'monthSubtotal' | 'monthAccumulated' | 'grandTotal';
 type UiRow = { rowType: RowType; key: string } & Partial<SupplierDueReportInvoiceEntry> & {
   label?: string;
   amount_uyu?: number;
@@ -47,6 +47,15 @@ export const SupplierDueReport = () => {
     return Array.from(map.entries()).map(([id, name]) => ({ value: id, label: name })).sort((a, b) => a.label.localeCompare(b.label));
   }, [report.data]);
 
+  const uniqueTypeDocuments = useMemo(() => {
+    if (!report.data?.invoices) return [];
+    const set = new Set<string>();
+    for (const e of report.data.invoices) {
+      if (e.invoice.type_document) set.add(e.invoice.type_document);
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b)).map(t => ({ value: t, label: t }));
+  }, [report.data]);
+
   const rows = useMemo(() => {
     if (!report.data) return [] as UiRow[];
     const data = report.data;
@@ -56,6 +65,9 @@ export const SupplierDueReport = () => {
     // Client-side filtering
     if (filters.supplier_id) {
       invoices = invoices.filter(e => e.supplier.id === filters.supplier_id);
+    }
+    if (filters.type_document) {
+      invoices = invoices.filter(e => e.invoice.type_document === filters.type_document);
     }
     if (filters.currency === 'UYU') {
       invoices = invoices.filter(e => (e.invoice.printable_amounts?.amount_uyu || 0) !== 0);
@@ -104,6 +116,8 @@ export const SupplierDueReport = () => {
       });
     };
 
+    let accumulatedUyu = 0;
+    let accumulatedUsd = 0;
     const pushMonthSubtotal = (month: string) => {
       const m = monthSubtotals.find(x => x.month_year_due === month);
       if (!m) return;
@@ -113,6 +127,16 @@ export const SupplierDueReport = () => {
         label: `Subtotal ${month}`,
         amount_uyu: m.amount_uyu,
         amount_usd: m.amount_usd,
+        month,
+      });
+      accumulatedUyu += m.amount_uyu;
+      accumulatedUsd += m.amount_usd;
+      output.push({
+        rowType: 'monthAccumulated',
+        key: `month-accumulated-${month}-${output.length}`,
+        label: `Acumulado al ${month}`,
+        amount_uyu: accumulatedUyu,
+        amount_usd: accumulatedUsd,
         month,
       });
     };
@@ -158,7 +182,7 @@ export const SupplierDueReport = () => {
     });
 
     return output;
-  }, [report.data, filters.supplier_id, filters.currency]);
+  }, [report.data, filters.supplier_id, filters.currency, filters.type_document]);
 
   const columns = [
     { title: 'M-A Vto.', dataIndex: ['invoice', 'month_year_due'], width: 100, render: (_: unknown, r: UiRow) => r.rowType === 'data' ? r.invoice?.month_year_due : '' },
@@ -177,7 +201,7 @@ export const SupplierDueReport = () => {
     if (!report.data) return;
     try {
       setIsExporting(true);
-      generateSupplierDueReportPDF(report.data);
+      generateSupplierDueReportPDF(report.data, { currency: filters.currency, supplier_id: filters.supplier_id, type_document: filters.type_document });
     } finally {
       setIsExporting(false);
     }
@@ -185,7 +209,7 @@ export const SupplierDueReport = () => {
 
   const onExportExcel = () => {
     if (!report.data) return;
-    generateSupplierDueReportExcel(report.data, { currency: filters.currency, supplier_id: filters.supplier_id });
+    generateSupplierDueReportExcel(report.data, { currency: filters.currency, supplier_id: filters.supplier_id, type_document: filters.type_document });
   };
 
   const hasResults = rows.some(r => r.rowType === 'data');
@@ -248,6 +272,19 @@ export const SupplierDueReport = () => {
                 </div>
               </div>
               <div>
+                <Text strong>Tipo Doc.</Text>
+                <div>
+                  <Select
+                    placeholder="Todos"
+                    allowClear
+                    style={{ width: 160 }}
+                    value={filters.type_document || undefined}
+                    onChange={(v) => updateFilters({ type_document: v || '' })}
+                    options={uniqueTypeDocuments}
+                  />
+                </div>
+              </div>
+              <div>
                 <Text strong>Moneda</Text>
                 <div>
                   <Select
@@ -296,6 +333,7 @@ export const SupplierDueReport = () => {
                 bordered
                 rowClassName={(r: UiRow, index) => {
                   if (r.rowType === 'grandTotal') return 'font-bold bg-gray-50';
+                  if (r.rowType === 'monthAccumulated') return 'font-bold bg-blue-50';
                   if (r.rowType === 'monthSubtotal') return 'font-bold';
                   if (r.rowType === 'supplierSubtotal') return 'font-bold border-t';
                   return index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
