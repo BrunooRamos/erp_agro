@@ -155,7 +155,7 @@ export const SupplierDueReport = () => {
     { title: 'Fecha Vto.', dataIndex: ['invoice', 'due_date'], width: 110, render: (_: unknown, r: UiRow) => r.rowType === 'data' ? formatDate(r.invoice?.due_date) : '' },
     { title: 'Tipo Doc.', dataIndex: ['invoice', 'type_document'], width: 110, render: (_: unknown, r: UiRow) => r.rowType === 'data' ? r.invoice?.type_document : '' },
     { title: 'Fecha Doc.', dataIndex: ['invoice', 'date'], width: 110, render: (_: unknown, r: UiRow) => r.rowType === 'data' ? formatDate(r.invoice?.date) : '' },
-    { title: 'N° Doc.', dataIndex: ['invoice', 'ref'], width: 140, render: (_: unknown, r: UiRow) => r.rowType === 'data' ? r.invoice?.ref : '' },
+    { title: 'N° Doc.', dataIndex: ['invoice', 'ref_supplier'], width: 140, render: (_: unknown, r: UiRow) => r.rowType === 'data' ? (r.invoice?.ref_supplier || r.invoice?.ref || '') : '' },
     { title: 'Fecha Orden de Pago', dataIndex: ['payments', '0', 'payment_order_date'], width: 150, render: (_: unknown, r: UiRow) => r.rowType === 'data' ? formatDate(r.payments?.[0]?.payment_order_date || undefined) : '' },
     { title: 'N° Orden de Pago', dataIndex: ['payments', '0', 'payment_order_ref'], width: 160, render: (_: unknown, r: UiRow) => r.rowType === 'data' ? (r.payments?.[0]?.payment_order_ref || '') : '' },
     { title: '$', dataIndex: ['invoice', 'printable_amounts', 'amount_uyu'], align: 'right' as const, width: 120, render: (_: unknown, r: UiRow) => filters.currency === 'USD' ? '' : (r.rowType === 'data' ? formatMoney(r.invoice?.printable_amounts?.amount_uyu) : formatMoney(r.amount_uyu)) },
