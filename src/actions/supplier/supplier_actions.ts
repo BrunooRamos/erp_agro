@@ -609,7 +609,7 @@ interface SupplierDueReportExportFilters {
   type_document?: string;
 }
 
-type SupplierDueRowType = 'data' | 'supplierSubtotal' | 'monthSubtotal' | 'monthAccumulated' | 'grandTotal';
+type SupplierDueRowType = 'data' | 'monthSubtotal' | 'monthAccumulated' | 'grandTotal';
 
 interface SupplierDueRow {
   rowType: SupplierDueRowType;
@@ -621,7 +621,7 @@ interface SupplierDueRow {
 
 /**
  * Apply client-side filters and build the structured row list (data rows,
- * supplier subtotals, month subtotals + running monthly accumulated, grand total)
+ * month subtotals + running monthly accumulated, grand total)
  * mirroring the on-screen report. Subtotals are recomputed from the filtered set.
  */
 const buildSupplierDueReportRows = (
@@ -636,15 +636,8 @@ const buildSupplierDueReportRows = (
 
   if (invoices.length === 0) return [];
 
-  const supplierSubtotalMap = new Map<string, { supplier_name: string; amount_uyu: number; amount_usd: number }>();
   const monthSubtotalMap = new Map<string, { amount_uyu: number; amount_usd: number }>();
   for (const e of invoices) {
-    const sid = e.supplier.id;
-    if (!supplierSubtotalMap.has(sid)) supplierSubtotalMap.set(sid, { supplier_name: e.supplier.name, amount_uyu: 0, amount_usd: 0 });
-    const s = supplierSubtotalMap.get(sid)!;
-    s.amount_uyu += e.invoice.printable_amounts?.amount_uyu || 0;
-    s.amount_usd += e.invoice.printable_amounts?.amount_usd || 0;
-
     const month = e.invoice.month_year_due;
     if (!monthSubtotalMap.has(month)) monthSubtotalMap.set(month, { amount_uyu: 0, amount_usd: 0 });
     const m = monthSubtotalMap.get(month)!;
@@ -660,15 +653,8 @@ const buildSupplierDueReportRows = (
 
   const output: SupplierDueRow[] = [];
   let currentMonth: string | null = null;
-  let currentSupplierId: string | null = null;
   let accumulatedUyu = 0;
   let accumulatedUsd = 0;
-
-  const pushSupplierSubtotal = (supplierId: string) => {
-    const s = supplierSubtotalMap.get(supplierId);
-    if (!s) return;
-    output.push({ rowType: 'supplierSubtotal', label: `Subtotal ${s.supplier_name}`, amount_uyu: s.amount_uyu, amount_usd: s.amount_usd });
-  };
 
   const pushMonthSubtotal = (month: string) => {
     const m = monthSubtotalMap.get(month);
@@ -681,27 +667,13 @@ const buildSupplierDueReportRows = (
 
   sorted.forEach((entry, idx) => {
     if (entry.invoice.month_year_due !== currentMonth) {
-      if (currentSupplierId) {
-        pushSupplierSubtotal(currentSupplierId);
-        currentSupplierId = null;
-      }
       if (currentMonth) pushMonthSubtotal(currentMonth);
       currentMonth = entry.invoice.month_year_due;
-    }
-    if (entry.supplier.id !== currentSupplierId) {
-      if (currentSupplierId) pushSupplierSubtotal(currentSupplierId);
-      currentSupplierId = entry.supplier.id;
     }
 
     output.push({ rowType: 'data', entry });
 
     const next = sorted[idx + 1];
-    if (!next || next.supplier.id !== currentSupplierId) {
-      if (currentSupplierId) {
-        pushSupplierSubtotal(currentSupplierId);
-        currentSupplierId = null;
-      }
-    }
     if (!next || next.invoice.month_year_due !== currentMonth) {
       if (currentMonth) pushMonthSubtotal(currentMonth);
       currentMonth = next ? next.invoice.month_year_due : null;
