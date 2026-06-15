@@ -10,7 +10,7 @@ const { Title, Text } = Typography;
 const formatDate = (iso?: string) => (iso ? dayjs(iso).format('DD/MM/YYYY') : '');
 const formatMoney = (n?: number) => (typeof n === 'number' && n !== 0 ? n.toLocaleString('es-UY', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "");
 
-type RowType = 'data' | 'supplierSubtotal' | 'monthSubtotal' | 'monthAccumulated' | 'grandTotal';
+type RowType = 'data' | 'monthSubtotal' | 'monthAccumulated' | 'grandTotal';
 type UiRow = { rowType: RowType; key: string } & Partial<SupplierDueReportInvoiceEntry> & {
   label?: string;
   amount_uyu?: number;
@@ -77,22 +77,14 @@ export const SupplierDueReport = () => {
 
     if (invoices.length === 0) return [] as UiRow[];
     // Recompute subtotals from filtered invoices
-    const supplierSubtotalMap = new Map<string, { supplier_name: string; amount_uyu: number; amount_usd: number }>();
     const monthSubtotalMap = new Map<string, { amount_uyu: number; amount_usd: number }>();
     for (const e of invoices) {
-      const sid = e.supplier.id;
-      if (!supplierSubtotalMap.has(sid)) supplierSubtotalMap.set(sid, { supplier_name: e.supplier.name, amount_uyu: 0, amount_usd: 0 });
-      const s = supplierSubtotalMap.get(sid)!;
-      s.amount_uyu += e.invoice.printable_amounts?.amount_uyu || 0;
-      s.amount_usd += e.invoice.printable_amounts?.amount_usd || 0;
-
       const month = e.invoice.month_year_due;
       if (!monthSubtotalMap.has(month)) monthSubtotalMap.set(month, { amount_uyu: 0, amount_usd: 0 });
       const m = monthSubtotalMap.get(month)!;
       m.amount_uyu += e.invoice.printable_amounts?.amount_uyu || 0;
       m.amount_usd += e.invoice.printable_amounts?.amount_usd || 0;
     }
-    const supplierSubtotals = Array.from(supplierSubtotalMap.entries()).map(([id, v]) => ({ supplier_id: id, ...v }));
     const monthSubtotals = Array.from(monthSubtotalMap.entries()).map(([month_year_due, v]) => ({ month_year_due, ...v }));
     const sorted = [...invoices].sort((a, b) => {
       if (a.invoice.month_year_due !== b.invoice.month_year_due) return a.invoice.month_year_due.localeCompare(b.invoice.month_year_due);
@@ -102,19 +94,6 @@ export const SupplierDueReport = () => {
 
     const output: UiRow[] = [];
     let currentMonth: string | null = null;
-    let currentSupplierId: string | null = null;
-
-    const pushSupplierSubtotal = (supplierId: string) => {
-      const s = supplierSubtotals.find(x => x.supplier_id === supplierId);
-      if (!s) return;
-      output.push({
-        rowType: 'supplierSubtotal',
-        key: `supplier-subtotal-${supplierId}-${output.length}`,
-        label: `Subtotal ${s.supplier_name}`,
-        amount_uyu: s.amount_uyu,
-        amount_usd: s.amount_usd,
-      });
-    };
 
     let accumulatedUyu = 0;
     let accumulatedUsd = 0;
@@ -143,27 +122,13 @@ export const SupplierDueReport = () => {
 
     sorted.forEach((entry, idx) => {
       if (entry.invoice.month_year_due !== currentMonth) {
-        if (currentSupplierId) {
-          pushSupplierSubtotal(currentSupplierId);
-          currentSupplierId = null;
-        }
         if (currentMonth) pushMonthSubtotal(currentMonth);
         currentMonth = entry.invoice.month_year_due;
-      }
-      if (entry.supplier.id !== currentSupplierId) {
-        if (currentSupplierId) pushSupplierSubtotal(currentSupplierId);
-        currentSupplierId = entry.supplier.id;
       }
 
       output.push({ rowType: 'data', key: entry.invoice.id, ...entry });
 
       const next = sorted[idx + 1];
-      if (!next || next.supplier.id !== currentSupplierId) {
-        if (currentSupplierId) {
-          pushSupplierSubtotal(currentSupplierId);
-          currentSupplierId = null;
-        }
-      }
       if (!next || next.invoice.month_year_due !== currentMonth) {
         if (currentMonth) pushMonthSubtotal(currentMonth);
         currentMonth = next ? next.invoice.month_year_due : null;
@@ -335,7 +300,6 @@ export const SupplierDueReport = () => {
                   if (r.rowType === 'grandTotal') return 'font-bold bg-gray-50';
                   if (r.rowType === 'monthAccumulated') return 'font-bold bg-blue-50';
                   if (r.rowType === 'monthSubtotal') return 'font-bold';
-                  if (r.rowType === 'supplierSubtotal') return 'font-bold border-t';
                   return index % 2 === 0 ? 'bg-white' : 'bg-gray-50';
                 }}
               />
