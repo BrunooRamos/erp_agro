@@ -1,5 +1,5 @@
 # Vicentina ERP 
-## Bruno Ramos - 2025.
+## Bruno Ramos - 2025
 
 ### 1. Contexto general:
 Vicentina ha trabajado en gran parte de su existencia con tablas de Excel, sin embargo, dada la logica de negocio y la dificultad para realizar 
