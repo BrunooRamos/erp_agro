@@ -8,7 +8,7 @@ interface PaymentOrderModalProps {
   visible: boolean;
   onCancel: () => void;
   onDownloadPDF: (orderNumber: string, includeInvoiceDetail: boolean) => void;
-  onConfirm: () => void;
+  onConfirm: (orderNumber: string) => void;
   supplierTotals: SupplierTotal[];
   totalUSD: number;
   totalUYU: number;
@@ -35,9 +35,11 @@ export const PaymentOrderModal: React.FC<PaymentOrderModalProps> = ({
   };
 
   const handleConfirm = () => {
-    onConfirm();
-    form.resetFields();
-    setOrderNumber('');
+    form.validateFields().then((values) => {
+      onConfirm(values.orderNumber);
+      form.resetFields();
+      setOrderNumber('');
+    });
   };
 
   const handleCancel = () => {

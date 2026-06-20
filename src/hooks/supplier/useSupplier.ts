@@ -94,7 +94,7 @@ export const useSupplier = () => {
         generateSupplierInvoicePDF(selectedInvoices, orderNumber, includeInvoiceDetail);
     };
 
-    const confirmPaymentOrder = async () => {
+    const confirmPaymentOrder = async (orderNumber?: string) => {
         if (selectedInvoices.length === 0) return;
 
         setIsGeneratingPDF(true);
@@ -103,7 +103,7 @@ export const useSupplier = () => {
             const invoiceIds = selectedInvoices.map(item => item.invoice.invoice.id);
 
             // 2. Marcar facturas como "en orden de pago" en el backend
-            const success = await markInvoicesInPaymentOrder(invoiceIds);
+            const success = await markInvoicesInPaymentOrder(invoiceIds, orderNumber);
 
             if (success) {
                 // 3. Refrescar la lista de facturas para ver los cambios

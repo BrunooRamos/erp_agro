@@ -138,6 +138,20 @@ export const SupplierInvoiceTable: React.FC<SupplierInvoiceTableProps> = ({
       },
     },
     {
+      title: 'N° OP',
+      key: 'paymentOrderRef',
+      width: 110,
+      render: (_: unknown, record: InvoiceElement) => {
+        const ref = record.invoice.payment_order_ref;
+        if (!ref) return <Text type="secondary">-</Text>;
+        return (
+          <Tooltip title={`Orden de pago N° ${ref}`}>
+            <Tag color="red">OP {ref}</Tag>
+          </Tooltip>
+        );
+      },
+    },
+    {
       title: 'Acciones',
       key: 'actions',
       width: 120,

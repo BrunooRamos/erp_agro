@@ -50,6 +50,7 @@ export interface InvoiceInvoice {
     cuenta:         string;
     currency:       Currency;
     in_payment_order?: number; // 0 = disponible, 1 = en orden de pago pendiente
+    payment_order_ref?: string | null; // N° de orden de pago asociado
 }
 
 export interface CreditNote {

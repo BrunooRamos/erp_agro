@@ -1046,13 +1046,16 @@ export const generateSupplierAccountStatementPDF = (
 /**
  * Marca facturas como incluidas en una orden de pago
  * @param invoiceIds - Array de IDs de facturas
+ * @param orderNumber - N° de orden de pago a asociar a las facturas
  * @returns Promise con la respuesta del servidor
  */
 export const markInvoicesInPaymentOrder = async (
-  invoiceIds: string[]
+  invoiceIds: string[],
+  orderNumber?: string
 ): Promise<boolean> => {
   const response = await dolibarrApi.post('/vicentina/markInvoicesAsInPaymentOrder', {
-    invoice_ids: invoiceIds.map(id => parseInt(id, 10))
+    invoice_ids: invoiceIds.map(id => parseInt(id, 10)),
+    ...(orderNumber ? { payment_order_ref: orderNumber } : {})
   });
   return response.data as boolean;
 };
